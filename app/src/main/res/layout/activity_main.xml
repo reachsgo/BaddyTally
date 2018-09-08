@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/my_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="35dp"
+        android:background="@color/colorPrimaryDark"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+        app:titleTextColor="#ffffff" />
+
+    <LinearLayout
+        android:id="@+id/gold_parentview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="10dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/gold_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:background="@color/colorGold"
+            android:gravity="center"
+            android:padding="5dp"
+            android:text="Gold"
+            android:textSize="18sp"
+            android:textStyle="bold|italic" />
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/parent_linearlayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="60"
+                android:gravity="left"
+                android:padding="5dp"
+                android:text="Player"
+                android:textSize="16sp"
+                android:textColor="@color/colorWhite"
+                android:background="@color/colorBlack"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="20"
+                android:gravity="center_horizontal"
+                android:padding="5dp"
+                android:text="Round"
+                android:textColor="@color/colorWhite"
+                android:background="@color/colorBlack"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="20"
+                android:gravity="center_horizontal"
+                android:padding="5dp"
+                android:text="Total"
+                android:textColor="@color/colorWhite"
+                android:background="@color/colorBlack"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/gold_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/birdie"
+            android:backgroundTint="@color/colorGold"
+            android:scrollbars="vertical" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/silver_parentview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="10dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/silver_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:background="@color/colorSilver"
+            android:gravity="center"
+            android:padding="5dp"
+            android:text="Silver"
+            android:textSize="18sp"
+            android:textColor="@color/colorBlack"
+            android:textStyle="bold|italic" />
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="200dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="60"
+                android:gravity="left"
+                android:padding="5dp"
+                android:text="Player"
+                android:textColor="@color/colorWhite"
+                android:background="@color/colorBlack"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="20"
+                android:gravity="center_horizontal"
+                android:padding="5dp"
+                android:text="Round"
+                android:textColor="@color/colorWhite"
+                android:background="@color/colorBlack"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="20"
+                android:gravity="center_horizontal"
+                android:padding="5dp"
+                android:text="Total"
+                android:textColor="@color/colorWhite"
+                android:background="@color/colorBlack"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/silver_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="5dp"
+            android:background="@drawable/birdie"
+            android:backgroundTint="@color/colorSilver"
+            android:scrollbars="vertical" />
+    </LinearLayout>
+</LinearLayout>

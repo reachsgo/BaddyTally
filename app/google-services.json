@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "903426650679",
+    "firebase_url": "https://baddytally.firebaseio.com",
+    "project_id": "baddytally",
+    "storage_bucket": "baddytally.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:903426650679:android:7f161b90dc439c17",
+        "android_client_info": {
+          "package_name": "com.sg0.baddytally"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "903426650679-t4as2cdhvgpk98rr9c4fhpep9vut1fij.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sg0.baddytally",
+            "certificate_hash": "6c014fa4f7b88d2ee28971ae426334b044800095"
+          }
+        },
+        {
+          "client_id": "903426650679-gicsm0qo9cl6obmfpuainq22arvga43b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCxEaXCFlU4P_i9FTBSdAnyTDNZ88nCCdk"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "903426650679-gicsm0qo9cl6obmfpuainq22arvga43b.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

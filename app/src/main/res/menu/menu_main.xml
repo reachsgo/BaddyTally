@@ -1,0 +1,24 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="1"
+        android:title="@string/action_settings"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_refresh"
+        android:orderInCategory="90"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_baseline_autorenew_24px"
+        android:title="Refresh"/>
+    <item
+        android:id="@+id/action_enter"
+        android:orderInCategory="100"
+        app:showAsAction="never"
+        android:title="Enter score"/>
+    <item
+        android:id="@+id/action_delcache"
+        android:orderInCategory="100"
+        app:showAsAction="never"
+        android:title="Delete cache"/>
+</menu>
