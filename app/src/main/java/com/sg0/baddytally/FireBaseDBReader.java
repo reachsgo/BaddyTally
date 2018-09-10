@@ -11,65 +11,12 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 
-class PlayerData implements Serializable {
-    private String name;
-    private String innings_score;
-    private String overall_score;
-    private String group;
 
-    public PlayerData(String group) {
-        this.name = "Player";
-        this.innings_score = "This\nRound";
-        this.overall_score = "Overall";
-        this.group = group;
-    }
 
-    public PlayerData(String name, String innings_score, String overall_score, String group) {
-        this.name = name;
-        this.innings_score = innings_score;
-        this.overall_score = overall_score;
-        this.group = group;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getInnings_score() {
-        return innings_score;
-    }
-
-    public void setInnings_score(String innings_score) {
-        this.innings_score = innings_score;
-    }
-
-    public String getOverall_score() {
-        return overall_score;
-    }
-
-    public void setOverall_score(String overall_score) {
-        this.overall_score = overall_score;
-    }
-
-    public String getGroup() {
-        return group;
-    }
-
-    public void setGroup(String group) {
-        this.group = group;
-    }
-}
-
-public class FireBaseDBReader {
+class FireBaseDBReader {
     private static final String TAG = "FireBaseDBReader";
-    private Context mContext;
     private RecyclerViewAdapter mViewAdapter;
     private RecyclerView mView;
     private String mClub;
@@ -86,7 +33,7 @@ public class FireBaseDBReader {
     }
 
     public FireBaseDBReader(Context context, String club, String group, String innings, RecyclerViewAdapter viewAdapter, RecyclerView view) {
-        this.mContext = context;
+        Context mContext = context;
         mInnings = innings;
         mClub = club;
         mGroup = group;
@@ -96,7 +43,7 @@ public class FireBaseDBReader {
         mLogStr = "[" + mClub + "." + mGroup + "." + mInnings + "]";
     }
 
-    public void fetchOverallScore() {
+    private void fetchOverallScore() {
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.GROUPS).child(mGroup);
         Query myQuery = dbRef.orderByValue();
         myQuery.addListenerForSingleValueEvent(new ValueEventListener() {

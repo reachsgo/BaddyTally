@@ -2,34 +2,27 @@ package com.sg0.baddytally;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
-import android.text.Html;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.util.ArrayList;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder>{
     private static final String TAG = "RecyclerViewAdapter";
-    private Context mContext;
     private ArrayList<PlayerData> mPlayers;
-    private String mGroup;
-    private String mBgColor;
     //private ArrayList<String> mPlayers = new ArrayList<>();
     //private ArrayList<String> mInnings_scores = new ArrayList<>();
     //private ArrayList<String> mOverall_scores = new ArrayList<>();
 
     //public RecyclerViewAdapter(Context mContext, ArrayList<String> players, ArrayList<String> innings_scores, ArrayList<String> overall_scores) {
     public RecyclerViewAdapter(Context context, String group, ArrayList<PlayerData> players) {
-        this.mContext = context;
+        Context mContext = context;
         this.mPlayers = players;
-        this.mGroup = group;
+        String mGroup = group;
         //this.mInnings_scores = innings_scores;
         //this.mOverall_scores = overall_scores;
     }
@@ -39,7 +32,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     }
 
     public void setColor(String color) {
-        this.mBgColor = color;
+        String mBgColor = color;
     }
 
     @NonNull
@@ -48,8 +41,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         //Log.d(TAG, "onCreateViewHolder");
         View v = (View) LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.layout_listitem, parent, false);
-        ViewHolder vh = new ViewHolder(v);
-        return vh;
+        return new ViewHolder(v);
     }
 
     @Override
@@ -93,7 +85,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             TextView innings_score;
             TextView overall_score;
             //LinearLayout parent_layout;
-            public ViewHolder(View itemView) {
+            ViewHolder(View itemView) {
                 super(itemView);
                 player = itemView.findViewById(R.id.player);
                 innings_score = itemView.findViewById(R.id.innings_score);

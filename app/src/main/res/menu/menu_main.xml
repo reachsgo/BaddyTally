@@ -13,9 +13,14 @@
         android:title="Refresh"/>
     <item
         android:id="@+id/action_enter"
-        android:orderInCategory="100"
+        android:orderInCategory="98"
         app:showAsAction="never"
         android:title="Enter score"/>
+    <item
+        android:id="@+id/action_summary"
+        android:orderInCategory="99"
+        app:showAsAction="never"
+        android:title="Round Summary"/>
     <item
         android:id="@+id/action_delcache"
         android:orderInCategory="100"

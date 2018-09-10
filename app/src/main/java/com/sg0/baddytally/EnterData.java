@@ -5,28 +5,23 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
-import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.content.ContextCompat;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
@@ -36,13 +31,12 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-
-
+import java.util.Locale;
 
 
 public class EnterData extends AppCompatActivity {
 
-    static final List<Integer> scoreList = new ArrayList<Integer>() {{
+    private static final List<Integer> scoreList = new ArrayList<Integer>() {{
         add(30);
         add(29);
         add(28);
@@ -76,11 +70,9 @@ public class EnterData extends AppCompatActivity {
         add(0);
     }};
     private static final String TAG = "EnterData";
-    private String mRole;
     private String mGroup;
     private String mGameType;
     private String mInnings;
-    private String mNewRoundFlag;
     private String mRoundName;
     private String mClub;
     private int mGameNum = 1;
@@ -102,14 +94,14 @@ public class EnterData extends AppCompatActivity {
 
     private String createNewRoundName(boolean commit) {
         Date c = Calendar.getInstance().getTime();
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.CANADA);
         String rndName = df.format(c);
         if (commit) {
             Log.w(TAG, "createNewRoundName: committing:" + rndName);
             SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
             SharedPreferences.Editor editor = prefs.edit();
             editor.putString(Constants.NEWROUND, rndName);
-            editor.commit();
+            editor.apply();
         }
         return rndName;
     }
@@ -123,6 +115,14 @@ public class EnterData extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_enter_data);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
+        FloatingActionButton fab = findViewById(R.id.fab_cancel);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                killActivity();
+            }
+        });
     }
 
     @Override
@@ -130,17 +130,16 @@ public class EnterData extends AppCompatActivity {
         super.onStart();
 
 
-        mRole = SharedData.getInstance().mRole;
+        String mRole = SharedData.getInstance().mRole;
         mClub = SharedData.getInstance().mClub;
         mInnings = SharedData.getInstance().mInnings;
         Intent myIntent = getIntent(); // gets the previously created intent
         mGameType = myIntent.getStringExtra("gametype");
         mGroup = myIntent.getStringExtra("group");
-        mNewRoundFlag = myIntent.getStringExtra("new_round");
+        String mNewRoundFlag = myIntent.getStringExtra("new_round");
         Log.w(TAG, "onStart :" + SharedData.getInstance().toString() + "/" + mGroup + "/" + mGameType + "/" + mNewRoundFlag);
 
-        mSingles = false;
-        if (Constants.SINGLES.equals(mGameType)) mSingles = true;
+        mSingles = Constants.SINGLES.equals(mGameType);
 
         mSpinner_P1 = findViewById(R.id.spinner_p1);
         mSpinner_P2 = findViewById(R.id.spinner_p2);
@@ -148,10 +147,10 @@ public class EnterData extends AppCompatActivity {
         mSpinner_P4 = findViewById(R.id.spinner_p4);
         mSpinner_T1 = findViewById(R.id.score_t1);
         mSpinner_T2 = findViewById(R.id.score_t2);
-        mSpinner_P1_selection = new String();
-        mSpinner_P2_selection = new String();
-        mSpinner_P3_selection = new String();
-        mSpinner_P4_selection = new String();
+        mSpinner_P1_selection = "";
+        mSpinner_P2_selection = "";
+        mSpinner_P3_selection = "";
+        mSpinner_P4_selection = "";
 
         // ...
         mDatabase = FirebaseDatabase.getInstance().getReference();
@@ -173,13 +172,6 @@ public class EnterData extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 fetchGames();
-            }
-        });
-        Button cancelButton = (Button) findViewById(R.id.cancel_button);
-        cancelButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                killActivity();
             }
         });
         Button summaryButton = (Button) findViewById(R.id.summary_button);
@@ -205,28 +197,28 @@ public class EnterData extends AppCompatActivity {
         }
 
         List<String> p1List = new ArrayList<>(playerList);
-        ArrayAdapter<String> dataAdapterP1 = new ArrayAdapter<String>(this,
+        ArrayAdapter<String> dataAdapterP1 = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, p1List);
         dataAdapterP1.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         //mSpinner_P1.setSelection(0);
         mSpinner_P1.setAdapter(dataAdapterP1);
 
         List<String> p2List = new ArrayList<>(playerList);
-        final ArrayAdapter<String> dataAdapterP2 = new ArrayAdapter<String>(this,
+        final ArrayAdapter<String> dataAdapterP2 = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, p2List);
         dataAdapterP2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         //mSpinner_P2.setSelection(1);
         mSpinner_P2.setAdapter(dataAdapterP2);
 
         List<String> p3List = new ArrayList<>(playerList);
-        final ArrayAdapter<String> dataAdapterP3 = new ArrayAdapter<String>(this,
+        final ArrayAdapter<String> dataAdapterP3 = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, p3List);
         dataAdapterP3.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         //mSpinner_P3.setSelection(2);
         mSpinner_P3.setAdapter(dataAdapterP3);
 
         List<String> p4List = new ArrayList<>(playerList);
-        final ArrayAdapter<String> dataAdapterP4 = new ArrayAdapter<String>(this,
+        final ArrayAdapter<String> dataAdapterP4 = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, p4List);
         dataAdapterP4.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         //mSpinner_P4.setSelection(3);
@@ -355,7 +347,7 @@ public class EnterData extends AppCompatActivity {
 
     private void checkData(ArrayList<GameJournal> gameList) {
 
-        if (false == enterData(true))  //dry run returned failure
+        if (!enterData(true))  //dry run returned failure
             return;
 
         //check player data, if the same team is being repeated
@@ -371,7 +363,7 @@ public class EnterData extends AppCompatActivity {
         int numOfSingles = 0;
         int numOfDoubles = 0;
         for (GameJournal games : gameList) {
-            if (Constants.SINGLES.equals(games.mGameType))
+            if (Constants.SINGLES.equals(games.getmGameType()))
                 numOfSingles++;
             else
                 numOfDoubles++;
@@ -379,7 +371,7 @@ public class EnterData extends AppCompatActivity {
         Log.d(TAG, "checkData: singles=" + numOfSingles + "doubles=" + numOfDoubles);
 
         for (GameJournal games : gameList) {
-            if (!games.mGameType.equals(mGameType)) continue;
+            if (!games.getmGameType().equals(mGameType)) continue;
 
             if (games.playedBefore(p1, p2, p3, p4)) {
                 if (mSingles)
@@ -468,17 +460,19 @@ public class EnterData extends AppCompatActivity {
         //Do not proceed to do tha actual DB update, if this is a dry run.
         if (dry_run) return true;
 
-        Toast.makeText(EnterData.this, winners + " won!", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(EnterData.this, winners + " won!", Toast.LENGTH_SHORT).show();
+        Snackbar.make(findViewById(R.id.enterdata_ll), winners + " won!", Snackbar.LENGTH_LONG)
+                .setAction("Action", null).show();
         Log.d(TAG, "enterData: " + winners + " vs " + losers + " : " + winningScore.toString() + "-" + losingScore.toString());
 
         GameJournal jEntry = new GameJournal(mRoundName, mInnings, SharedData.getInstance().mUser);
         jEntry.setResult(createNewRoundName(false), mGameType, winner1, winner2, loser1, loser2, winningScore, losingScore);
-        jEntry.mGameNum = mGameNum;
+        jEntry.setmGameNum(mGameNum);
         DatabaseReference jDBEntryRef = mDatabase.child(mClub).child(Constants.JOURNAL).child(mInnings).child(mRoundName).child(mGroup).push();
         jDBEntryRef.setValue(jEntry);
         Log.w(TAG, "WRITTEN jEntry: " + jEntry.toReadableString());
         updateDB(winner1, winner2);
-        mDatabase.child(mClub).child(Constants.INNINGS).child(mInnings).child(Constants.ROUND_INDEX).setValue(mRoundName);
+        mDatabase.child(mClub).child(Constants.INNINGS).child(SharedData.getInstance().mInningsDBKey).child("round").setValue(mRoundName);
         SharedData.getInstance().mRoundName = mRoundName;
         Log.w(TAG, "WRITTEN mRoundName: " + mRoundName + " data=" + SharedData.getInstance().toString());
         //killActivity();
@@ -502,6 +496,5 @@ public class EnterData extends AppCompatActivity {
         dbRef_winner2.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, winner2, dbRef_winner2, false));
 
     }
-
 
 }

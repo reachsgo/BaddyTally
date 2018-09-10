@@ -1,8 +1,10 @@
 package com.sg0.baddytally;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class SharedData {
+    public int mNumOfGroups;
     public String mUser;
     public String mClub;
     public String mRole;
@@ -10,14 +12,18 @@ public class SharedData {
     public String mRoundName;
     public String mAdminCode;
     public String mMemCode;
+    public String mRootCode;
     public ArrayList<PlayerData> mGoldPlayers;
     public ArrayList<PlayerData> mSilverPlayers;
+    public String mInningsDBKey;
 
     private static SharedData sSoleInstance;
 
     private SharedData(){
         mGoldPlayers = null;
         mSilverPlayers = null;
+        mMemCode = "";
+        mNumOfGroups = Constants.NUM_OF_GROUPS;
     }  //private constructor.
 
     public static SharedData getInstance(){

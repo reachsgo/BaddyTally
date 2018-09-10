@@ -26,7 +26,6 @@
         android:layout_height="match_parent">
 
         <LinearLayout
-            android:id="@+id/email_login_form"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -34,6 +33,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:baselineAligned="false"
             android:orientation="horizontal">
 
             <android.support.design.widget.TextInputLayout
@@ -51,7 +51,8 @@
                     android:imeOptions="actionUnspecified"
                     android:maxLines="1"
                     android:layout_marginRight="10dp"
-                    android:singleLine="true" />
+                    android:singleLine="true"
+                    android:inputType="text" />
             </android.support.design.widget.TextInputLayout>
 
             <android.support.design.widget.TextInputLayout
@@ -70,7 +71,8 @@
                     android:maxLines="1"
                     android:maxLength="3"
                     android:layout_marginRight="10dp"
-                    android:singleLine="true" />
+                    android:singleLine="true"
+                    android:inputType="text" />
 
             </android.support.design.widget.TextInputLayout>
         </LinearLayout>
@@ -117,19 +119,17 @@
                 android:paddingTop="40dp">
 
                 <RadioButton
-                    android:id="@+id/gametype_singles"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/radio_singles"
                     android:textColor="@color/colorPrimaryDark" />
 
                 <RadioButton
-                    android:id="@+id/gametype_doubles"
+                    android:id="@+id/gametype_default"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/radio_doubles"
-                    android:textColor="@color/colorPrimaryDark"
-                    android:checked="true" />
+                    android:textColor="@color/colorPrimaryDark"/>
             </RadioGroup>
 
             <RadioGroup
@@ -153,8 +153,7 @@
                     android:layout_height="wrap_content"
                     android:text="@string/radio_silver"
                     android:textStyle="bold"
-                    android:textColor="@color/colorSilver"
-                    android:checked="true" />
+                    android:textColor="@color/colorSilver"/>
             </RadioGroup>
         </LinearLayout>
             <CheckBox

@@ -27,7 +27,6 @@
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/gold_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
@@ -39,7 +38,6 @@
             android:textStyle="bold|italic" />
 
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-            android:id="@+id/parent_linearlayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
@@ -47,9 +45,8 @@
             <TextView
                 android:layout_width="200dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="60"
+                android:layout_weight="56"
                 android:gravity="left"
-                android:padding="5dp"
                 android:text="Player"
                 android:textSize="16sp"
                 android:textColor="@color/colorWhite"
@@ -59,10 +56,9 @@
             <TextView
                 android:layout_width="60dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="22"
                 android:gravity="center_horizontal"
-                android:padding="5dp"
-                android:text="Round"
+                android:text="Innings"
                 android:textColor="@color/colorWhite"
                 android:background="@color/colorBlack"
                 android:textSize="16sp"
@@ -71,10 +67,9 @@
             <TextView
                 android:layout_width="50dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="22"
                 android:gravity="center_horizontal"
-                android:padding="5dp"
-                android:text="Total"
+                android:text="Season"
                 android:textColor="@color/colorWhite"
                 android:background="@color/colorBlack"
                 android:textSize="16sp"
@@ -99,7 +94,6 @@
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/silver_header"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
@@ -119,9 +113,8 @@
             <TextView
                 android:layout_width="200dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="60"
+                android:layout_weight="56"
                 android:gravity="left"
-                android:padding="5dp"
                 android:text="Player"
                 android:textColor="@color/colorWhite"
                 android:background="@color/colorBlack"
@@ -131,10 +124,9 @@
             <TextView
                 android:layout_width="60dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="22"
                 android:gravity="center_horizontal"
-                android:padding="5dp"
-                android:text="Round"
+                android:text="Innings"
                 android:textColor="@color/colorWhite"
                 android:background="@color/colorBlack"
                 android:textSize="16sp"
@@ -143,10 +135,9 @@
             <TextView
                 android:layout_width="50dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="22"
                 android:gravity="center_horizontal"
-                android:padding="5dp"
-                android:text="Total"
+                android:text="Season"
                 android:textColor="@color/colorWhite"
                 android:background="@color/colorBlack"
                 android:textSize="16sp"

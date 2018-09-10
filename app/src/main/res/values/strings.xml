@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">ScoreTally</string>
     <string name="app_name_enterdata">ScoreTally - Enter scores</string>
+    <string name="app_name_settings">ScoreTally - Settings</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_login">Sign in</string>
 
@@ -10,19 +11,13 @@
     <string name="prompt_password">Password</string>
     <string name="action_sign_in">Sign in</string>
     <string name="action_sign_in_short">Sign in</string>
-    <string name="error_invalid_email">This email address is invalid</string>
     <string name="error_invalid_password">This password is too short</string>
     <string name="error_incorrect_password">This password is incorrect</string>
-    <string name="error_field_required">This field is required</string>
-    <string name="permission_rationale">"Contacts permissions are needed for providing email
-        completions."
-    </string>
     <string name="radio_singles">singles</string>
     <string name="radio_doubles">doubles</string>
     <string name="radio_gold">gold</string>
     <string name="radio_silver">silver</string>
     <string name="action_enter">Enter</string>
-    <string name="action_cancel">Cancel</string>
-    <string name="action_summary">Summary</string>
+    <string name="action_summary">Summary of this round</string>
     <string name="check_new_round">Start a new round of games</string>
 </resources>

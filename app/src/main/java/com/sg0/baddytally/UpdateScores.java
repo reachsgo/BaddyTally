@@ -9,9 +9,8 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
-import com.sg0.baddytally.EnterData;
 
-public class UpdateScores implements ValueEventListener {
+class UpdateScores implements ValueEventListener {
     private static final String TAG = "UpdateScores";
     private Context mContext;
     private boolean mSingles;
@@ -29,11 +28,6 @@ public class UpdateScores implements ValueEventListener {
 
     @Override
     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-        if(dataSnapshot == null) {
-            Toast.makeText(mContext, "Data not found in DB for "+ mWinner,
-                    Toast.LENGTH_SHORT).show();
-            return;
-        }
         int score = dataSnapshot.getValue(Integer.class);
         int prevScore = score;
         score++;

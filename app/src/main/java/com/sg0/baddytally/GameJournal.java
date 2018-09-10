@@ -3,18 +3,106 @@ package com.sg0.baddytally;
 import com.google.firebase.database.IgnoreExtraProperties;
 
 @IgnoreExtraProperties
-public class GameJournal {
-    public String mWinner1;   //winner1
-    public String mWinner2;   //winner2
-    public String mLoser1;   //loser1
-    public String mLoser2;   //loser2
-    public int mWin_score;
-    public int mOpponent_score;
-    public String mDate;
-    public int mGameNum;
-    public String mInnings;
-    public String mGameType;
-    public String mUser;
+class GameJournal {
+    private String mWinner1;   //winner1
+    private String mWinner2;   //winner2
+    private String mLoser1;   //loser1
+    private String mLoser2;   //loser2
+    private int mWin_score;
+    private int mOpponent_score;
+    private String mDate;
+    private int mGameNum;
+    private String mInnings;
+    private String mGameType;
+    private String mUser;
+
+    public void setmWinner1(String mWinner1) {
+        this.mWinner1 = mWinner1;
+    }
+
+    public void setmWinner2(String mWinner2) {
+        this.mWinner2 = mWinner2;
+    }
+
+    public void setmLoser1(String mLoser1) {
+        this.mLoser1 = mLoser1;
+    }
+
+    public void setmLoser2(String mLoser2) {
+        this.mLoser2 = mLoser2;
+    }
+
+    public void setmWin_score(int mWin_score) {
+        this.mWin_score = mWin_score;
+    }
+
+    public void setmOpponent_score(int mOpponent_score) {
+        this.mOpponent_score = mOpponent_score;
+    }
+
+    public void setmDate(String mDate) {
+        this.mDate = mDate;
+    }
+
+    public void setmGameNum(int mGameNum) {
+        this.mGameNum = mGameNum;
+    }
+
+    public void setmInnings(String mInnings) {
+        this.mInnings = mInnings;
+    }
+
+    public void setmGameType(String mGameType) {
+        this.mGameType = mGameType;
+    }
+
+    public void setmUser(String mUser) {
+        this.mUser = mUser;
+    }
+
+    public String getmWinner1() {
+        return mWinner1;
+    }
+
+    public String getmWinner2() {
+        return mWinner2;
+    }
+
+    public String getmLoser1() {
+        return mLoser1;
+    }
+
+    public String getmLoser2() {
+        return mLoser2;
+    }
+
+    public int getmWin_score() {
+        return mWin_score;
+    }
+
+    public int getmOpponent_score() {
+        return mOpponent_score;
+    }
+
+    public String getmDate() {
+        return mDate;
+    }
+
+    public int getmGameNum() {
+        return mGameNum;
+    }
+
+    public String getmInnings() {
+        return mInnings;
+    }
+
+    public String getmGameType() {
+        return mGameType;
+    }
+
+    public String getmUser() {
+        return mUser;
+    }
 
     public GameJournal() {
         this.mDate = "Nov 20 1978";
@@ -40,10 +128,7 @@ public class GameJournal {
     }
 
     public boolean playerInvolved(String player) {
-        if (player.equalsIgnoreCase(mWinner1) || player.equalsIgnoreCase(mWinner2) || player.equalsIgnoreCase(mLoser1) || player.equalsIgnoreCase(mLoser2)) {
-            return true;
-        }
-        return false;
+        return player.equalsIgnoreCase(mWinner1) || player.equalsIgnoreCase(mWinner2) || player.equalsIgnoreCase(mLoser1) || player.equalsIgnoreCase(mLoser2);
     }
 
 
@@ -66,7 +151,7 @@ public class GameJournal {
         return false;
     }
 
-    public String getPlayerPartner(String player) {
+    private String getPlayerPartner(String player) {
         if (Constants.SINGLES.equals(mGameType)) {
             return "";
         }
@@ -99,10 +184,6 @@ public class GameJournal {
 
         return  winner + " vs " +
                 loser + " : " + mWin_score + "-" + mOpponent_score;
-    }
-
-    public String getUsr() {
-        return mUser;
     }
 
 }
