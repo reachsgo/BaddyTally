@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -21,7 +22,6 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 
 public class EnterData extends AppCompatActivity {
@@ -123,14 +124,7 @@ public class EnterData extends AppCompatActivity {
                 killActivity();
             }
         });
-    }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-
-        String mRole = SharedData.getInstance().mRole;
         mClub = SharedData.getInstance().mClub;
         mInnings = SharedData.getInstance().mInnings;
         Intent myIntent = getIntent(); // gets the previously created intent
@@ -140,6 +134,20 @@ public class EnterData extends AppCompatActivity {
         Log.w(TAG, "onStart :" + SharedData.getInstance().toString() + "/" + mGroup + "/" + mGameType + "/" + mNewRoundFlag);
 
         mSingles = Constants.SINGLES.equals(mGameType);
+        mDatabase = FirebaseDatabase.getInstance().getReference();
+        mRoundName = "";
+        if(!mNewRoundFlag.equals(Constants.NEWROUND)) {
+            mRoundName = SharedData.getInstance().mRoundName;  //use the value read from DB
+        }
+        if(mRoundName.isEmpty()) {
+            mRoundName = createNewRoundName(true);
+        }
+        Log.w(TAG, "mRoundName=" + mRoundName);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
 
         mSpinner_P1 = findViewById(R.id.spinner_p1);
         mSpinner_P2 = findViewById(R.id.spinner_p2);
@@ -152,29 +160,18 @@ public class EnterData extends AppCompatActivity {
         mSpinner_P3_selection = "";
         mSpinner_P4_selection = "";
 
-        // ...
-        mDatabase = FirebaseDatabase.getInstance().getReference();
-        mRoundName = "";
-        if(!mNewRoundFlag.equals(Constants.NEWROUND)) {
-            mRoundName = SharedData.getInstance().mRoundName;  //use the value read from DB
-        }
-        if(mRoundName.isEmpty()) {
-            mRoundName = createNewRoundName(true);
-        }
-        Log.w(TAG, "mRoundName=" + mRoundName);
-
         if (mSingles) {
             mSpinner_P2.setVisibility(View.GONE);
             mSpinner_P4.setVisibility(View.GONE);
         }
-        final Button enterButton = (Button) findViewById(R.id.enter_button);
+        final Button enterButton = findViewById(R.id.enter_button);
         enterButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 fetchGames();
             }
         });
-        Button summaryButton = (Button) findViewById(R.id.summary_button);
+        Button summaryButton = findViewById(R.id.summary_button);
         summaryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -230,13 +227,11 @@ public class EnterData extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
                 mSpinner_P1_selection = (String) adapterView.getItemAtPosition(position);
                 // Notify the selected item text
-                Log.w(TAG, "mSpinner_P1 onItemSelected mSpinner_P1_selection:" + mSpinner_P1_selection);
+                Log.v(TAG, "mSpinner_P1 onItemSelected mSpinner_P1_selection:" + mSpinner_P1_selection);
                 mSpinner_P2_selection = "";
                 mSpinner_P3_selection = "";
                 mSpinner_P4_selection = "";
-                //if(mSpinner_P1_selection.equals(mSpinner_P2_selection)) mSpinner_P2_selection = "";
-                //if(mSpinner_P1_selection.equals(mSpinner_P3_selection)) mSpinner_P3_selection = "";
-                //if(mSpinner_P1_selection.equals(mSpinner_P4_selection)) mSpinner_P4_selection = "";
+                //When P1 is selected, re-arrange P2/3/4 lists to remove P1 selection.
                 if(!mSingles) rearrangeDropdownList(mSpinner_P2, dataAdapterP2, playerList);
                 rearrangeDropdownList(mSpinner_P3, dataAdapterP3, playerList);
                 if(!mSingles) rearrangeDropdownList(mSpinner_P4, dataAdapterP4, playerList);
@@ -252,12 +247,9 @@ public class EnterData extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
                 mSpinner_P2_selection = (String) adapterView.getItemAtPosition(position);
-                // Notify the selected item text
-                Log.w(TAG, "mSpinner_P2 onItemSelected mSpinner_P2_selection:" + mSpinner_P2_selection);
+                Log.v(TAG, "mSpinner_P2 onItemSelected mSpinner_P2_selection:" + mSpinner_P2_selection);
                 mSpinner_P3_selection = "";
                 mSpinner_P4_selection = "";
-                //if(mSpinner_P2_selection.equals(mSpinner_P3_selection)) mSpinner_P3_selection = "";
-                //if(mSpinner_P2_selection.equals(mSpinner_P4_selection)) mSpinner_P4_selection = "";
                 rearrangeDropdownList(mSpinner_P3, dataAdapterP3, playerList);
                 rearrangeDropdownList(mSpinner_P4, dataAdapterP4, playerList);
             }
@@ -271,8 +263,7 @@ public class EnterData extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
                 mSpinner_P3_selection = (String) adapterView.getItemAtPosition(position);
-                // Notify the selected item text
-                Log.w(TAG, "mSpinner_P3 onItemSelected mSpinner_P3_selection:" + mSpinner_P3_selection);
+                Log.v(TAG, "mSpinner_P3 onItemSelected mSpinner_P3_selection:" + mSpinner_P3_selection);
                 mSpinner_P4_selection = "";
                 if(!mSingles) rearrangeDropdownList(mSpinner_P4, dataAdapterP4, playerList);
             }
@@ -292,7 +283,7 @@ public class EnterData extends AppCompatActivity {
     }
 
     private void rearrangeDropdownList(Spinner spinner, ArrayAdapter<String> adapter, List<String> players) {
-        Log.w(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
+        Log.v(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
         adapter.clear();
         Collections.sort(players);
         adapter.addAll(players);
@@ -317,7 +308,7 @@ public class EnterData extends AppCompatActivity {
             spinner.setSelection(0);
             mSpinner_P4_selection = spinner.getItemAtPosition(0).toString();
         }
-        Log.w(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
+        Log.i(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
         adapter.notifyDataSetChanged();
     }
 
@@ -328,18 +319,20 @@ public class EnterData extends AppCompatActivity {
         final ArrayList<GameJournal> gameList= new ArrayList<>();
         myQuery.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
                     GameJournal jEntry = child.getValue(GameJournal.class);
+                    if(null==jEntry) continue;
                     gameList.add(jEntry);
-                    Log.w(TAG, "fetchGames:" + jEntry.toReadableString());
+                    Log.d(TAG, "fetchGames:" + jEntry.toReadableString());
                 }
                 checkData(gameList);
             }
 
             @Override
-            public void onCancelled(DatabaseError databaseError) {
-                Toast.makeText(EnterData.this, "DB error while fetching games!", Toast.LENGTH_LONG).show();
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Toast.makeText(EnterData.this, "DB error while fetching games: " + databaseError.toString(),
+                        Toast.LENGTH_LONG).show();
                 killActivity();
             }
         });
@@ -363,7 +356,7 @@ public class EnterData extends AppCompatActivity {
         int numOfSingles = 0;
         int numOfDoubles = 0;
         for (GameJournal games : gameList) {
-            if (Constants.SINGLES.equals(games.getmGameType()))
+            if (Constants.SINGLES.equals(games.getmGT()))
                 numOfSingles++;
             else
                 numOfDoubles++;
@@ -371,11 +364,11 @@ public class EnterData extends AppCompatActivity {
         Log.d(TAG, "checkData: singles=" + numOfSingles + "doubles=" + numOfDoubles);
 
         for (GameJournal games : gameList) {
-            if (!games.getmGameType().equals(mGameType)) continue;
+            if (!games.getmGT().equals(mGameType)) continue;
 
             if (games.playedBefore(p1, p2, p3, p4)) {
                 if (mSingles)
-                    showAlert(p1 + " has already played " + p3 + " today!");
+                    showAlert(p1 + " has already played against " + p3 + " today!");
                 else
                     showAlert(p1 + "/" + p2 + " or " + p3 + "/" + p4 + " have already played as a team today!");
                 return;
@@ -406,6 +399,7 @@ public class EnterData extends AppCompatActivity {
         };
 
         AlertDialog.Builder builder = new AlertDialog.Builder(EnterData.this);
+        builder.setTitle(SharedData.getInstance().getRedString("Really?"));
         builder.setMessage(message + "\n\nWould be nice if you can play all combinations in your group, before repeating." +
                 "\n\nYou still want to enter this score?")
                 .setPositiveButton("Yes", dialogClickListener)
@@ -452,7 +446,7 @@ public class EnterData extends AppCompatActivity {
             losingScore = s1;
         }
 
-        if ((winningScore < 21) || s1 == s2 || winners.equals(losers)) {
+        if ((winningScore < 21) || s1.equals(s2) || winners.equals(losers)) {
             Toast.makeText(EnterData.this, "Bad data!", Toast.LENGTH_SHORT).show();
             return false;
         }
@@ -463,19 +457,18 @@ public class EnterData extends AppCompatActivity {
         //Toast.makeText(EnterData.this, winners + " won!", Toast.LENGTH_SHORT).show();
         Snackbar.make(findViewById(R.id.enterdata_ll), winners + " won!", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show();
-        Log.d(TAG, "enterData: " + winners + " vs " + losers + " : " + winningScore.toString() + "-" + losingScore.toString());
+        Log.i(TAG, "enterData: " + winners + " vs " + losers + " : " + winningScore.toString() + "-" + losingScore.toString());
 
         GameJournal jEntry = new GameJournal(mRoundName, mInnings, SharedData.getInstance().mUser);
         jEntry.setResult(createNewRoundName(false), mGameType, winner1, winner2, loser1, loser2, winningScore, losingScore);
-        jEntry.setmGameNum(mGameNum);
+        jEntry.setmGNo(mGameNum);
         DatabaseReference jDBEntryRef = mDatabase.child(mClub).child(Constants.JOURNAL).child(mInnings).child(mRoundName).child(mGroup).push();
         jDBEntryRef.setValue(jEntry);
-        Log.w(TAG, "WRITTEN jEntry: " + jEntry.toReadableString());
+        Log.i(TAG, "WRITTEN jEntry: " + jEntry.toReadableString());
         updateDB(winner1, winner2);
         mDatabase.child(mClub).child(Constants.INNINGS).child(SharedData.getInstance().mInningsDBKey).child("round").setValue(mRoundName);
         SharedData.getInstance().mRoundName = mRoundName;
-        Log.w(TAG, "WRITTEN mRoundName: " + mRoundName + " data=" + SharedData.getInstance().toString());
-        //killActivity();
+        Log.d(TAG, "WRITTEN mRoundName: " + mRoundName + " data=" + SharedData.getInstance().toString());
         return true;
     }
 
@@ -485,16 +478,19 @@ public class EnterData extends AppCompatActivity {
             killActivity();
         }
 
+        //add score to club/innings/group/player
         DatabaseReference dbRef_winner1 = mDatabase.child(mClub).child(mInnings).child(mGroup).child(winner1);
-        dbRef_winner1.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, winner1, dbRef_winner1, true));
+        dbRef_winner1.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, winner1, dbRef_winner1, false,true));
+        //add score to club/GROUPS/group/player
         dbRef_winner1 = mDatabase.child(mClub).child(Constants.GROUPS).child(mGroup).child(winner1);
-        dbRef_winner1.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, winner1, dbRef_winner1, false));
+        dbRef_winner1.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, winner1, dbRef_winner1, false,false));
         if (mSingles) return;
+        //add score to club/innings/group/player
         DatabaseReference dbRef_winner2 = mDatabase.child(mClub).child(mInnings).child(mGroup).child(winner2);
-        dbRef_winner2.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, winner2, dbRef_winner2, true));
+        dbRef_winner2.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, winner2, dbRef_winner2, false, true));
+        //add score to club/GROUPS/group/player
         dbRef_winner2 = mDatabase.child(mClub).child(Constants.GROUPS).child(mGroup).child(winner2);
-        dbRef_winner2.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, winner2, dbRef_winner2, false));
-
+        dbRef_winner2.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, winner2, dbRef_winner2, false,  false));
     }
 
 }

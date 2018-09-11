@@ -8,9 +8,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
@@ -39,15 +39,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
-/**
- * A login screen that offers login via email/password.
- */
 public class LoginActivity extends AppCompatActivity {
 
     private static final String TAG = "LoginActivity";
 
-    // UI references.
-    //private AutoCompleteTextView mEmailView;
     private EditText mClubView;
     private EditText mUserView;
     private EditText mPasswordView;
@@ -70,14 +65,14 @@ public class LoginActivity extends AppCompatActivity {
     private void killActivity(){
         finish();
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        // Set up the login form.
-        mInitialAttempt = false;
 
+        mInitialAttempt = false;
         mClubView = findViewById(R.id.clubname);
         mUserView = findViewById(R.id.username);
         mPasswordView =  findViewById(R.id.password);
@@ -94,7 +89,8 @@ public class LoginActivity extends AppCompatActivity {
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
         if(getCurrentFocus()!=null) {
             InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-            inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+            if(null!=inputMethodManager)
+                inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
         }
 
         if(SharedData.getInstance().mNumOfGroups==1) {
@@ -133,8 +129,6 @@ public class LoginActivity extends AppCompatActivity {
                 mCheckNewRound.setChecked(true);
         }
 
-
-
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
@@ -146,7 +140,7 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
-        Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
+        Button mEmailSignInButton = findViewById(R.id.email_sign_in_button);
         //mEmailSignInButton.setFocus
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
@@ -180,9 +174,10 @@ public class LoginActivity extends AppCompatActivity {
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.PROFILE);
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 Log.w(TAG, "fetchInitialData: onDataChange");
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
+                    if(null==child) continue;
                     switch (child.getKey()) {
                         case "admincode":
                             mAdminCode = child.getValue(String.class);
@@ -200,10 +195,10 @@ public class LoginActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onCancelled(DatabaseError databaseError) {
+            public void onCancelled(@NonNull DatabaseError databaseError) {
                 Log.w(TAG, "fetchInitialData: onCancelled", databaseError.toException());
                 Toast.makeText(LoginActivity.this,
-                        "DB error!", Toast.LENGTH_SHORT).show();
+                        "Login Profile DB error:" + databaseError.toString(), Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -214,12 +209,8 @@ public class LoginActivity extends AppCompatActivity {
      * errors are presented and no actual login attempt is made.
      */
     private void attemptLogin() {
-        //if (mAuthTask != null) {
-        //   return;
-        //}
-        Log.w(TAG, "attemptLogin:" + mAdminCode + ":" + mMemCode);
+        //Log.v(TAG, "attemptLogin:" + mAdminCode + ":" + mMemCode);
         // Reset errors.
-        //mEmailView.setError(null);
         mPasswordView.setError(null);
 
         // Store values at the time of the login attempt.
@@ -248,11 +239,7 @@ public class LoginActivity extends AppCompatActivity {
             // form field with an error.
             focusView.requestFocus();
         } else {
-            // Show a progress spinner, and kick off a background task to
-            // perform the user login attempt.
             showProgress(true);
-            //mAuthTask = new UserLoginTask(password);
-            //mAuthTask.execute((Void) null);
             if (secpd.equals(mAdminCode)) {
                 mRole = Constants.ADMIN;
                 successfulLogin(club, secpd);
@@ -288,14 +275,11 @@ public class LoginActivity extends AppCompatActivity {
         int selectedId = mGameTypeRadioGroup.getCheckedRadioButtonId();
         // find the radiobutton by returned id
         mGameTypeRadioButton = findViewById(selectedId);
-        //Toast.makeText(LoginActivity.this,
-        //        mGameTypeRadioButton.getText(), Toast.LENGTH_SHORT).show();
-
 
         selectedId = mGroupRadioGroup.getCheckedRadioButtonId();
         // find the radiobutton by returned id
         mGroupRadioButton = findViewById(selectedId);
-        Log.w(TAG, "successfulLogin:" + mGameTypeRadioButton.getText() + ":" + mGroupRadioButton.getText());
+        Log.v(TAG, "successfulLogin:" + mGameTypeRadioButton.getText() + ":" + mGroupRadioButton.getText());
 
         if(mCheckNewRound.isChecked()) {
             //Are you sure you want to create a new round of games?
@@ -316,6 +300,7 @@ public class LoginActivity extends AppCompatActivity {
             };
 
             AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
+            builder.setTitle(SharedData.getInstance().getRedString("Really?"));
             builder.setMessage("You are about to create a new round!\nAre you sure?")
                     .setPositiveButton("Yes", dialogClickListener)
                     .setNegativeButton("No", dialogClickListener).show();
@@ -327,7 +312,7 @@ public class LoginActivity extends AppCompatActivity {
     private void createEnterDataActivity()     {
         String newRoundFlag = "False";
         if(mCheckNewRound.isChecked()) newRoundFlag = Constants.NEWROUND;
-        Log.w(TAG, "successfulLogin, new round flag:" + newRoundFlag);
+        Log.i(TAG, "successfulLogin, new round flag:" + newRoundFlag);
         Intent myIntent = new Intent(LoginActivity.this, EnterData.class);
         myIntent.putExtra("gametype", mGameTypeRadioButton.getText());
         myIntent.putExtra("group", mGroupRadioButton.getText());

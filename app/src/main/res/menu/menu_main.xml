@@ -26,4 +26,14 @@
         android:orderInCategory="100"
         app:showAsAction="never"
         android:title="Delete cache"/>
+    <item
+        android:id="@+id/action_rules"
+        android:orderInCategory="101"
+        app:showAsAction="never"
+        android:title="Rules"/>
+    <item
+        android:id="@+id/action_about"
+        android:orderInCategory="102"
+        app:showAsAction="never"
+        android:title="About"/>
 </menu>

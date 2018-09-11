@@ -12,17 +12,19 @@ import com.google.firebase.database.ValueEventListener;
 
 class UpdateScores implements ValueEventListener {
     private static final String TAG = "UpdateScores";
-    private Context mContext;
-    private boolean mSingles;
-    private DatabaseReference mDBRef;
-    private String mWinner;
-    private boolean mShowToasts;
+    private final Context mContext;
+    private final boolean mSingles;
+    private final DatabaseReference mDBRef;
+    private final String mWinner;
+    private final boolean mDelete;
+    private final boolean mShowToasts;
 
-    public UpdateScores(Context context, boolean singles, String winner, DatabaseReference dbRef, boolean showToasts) {
+    public UpdateScores(Context context, boolean singles, String winner, DatabaseReference dbRef, boolean deleteFlag, boolean showToasts) {
         mContext = context;
         mSingles = singles;
         mDBRef = dbRef;
         mWinner = winner;
+        mDelete = deleteFlag;
         mShowToasts = showToasts;
     }
 
@@ -30,8 +32,13 @@ class UpdateScores implements ValueEventListener {
     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
         int score = dataSnapshot.getValue(Integer.class);
         int prevScore = score;
-        score++;
-        if (mSingles) score++;   //+2 for singles
+        if(mDelete) {
+            score--;
+            if (mSingles) score--;   //-2 for singles
+        } else {
+            score++;
+            if (mSingles) score++;   //+2 for singles
+        }
         Log.w(TAG, "Points updated for "+ mWinner + ": " + prevScore + " -> " + score);
         mDBRef.setValue(score);
         if(mShowToasts) {

@@ -14,17 +14,11 @@ import java.util.ArrayList;
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder>{
     private static final String TAG = "RecyclerViewAdapter";
     private ArrayList<PlayerData> mPlayers;
-    //private ArrayList<String> mPlayers = new ArrayList<>();
-    //private ArrayList<String> mInnings_scores = new ArrayList<>();
-    //private ArrayList<String> mOverall_scores = new ArrayList<>();
 
-    //public RecyclerViewAdapter(Context mContext, ArrayList<String> players, ArrayList<String> innings_scores, ArrayList<String> overall_scores) {
     public RecyclerViewAdapter(Context context, String group, ArrayList<PlayerData> players) {
         Context mContext = context;
         this.mPlayers = players;
         String mGroup = group;
-        //this.mInnings_scores = innings_scores;
-        //this.mOverall_scores = overall_scores;
     }
 
     public void setPlayers(ArrayList<PlayerData> players) {
@@ -38,27 +32,13 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        //Log.d(TAG, "onCreateViewHolder");
-        View v = (View) LayoutInflater.from(parent.getContext())
+        View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.layout_listitem, parent, false);
         return new ViewHolder(v);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        //Log.d(TAG, "onBindViewHolder:"+Integer.toString(position));
-
-        //holder.innings_score.setText(mInnings_scores.get(position));
-        //holder.overall_score.setText(mOverall_scores.get(position));
-        /*if(position == mPlayers.size()-1) {
-            //holder.player.setText(Html.fromHtml("<b>"+mPlayers.get(position)+"</b>", Html.FROM_HTML_MODE_COMPACT));
-            holder.player.setTypeface(null, Typeface.BOLD);
-            holder.innings_score.setTypeface(null, Typeface.BOLD);
-            holder.overall_score.setTypeface(null, Typeface.BOLD);
-            //holder.player.setText("Player");
-            //holder.innings_score.setText("This\nRound");
-            //holder.overall_score.setText("Overall");
-        }*/
         holder.player.setText(mPlayers.get(position).getName());
         holder.innings_score.setText(mPlayers.get(position).getInnings_score());
         holder.overall_score.setText(mPlayers.get(position).getOverall_score());
@@ -81,9 +61,9 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     public class ViewHolder extends RecyclerView.ViewHolder{
 
-            TextView player;
-            TextView innings_score;
-            TextView overall_score;
+            final TextView player;
+            final TextView innings_score;
+            final TextView overall_score;
             //LinearLayout parent_layout;
             ViewHolder(View itemView) {
                 super(itemView);

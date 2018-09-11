@@ -1,8 +1,10 @@
 package com.sg0.baddytally;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -14,26 +16,23 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 
 
-
 class FireBaseDBReader {
     private static final String TAG = "FireBaseDBReader";
-    private RecyclerViewAdapter mViewAdapter;
-    private RecyclerView mView;
-    private String mClub;
-    private String mGroup;
-    private String mInnings;
-
-    //private String mAdminCode;
-    //private String mMemCode;
-    private ArrayList<PlayerData> mPlayers;
-    private String mLogStr;
+    private final Context mContext;
+    private final RecyclerViewAdapter mViewAdapter;
+    private final RecyclerView mView;
+    private final String mClub;
+    private final String mGroup;
+    private final String mInnings;
+    private final ArrayList<PlayerData> mPlayers;
+    private final String mLogStr;
 
     public ArrayList<PlayerData> getPlayers() {
         return mPlayers;
     }
 
     public FireBaseDBReader(Context context, String club, String group, String innings, RecyclerViewAdapter viewAdapter, RecyclerView view) {
-        Context mContext = context;
+        mContext = context;
         mInnings = innings;
         mClub = club;
         mGroup = group;
@@ -46,13 +45,14 @@ class FireBaseDBReader {
     private void fetchOverallScore() {
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.GROUPS).child(mGroup);
         Query myQuery = dbRef.orderByValue();
-        myQuery.addListenerForSingleValueEvent(new ValueEventListener() {
         //myQuery.addValueEventListener(new ValueEventListener() {
+        myQuery.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 Log.w(TAG, "onDataChange:" + mLogStr);
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
                     Integer score = child.getValue(Integer.class);
+                    if(null==score) continue;
                     String name = child.getKey();
                     boolean playerFound = false;
                     Log.w(TAG, mLogStr + "] child (" + name + ") score=" + score.toString());
@@ -77,28 +77,27 @@ class FireBaseDBReader {
             }
 
             @Override
-            public void onCancelled(DatabaseError databaseError) {
-                // Getting Post failed, log a message
+            public void onCancelled(@NonNull DatabaseError databaseError) {
                 Log.w(TAG, "fetchOverallScore:onCancelled", databaseError.toException());
-                // ...
+                Toast.makeText(mContext, "DB error while fetching overall score: " + databaseError.toString(),
+                        Toast.LENGTH_LONG).show();
             }
         });
         mViewAdapter.setPlayers(mPlayers);
     }
 
     public void fetchThisRoundScore() {
-        Log.w(TAG, mLogStr+ ": fetchThisRoundScore");
         if (mInnings.isEmpty()) return;
-        //int index = 0;
 
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(mInnings).child(mGroup);
         Query myQuery = dbRef.orderByValue();
         //myQuery.addValueEventListener(new ValueEventListener() {
         myQuery.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
                     Integer score = child.getValue(Integer.class);
+                    if(null==score) continue;
                     String name = child.getKey();
                     boolean playerFound = false;
                     //Log.w(TAG, "fetchThisRoundScore [" + mRound+":"+group + "] child (" + name + ") innings score=" + score.toString());
@@ -123,51 +122,11 @@ class FireBaseDBReader {
             }
 
             @Override
-            public void onCancelled(DatabaseError databaseError) {
-                // Getting Post failed, log a message
+            public void onCancelled(@NonNull DatabaseError databaseError) {
                 Log.w(TAG, "fetchThisRoundScore:onCancelled:" + mLogStr, databaseError.toException());
-                // ...
+                Toast.makeText(mContext, "DB error while fetching round score: " + databaseError.toString(),
+                        Toast.LENGTH_LONG).show();
             }
         });
     }
 }
-
-
-        /*ChildEventListener childEventListener = new ChildEventListener() {
-            @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String previousChildName) {
-                Log.d(TAG, "onChildAdded:" + dataSnapshot.getKey());
-                //Toast.makeText(MainActivity.this, "onChildAdded Key:"+dataSnapshot.getKey(), Toast.LENGTH_SHORT).show();
-                // A new comment has been added, add it to the displayed list
-                Integer score = dataSnapshot.getValue(Integer.class);
-                Log.w(TAG, "onChildAdded score=" + score.toString());
-                players.add(dataSnapshot.getKey());
-                scores.add(Integer.toString(score));
-            }
-
-            @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, String previousChildName) {
-                Log.w(TAG, "onChildChanged:" + dataSnapshot.getKey());
-            }
-
-            @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-                Log.w(TAG, "onChildRemoved:" + dataSnapshot.getKey());
-            }
-
-            @Override
-            public void onChildMoved(DataSnapshot dataSnapshot, String previousChildName) {
-                Log.w(TAG, "onChildMoved:" + dataSnapshot.getKey());
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                Log.w(TAG, "postComments:onCancelled", databaseError.toException());
-                Toast.makeText(mContext, "Failed to load comments.",
-                        Toast.LENGTH_SHORT).show();
-            }
-        };
-        //mDBInnings = FirebaseDatabase.getInstance().getReference().child("kbc").child("sept").child("gold");
-        mDBRef.addChildEventListener(childEventListener);
-    }*/
-

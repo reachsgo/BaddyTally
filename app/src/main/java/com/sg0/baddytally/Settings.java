@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -33,9 +34,6 @@ import java.util.List;
 
 public class Settings extends AppCompatActivity {
     private static final String TAG = "Settings";
-    private EditText mNewUserView;
-    private RadioGroup mNewRadioGroup;
-    private RadioGroup mDelRadioGroup;
     private Spinner mDelSpinner;
     private List<String> mPlayerList;
     private DatabaseReference mDatabase;
@@ -54,7 +52,7 @@ public class Settings extends AppCompatActivity {
         Log.w(TAG, "onCreate :" + SharedData.getInstance().toString());
         ((EditText)findViewById(R.id.newuser)).setText("");
         ((EditText)findViewById(R.id.newuser)).setHint("new user name");
-        Button newuserAddBtn = (Button) findViewById(R.id.enter_button);
+        Button newuserAddBtn = findViewById(R.id.enter_button);
         newuserAddBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -64,7 +62,7 @@ public class Settings extends AppCompatActivity {
         ((RadioButton)findViewById(R.id.nu_gamegroup_silver)).setChecked(true);
 
         mDelSpinner = findViewById(R.id.del_spinner);
-        mDelRadioGroup = findViewById(R.id.del_gamegroup_radiogroup);
+        RadioGroup mDelRadioGroup = findViewById(R.id.del_gamegroup_radiogroup);
         mDelRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener()
         {
             @Override
@@ -73,7 +71,7 @@ public class Settings extends AppCompatActivity {
                 fetchDataAndUpdateSpinner();
             }
         });
-        Button deleteBtn = (Button) findViewById(R.id.del_button);
+        Button deleteBtn = findViewById(R.id.del_button);
         deleteBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -81,7 +79,7 @@ public class Settings extends AppCompatActivity {
             } //onClick
         });
 
-        Button createNewInningsBtn = (Button) findViewById(R.id.createNewInnings_btn);
+        Button createNewInningsBtn = findViewById(R.id.createNewInnings_btn);
         createNewInningsBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -105,7 +103,7 @@ public class Settings extends AppCompatActivity {
             return;
         }
         final String group = ((RadioButton)findViewById(selectedId)).getText().toString();
-        Log.w(TAG, "newuserAddBtn.setOnClickListener:" + name + ":" + group);
+        Log.i(TAG, "newuserAddBtn.setOnClickListener:" + name + ":" + group);
 
         DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
             @Override
@@ -137,9 +135,9 @@ public class Settings extends AppCompatActivity {
         DatabaseReference dbRef = mDatabase.child(club).child(Constants.GROUPS).child(group).child(name);
         dbRef.setValue(0, new DatabaseReference.CompletionListener() {
             @Override
-            public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
+            public void onComplete(DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
                 if (databaseError != null) {
-                    Toast.makeText(Settings.this, "Data could not be saved " + databaseError.getMessage(),
+                    Toast.makeText(Settings.this, "New user data (GROUPS/group) could not be saved:" + databaseError.getMessage(),
                             Toast.LENGTH_LONG).show();
                 } else {
                     Toast.makeText(Settings.this, "New user " + name + " created in \"" + group +
@@ -153,9 +151,9 @@ public class Settings extends AppCompatActivity {
         dbRef = mDatabase.child(club).child(innings).child(group).child(name);
         dbRef.setValue(0, new DatabaseReference.CompletionListener() {
             @Override
-            public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
+            public void onComplete(DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
                 if (databaseError != null) {
-                    Toast.makeText(Settings.this, "Data could not be saved " + databaseError.getMessage(),
+                    Toast.makeText(Settings.this, "New user data (innings/group) could not be saved:" + databaseError.getMessage(),
                             Toast.LENGTH_LONG).show();
                 } else {
                     Toast.makeText(Settings.this, "New user " + name + " added to ongoing \"" + innings + "\" innings.",
@@ -170,7 +168,8 @@ public class Settings extends AppCompatActivity {
         //hide keyboard
             if(getCurrentFocus()!=null) {
                 InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-                inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+                if(null!=inputMethodManager)
+                    inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
             }
 
 
@@ -182,15 +181,13 @@ public class Settings extends AppCompatActivity {
         mPlayerList = null;
         mPlayerList = new ArrayList<>();
         final String club = SharedData.getInstance().mClub;
-        final String innings = SharedData.getInstance().mInnings;
         int selectedId = ((RadioGroup) findViewById(R.id.del_gamegroup_radiogroup)).getCheckedRadioButtonId();
         final String group = ((RadioButton) findViewById(selectedId)).getText().toString();
         Log.w(TAG, "updateSpinner:" + group);
         DatabaseReference dbRef = mDatabase.child(club).child(Constants.GROUPS).child(group);
-        final ArrayList<GameJournal> gameList = new ArrayList<>();
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
                     mPlayerList.add(child.getKey());
                     Log.w(TAG, "updateSpinner, added:" + child.getKey());
@@ -199,7 +196,7 @@ public class Settings extends AppCompatActivity {
             }
 
             @Override
-            public void onCancelled(DatabaseError databaseError) {
+            public void onCancelled(@NonNull DatabaseError databaseError) {
             }
         });
     }
@@ -207,10 +204,6 @@ public class Settings extends AppCompatActivity {
         mPlayerListAdapter = null;
         mPlayerListAdapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, mPlayerList);
-        //mPlayerListAdapter = new ArrayAdapter<String>(this,
-         //       R.layout.spinner_item, mPlayerList);
-        //ArrayAdapter.createFromResource(this, mPlayerList,
-        //       R.layout.spinner_item)
         mPlayerListAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         mDelSpinner.setAdapter(mPlayerListAdapter);
         mDelSpinner.performClick();
@@ -229,8 +222,7 @@ public class Settings extends AppCompatActivity {
             {
                 //Change the selected item's text color
                 ((TextView) view).setTextColor(getResources().getColor(R.color.colorWhite));
-                //((TextView) view).setBackgroundTintList(getResources().getColorStateList(R.color.colorWhite));
-                Log.w(TAG, "updateSpinner, mDelSpinner:onItemSelected:" + position);
+                Log.v(TAG, "updateSpinner, mDelSpinner:onItemSelected:" + position);
             }
 
             @Override
@@ -244,7 +236,7 @@ public class Settings extends AppCompatActivity {
         final String name = mDelSpinner.getSelectedItem().toString();
         int selectedId = ((RadioGroup)findViewById(R.id.del_gamegroup_radiogroup)).getCheckedRadioButtonId();
         final String group = ((RadioButton)findViewById(selectedId)).getText().toString();
-        Log.w(TAG, "newuserAddBtn.setOnClickListener:" + name + ":" + group);
+        Log.v(TAG, "newuserAddBtn.setOnClickListener:" + name + ":" + group);
 
         DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
             @Override
@@ -276,9 +268,9 @@ public class Settings extends AppCompatActivity {
         DatabaseReference dbRef = mDatabase.child(club).child(Constants.GROUPS).child(group).child(name);
         dbRef.setValue(null, new DatabaseReference.CompletionListener() {
             @Override
-            public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
+            public void onComplete(DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
                 if (databaseError != null) {
-                    Toast.makeText(Settings.this, "DB error: " + databaseError.getMessage(),
+                    Toast.makeText(Settings.this, "DB (delete user: GROUPS/group) error: " + databaseError.getMessage(),
                             Toast.LENGTH_LONG).show();
                 } else {
                     Toast.makeText(Settings.this, name + " deleted from \"" + group +
@@ -292,9 +284,9 @@ public class Settings extends AppCompatActivity {
         dbRef = mDatabase.child(club).child(innings).child(group).child(name);
         dbRef.setValue(null, new DatabaseReference.CompletionListener() {
             @Override
-            public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
+            public void onComplete(DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
                 if (databaseError != null) {
-                    Toast.makeText(Settings.this, "DB error: " + databaseError.getMessage(),
+                    Toast.makeText(Settings.this, "DB delete user: innings/group) error: " + databaseError.getMessage(),
                             Toast.LENGTH_LONG).show();
                 } else {
                     Toast.makeText(Settings.this, name + " deleted from \"" + innings + "\" innings.",
