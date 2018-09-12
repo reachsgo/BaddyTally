@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/update_innings"
+        android:title="Update innings?" />
+    <item
+        android:id="@+id/update_season"
+        android:title="Update season?" />
+</menu>

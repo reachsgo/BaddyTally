@@ -79,7 +79,7 @@ public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecy
         final int position = holder.getAdapterPosition();
         final String[] options = {"delete"};
         PopupMenu popup = new PopupMenu(mContext, view);
-        popup.getMenuInflater().inflate(R.menu.popup_menu, popup.getMenu());
+        popup.getMenuInflater().inflate(R.menu.summary_popup_menu, popup.getMenu());
         popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {

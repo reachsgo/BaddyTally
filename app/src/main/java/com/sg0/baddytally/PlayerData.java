@@ -53,4 +53,18 @@ class PlayerData implements Serializable {
     public void setGroup(String group) {
         this.group = group;
     }
+
+    @Override
+    public String toString() {
+        return "PlayerData{" +
+                "name='" + name + '\'' +
+                ", innings_score='" + innings_score + '\'' +
+                ", overall_score='" + overall_score + '\'' +
+                ", group='" + group + '\'' +
+                '}';
+    }
+
+    public String toPrintString() {
+        return group + '/' + name + '/' + innings_score + '/' +  overall_score;
+    }
 }

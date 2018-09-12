@@ -122,6 +122,7 @@ public class Settings extends AppCompatActivity {
         };
 
         AlertDialog.Builder builder = new AlertDialog.Builder(Settings.this);
+        builder.setTitle("Creating New Player");
         builder.setMessage("You are about to create a new user:\n\n" +
                 name + " to \"" + group + "\" group.\n\nAre you sure?")
                 .setPositiveButton("Yes", dialogClickListener)
@@ -255,6 +256,7 @@ public class Settings extends AppCompatActivity {
         };
 
         AlertDialog.Builder builder = new AlertDialog.Builder(Settings.this);
+        builder.setTitle("Deleting a Player");
         builder.setMessage("You are about to delete a player:\n\n" +
                 name + " from \"" + group + "\" group.\n\nAre you sure?")
                 .setPositiveButton("Yes", dialogClickListener)

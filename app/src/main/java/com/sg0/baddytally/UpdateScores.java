@@ -39,6 +39,7 @@ class UpdateScores implements ValueEventListener {
             score++;
             if (mSingles) score++;   //+2 for singles
         }
+        if(score<0) score=0;
         Log.w(TAG, "Points updated for "+ mWinner + ": " + prevScore + " -> " + score);
         mDBRef.setValue(score);
         if(mShowToasts) {

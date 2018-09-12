@@ -5,6 +5,7 @@ class Constants {
     public static final String CLUB = "kbc";
     public static final String GROUPS = "groups";
     public static final String INNINGS = "innings";
+    public static final String SEASON = "season";
     public static final String PROFILE = "profile";
     public static final String JOURNAL = "journal";
     public static final String SINGLES = "singles";
