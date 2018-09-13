@@ -134,7 +134,13 @@ public class Settings extends AppCompatActivity {
         final String innings = SharedData.getInstance().mInnings;
         //Create user with 0 overall score.
         DatabaseReference dbRef = mDatabase.child(club).child(Constants.GROUPS).child(group).child(name);
-        dbRef.setValue(0, new DatabaseReference.CompletionListener() {
+        final List<PointsDBEntry> points =  new ArrayList<>();
+        points.add(Constants.SEASON_IDX, new PointsDBEntry());
+        points.add(Constants.INNINGS_IDX, new PointsDBEntry());
+
+
+        //dbRef.setValue(0, new DatabaseReference.CompletionListener() {
+        dbRef.setValue(points, new DatabaseReference.CompletionListener() {
             @Override
             public void onComplete(DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
                 if (databaseError != null) {
@@ -144,10 +150,13 @@ public class Settings extends AppCompatActivity {
                     Toast.makeText(Settings.this, "New user " + name + " created in \"" + group +
                                     "\" group of " + club,
                             Toast.LENGTH_LONG).show();
+                    ((EditText)findViewById(R.id.newuser)).setText("");
+                    ((EditText)findViewById(R.id.newuser)).setHint("new user name");
                 }
             }
         });
 
+        /*
         //Added user with 0 score to current innings.
         dbRef = mDatabase.child(club).child(innings).child(group).child(name);
         dbRef.setValue(0, new DatabaseReference.CompletionListener() {
@@ -165,7 +174,7 @@ public class Settings extends AppCompatActivity {
                 //killActivity(); //thats too soon, snackbar or toasts are not seen in this view.
             }
         });
-
+*/
         //hide keyboard
             if(getCurrentFocus()!=null) {
                 InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
@@ -184,14 +193,14 @@ public class Settings extends AppCompatActivity {
         final String club = SharedData.getInstance().mClub;
         int selectedId = ((RadioGroup) findViewById(R.id.del_gamegroup_radiogroup)).getCheckedRadioButtonId();
         final String group = ((RadioButton) findViewById(selectedId)).getText().toString();
-        Log.w(TAG, "updateSpinner:" + group);
+        Log.w(TAG, "fetchDataAndUpdateSpinner:" + group);
         DatabaseReference dbRef = mDatabase.child(club).child(Constants.GROUPS).child(group);
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
                     mPlayerList.add(child.getKey());
-                    Log.w(TAG, "updateSpinner, added:" + child.getKey());
+                    Log.w(TAG, "fetchDataAndUpdateSpinner, added:" + child.getKey());
                 }
                 updateSpinner();
             }
@@ -234,6 +243,7 @@ public class Settings extends AppCompatActivity {
     }
 
     private void onClickDelete(){
+        if(null==mDelSpinner.getSelectedItem()) return;
         final String name = mDelSpinner.getSelectedItem().toString();
         int selectedId = ((RadioGroup)findViewById(R.id.del_gamegroup_radiogroup)).getCheckedRadioButtonId();
         final String group = ((RadioButton)findViewById(selectedId)).getText().toString();
@@ -278,22 +288,6 @@ public class Settings extends AppCompatActivity {
                     Toast.makeText(Settings.this, name + " deleted from \"" + group +
                                     "\" group of " + club,
                             Toast.LENGTH_LONG).show();
-                }
-            }
-        });
-
-        //Added user with 0 score to current innings.
-        dbRef = mDatabase.child(club).child(innings).child(group).child(name);
-        dbRef.setValue(null, new DatabaseReference.CompletionListener() {
-            @Override
-            public void onComplete(DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
-                if (databaseError != null) {
-                    Toast.makeText(Settings.this, "DB delete user: innings/group) error: " + databaseError.getMessage(),
-                            Toast.LENGTH_LONG).show();
-                } else {
-                    Toast.makeText(Settings.this, name + " deleted from \"" + innings + "\" innings.",
-                            Toast.LENGTH_LONG).show();
-                    mPlayerListAdapter.notifyDataSetInvalidated();
                 }
             }
         });

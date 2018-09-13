@@ -1,25 +1,39 @@
 package com.sg0.baddytally;
 
-import java.io.Serializable;
+//import java.io.Serializable;
+import android.graphics.Typeface;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.style.RelativeSizeSpan;
+import android.text.style.StyleSpan;
+import android.text.style.UnderlineSpan;
 
-class PlayerData implements Serializable {
+import java.util.ArrayList;
+import java.util.List;
+
+class PlayerData {
     private String name;
-    private String innings_score;
-    private String overall_score;
+    //private String innings_score;
+    //private String overall_score;
     private String group;
+    public List<PointsDBEntry> points;
 
     public PlayerData(String group) {
         this.name = "Player";
-        this.innings_score = "This\nRound";
-        this.overall_score = "Overall";
+        //this.innings_score = "This\nRound";
+        //this.overall_score = "Overall";
         this.group = group;
+        points = new ArrayList<>(2);
+        points.add(new PointsDBEntry ());  //season
+        points.add(new PointsDBEntry ());  //innings
     }
 
-    public PlayerData(String name, String innings_score, String overall_score, String group) {
+    public PlayerData(String group, String name, List<PointsDBEntry> pts) {
         this.name = name;
-        this.innings_score = innings_score;
-        this.overall_score = overall_score;
+        //this.innings_score = innings_score;
+        //this.overall_score = overall_score;
         this.group = group;
+        this.points = pts;
     }
 
     public String getName() {
@@ -30,20 +44,49 @@ class PlayerData implements Serializable {
         this.name = name;
     }
 
-    public String getInnings_score() {
-        return innings_score;
+
+    public String getPoints_innings() {
+        return Integer.toString(points.get(Constants.INNINGS_IDX).getPts());
     }
 
-    public void setInnings_score(String innings_score) {
-        this.innings_score = innings_score;
+    public String getPoints_season() {
+        return Integer.toString(points.get(Constants.SEASON_IDX).getPts());
     }
 
-    public String getOverall_score() {
-        return overall_score;
+    public String getPoints(final int idx) {
+        switch(idx) {
+            case Constants.INNINGS_IDX:
+                return getPoints_innings();
+            case Constants.SEASON_IDX:
+                return getPoints_season();
+        }
+        return "unknown";
     }
 
-    public void setOverall_score(String overall_score) {
-        this.overall_score = overall_score;
+
+    public int getPointsInt_innings() {
+        return points.get(Constants.INNINGS_IDX).getPts();
+    }
+
+    public void setPts_innings(Integer innings_score) {
+        points.get(Constants.INNINGS_IDX).setPts(innings_score);
+    }
+
+
+
+    public void setPts_season(Integer overall_score) {
+        points.get(Constants.SEASON_IDX).setPts(overall_score);
+    }
+
+    public void setPoints(final int idx, Integer points) {
+        switch(idx) {
+            case Constants.INNINGS_IDX:
+                setPts_innings(points);
+                break;
+            case Constants.SEASON_IDX:
+                setPts_season(points);
+                break;
+        }
     }
 
     public String getGroup() {
@@ -54,17 +97,86 @@ class PlayerData implements Serializable {
         this.group = group;
     }
 
+    public PointsDBEntry getPointsDBEntry_season() {
+        return points.get(Constants.SEASON_IDX);
+    }
+
+    public PointsDBEntry getPointsDBEntry_innings() {
+        return points.get(Constants.INNINGS_IDX);
+    }
+
+    public String getGamesWon_season () {
+        return Integer.toString(points.get(Constants.SEASON_IDX).getW());
+    }
+    public String getGamesPlayed_season () {
+        return Integer.toString(points.get(Constants.SEASON_IDX).getP());
+    }
+
+    public String getGamesWon_innings () {
+        return Integer.toString(points.get(Constants.INNINGS_IDX).getW());
+    }
+    public String getGamesPlayed_innings () {
+        return Integer.toString(points.get(Constants.INNINGS_IDX).getP());
+    }
+
+    public String getWinPercentage_season () {
+        return Integer.toString(points.get(Constants.SEASON_IDX).getWinPercentage());
+    }
+
+    public String getWinPercentage_innings () {
+        return Integer.toString(points.get(Constants.INNINGS_IDX).getWinPercentage());
+    }
+
+    public int wonMatch(boolean singles){
+        points.get(Constants.SEASON_IDX).wonMatch(singles);
+        return points.get(Constants.INNINGS_IDX).wonMatch(singles);
+    }
+
+    public void lostMatch(boolean singles){
+        points.get(Constants.SEASON_IDX).wonMatch(singles);
+        points.get(Constants.INNINGS_IDX).wonMatch(singles);
+    }
+
+    public SpannableString getPtsFormat_season(){
+        String tempString = getPoints_season() + "\n" + getWinPercentage_season() + "%";
+        SpannableString spanString = new SpannableString(tempString);
+        spanString.setSpan(new RelativeSizeSpan(0.7f), getPoints_season().length(), tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        return spanString;
+    }
+
+    public SpannableString getPtsFormat_innings(){
+        String tempString = getPoints_innings() + "\n" + getWinPercentage_innings() + "%";
+        SpannableString spanString = new SpannableString(tempString);
+        spanString.setSpan(new RelativeSizeSpan(0.7f), getPoints_innings().length(), tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        return spanString;
+    }
+
+    public SpannableString getPtsDetailFormat_season(){
+        String heading = "\n Season ";
+        String tempString = heading + "\n\n\tPoints: " + getPoints_season() + "\n\tWon: " + getGamesWon_season() + "\n\tPlayed: " + getGamesPlayed_season()  +"\n\tWin%: " + getWinPercentage_season();
+        SpannableString spanString = new SpannableString(tempString);
+        spanString.setSpan(new UnderlineSpan(), 0, heading.length(), 0);
+        spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, heading.length(), 0);
+        return spanString;
+    }
+
+    public SpannableString getPtsDetailFormat_innings(){
+        String heading = "\n Innings ";
+        String tempString = heading + "\n\n\tPoints: " + getPoints_innings() + "\n\tWon: " + getGamesWon_innings() + "\n\tPlayed: " + getGamesPlayed_innings()  +"\n\tWin%: " + getWinPercentage_innings();
+        SpannableString spanString = new SpannableString(tempString);
+        spanString.setSpan(new UnderlineSpan(), 0, heading.length()+1, 0);
+        spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, heading.length(), 0);
+        return spanString;
+    }
+
     @Override
     public String toString() {
-        return "PlayerData{" +
-                "name='" + name + '\'' +
-                ", innings_score='" + innings_score + '\'' +
-                ", overall_score='" + overall_score + '\'' +
-                ", group='" + group + '\'' +
-                '}';
+        return "PlayerData{" + group + "/" + name + ": season=" +
+                points.get(Constants.SEASON_IDX).toString() + " innings=" +
+                points.get(Constants.INNINGS_IDX).toString() + "}";
     }
 
     public String toPrintString() {
-        return group + '/' + name + '/' + innings_score + '/' +  overall_score;
+        return group + '/' + name + '/' + points.get(Constants.INNINGS_IDX).getPts() + '/' +  points.get(Constants.SEASON_IDX).getPts() ;
     }
 }

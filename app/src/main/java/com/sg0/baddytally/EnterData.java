@@ -32,7 +32,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 
 
 public class EnterData extends AppCompatActivity {
@@ -131,7 +130,7 @@ public class EnterData extends AppCompatActivity {
         mGameType = myIntent.getStringExtra("gametype");
         mGroup = myIntent.getStringExtra("group");
         String mNewRoundFlag = myIntent.getStringExtra("new_round");
-        Log.w(TAG, "onStart :" + SharedData.getInstance().toString() + "/" + mGroup + "/" + mGameType + "/" + mNewRoundFlag);
+        Log.w(TAG, "onCreate :" + SharedData.getInstance().toString() + "/" + mGroup + "/" + mGameType + "/" + mNewRoundFlag);
 
         mSingles = Constants.SINGLES.equals(mGameType);
         mDatabase = FirebaseDatabase.getInstance().getReference();
@@ -164,6 +163,24 @@ public class EnterData extends AppCompatActivity {
             mSpinner_P2.setVisibility(View.GONE);
             mSpinner_P4.setVisibility(View.GONE);
         }
+
+        ArrayList<PlayerData> players;
+        if (Constants.GOLD.equals(mGroup)) {
+            players = SharedData.getInstance().mGoldPlayers;
+        } else {
+            players = SharedData.getInstance().mSilverPlayers;
+        }
+
+        if(mSingles && players.size()<2){
+            Toast.makeText(EnterData.this, "Not enough players to play Singles in group " + mGroup,
+                    Toast.LENGTH_LONG).show();
+            finish();
+        } else if(!mSingles && players.size()<4){
+            Toast.makeText(EnterData.this, "Not enough players to play Doubles in group " + mGroup,
+                    Toast.LENGTH_LONG).show();
+            finish();
+        }
+
         final Button enterButton = findViewById(R.id.enter_button);
         enterButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -179,13 +196,6 @@ public class EnterData extends AppCompatActivity {
                 EnterData.this.startActivity(myIntent);
             }
         });
-
-        ArrayList<PlayerData> players;
-        if (Constants.GOLD.equals(mGroup)) {
-            players = SharedData.getInstance().mGoldPlayers;
-        } else {
-            players = SharedData.getInstance().mSilverPlayers;
-        }
 
         final List<String> playerList = new ArrayList<>();
         for (int i = 0; i < players.size(); i++) {
@@ -316,12 +326,12 @@ public class EnterData extends AppCompatActivity {
         mGameNum = 1;
         DatabaseReference dbRef = mDatabase.child(mClub).child(Constants.JOURNAL).child(mInnings).child(mRoundName).child(mGroup);
         Query myQuery = dbRef.orderByKey();
-        final ArrayList<GameJournal> gameList= new ArrayList<>();
+        final ArrayList<GameJournalDBEntry> gameList= new ArrayList<>();
         myQuery.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
-                    GameJournal jEntry = child.getValue(GameJournal.class);
+                    GameJournalDBEntry jEntry = child.getValue(GameJournalDBEntry.class);
                     if(null==jEntry) continue;
                     gameList.add(jEntry);
                     Log.d(TAG, "fetchGames:" + jEntry.toReadableString());
@@ -338,7 +348,7 @@ public class EnterData extends AppCompatActivity {
         });
     }
 
-    private void checkData(ArrayList<GameJournal> gameList) {
+    private void checkData(ArrayList<GameJournalDBEntry> gameList) {
 
         if (!enterData(true))  //dry run returned failure
             return;
@@ -355,7 +365,7 @@ public class EnterData extends AppCompatActivity {
         }
         int numOfSingles = 0;
         int numOfDoubles = 0;
-        for (GameJournal games : gameList) {
+        for (GameJournalDBEntry games : gameList) {
             if (Constants.SINGLES.equals(games.getmGT()))
                 numOfSingles++;
             else
@@ -363,7 +373,7 @@ public class EnterData extends AppCompatActivity {
         }
         Log.d(TAG, "checkData: singles=" + numOfSingles + "doubles=" + numOfDoubles);
 
-        for (GameJournal games : gameList) {
+        for (GameJournalDBEntry games : gameList) {
             if (!games.getmGT().equals(mGameType)) continue;
 
             if (games.playedBefore(p1, p2, p3, p4)) {
@@ -459,25 +469,37 @@ public class EnterData extends AppCompatActivity {
                 .setAction("Action", null).show();
         Log.i(TAG, "enterData: " + winners + " vs " + losers + " : " + winningScore.toString() + "-" + losingScore.toString());
 
-        GameJournal jEntry = new GameJournal(mRoundName, mInnings, SharedData.getInstance().mUser);
+        GameJournalDBEntry jEntry = new GameJournalDBEntry(mRoundName, mInnings, SharedData.getInstance().mUser);
         jEntry.setResult(createNewRoundName(false), mGameType, winner1, winner2, loser1, loser2, winningScore, losingScore);
         jEntry.setmGNo(mGameNum);
         DatabaseReference jDBEntryRef = mDatabase.child(mClub).child(Constants.JOURNAL).child(mInnings).child(mRoundName).child(mGroup).push();
         jDBEntryRef.setValue(jEntry);
         Log.i(TAG, "WRITTEN jEntry: " + jEntry.toReadableString());
-        updateDB(winner1, winner2);
+        updateDB(winner1, winner2, loser1, loser2);
         mDatabase.child(mClub).child(Constants.INNINGS).child(SharedData.getInstance().mInningsDBKey).child("round").setValue(mRoundName);
         SharedData.getInstance().mRoundName = mRoundName;
         Log.d(TAG, "WRITTEN mRoundName: " + mRoundName + " data=" + SharedData.getInstance().toString());
         return true;
     }
 
-    private void updateDB(final String winner1, final String winner2){
+    private void updateDB(final String winner1, final String winner2, final String loser1, final String loser2){
         if (winner1.isEmpty()) {
             Toast.makeText(EnterData.this, "winner name is empty!", Toast.LENGTH_LONG).show();
             killActivity();
         }
+        DatabaseReference mClubDBRef = mDatabase.child(mClub);
+        DatabaseReference dbRef_winner1 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(winner1);
+        dbRef_winner1.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, true, dbRef_winner1, false,true));
+        DatabaseReference dbRef_loser1 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(loser1);
+        dbRef_loser1.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, false, dbRef_loser1, false,false));
+        if (!mSingles) {
+            DatabaseReference dbRef_winner2 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(winner2);
+            dbRef_winner2.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, true, dbRef_winner2, false,true));
+            DatabaseReference dbRef_loser2 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(loser2);
+            dbRef_loser2.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, false, dbRef_loser2, false,false));
+        }
 
+        /*
         //add score to club/innings/group/player
         DatabaseReference dbRef_winner1 = mDatabase.child(mClub).child(mInnings).child(mGroup).child(winner1);
         dbRef_winner1.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, winner1, dbRef_winner1, false,true));
@@ -491,6 +513,7 @@ public class EnterData extends AppCompatActivity {
         //add score to club/GROUPS/group/player
         dbRef_winner2 = mDatabase.child(mClub).child(Constants.GROUPS).child(mGroup).child(winner2);
         dbRef_winner2.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, winner2, dbRef_winner2, false,  false));
+        */
     }
 
 }

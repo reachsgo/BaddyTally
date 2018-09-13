@@ -3,7 +3,7 @@ package com.sg0.baddytally;
 import com.google.firebase.database.IgnoreExtraProperties;
 
 @IgnoreExtraProperties
-class GameJournal {
+class GameJournalDBEntry {
     //shorter names will save firebase DB space
     private String mW1;  //winner1
     private String mW2;  //winner2
@@ -106,12 +106,12 @@ class GameJournal {
         return mU;
     }
 
-    public GameJournal() {
+    public GameJournalDBEntry() {
         this.mDate = "Nov 20 1978";
         this.mIn = "godha";
     }
 
-    public GameJournal(String mDate, String mIn, String user) {
+    public GameJournalDBEntry(String mDate, String mIn, String user) {
         this.mDate = mDate;
         this.mIn = mIn;
         this.mU = user;

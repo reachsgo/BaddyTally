@@ -57,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
             String tempString = Constants.APPNAME + "  " + club;
             if (SharedData.getInstance().isAdmin()) tempString += " +";
             else if (SharedData.getInstance().isRoot()) tempString += " *";
+            else tempString += " ";
             SpannableString spanString = new SpannableString(tempString);
             spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPNAME.length(), 0);
             spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPNAME.length(), tempString.length()-1, 0);
@@ -83,18 +84,22 @@ public class MainActivity extends AppCompatActivity {
         }
         LinearLayout parent = findViewById(R.id.gold_parentview);
         LinearLayoutManager mGoldLayoutManager = new LinearLayoutManager(parent.getContext());
+
         //firebase DB filter allows only descending order, So, reverse the order so that highest score is shown first
         //Innings score (This round) is fetched first (see below), so that the sorting is on current round score.
-        mGoldLayoutManager.setReverseLayout(true);
-        mGoldLayoutManager.setStackFromEnd(true);
+        //mGoldLayoutManager.setReverseLayout(true);
+        //mGoldLayoutManager.setStackFromEnd(true);
+        // SGO: Above revering not needed anymore as the sorting is now done in adapter. After DB restructuring to add win%,
+        //      orderByChild on a list child doesnt seem to be working. Needs more investigation.
+
         mRecyclerGoldView.setLayoutManager(mGoldLayoutManager);
         //mRecyclerGoldView.addItemDecoration(new DividerItemDecoration(MainActivity.this,
         //        DividerItemDecoration.VERTICAL));
         RecyclerViewAdapter mGoldAdapter = new RecyclerViewAdapter(this, Constants.GOLD, players);
-        mGoldAdapter.setColor("#eedd82");  //color gold
+        mGoldAdapter.setBgColor("#eee8aa");  //pale gold as background for text
         mRecyclerGoldView.setAdapter(mGoldAdapter);
         mGoldDB = new FireBaseDBReader(this, mClub, Constants.GOLD, mInnings, mGoldAdapter, mRecyclerGoldView);
-        mGoldDB.fetchThisRoundScore();
+        mGoldDB.fetchOverallScore();
 
         if (SharedData.getInstance().mNumOfGroups == 1) {
             //There is only one group, dont show silver group view.
@@ -114,14 +119,14 @@ public class MainActivity extends AppCompatActivity {
             LinearLayoutManager mSilverLayoutManager = new LinearLayoutManager(parent.getContext());
             //firebase DB filter allows only descending order, So, reverse the order so that highest score is shown first
             //Innings score (This round) is fetched first (see below), so that the sorting is on current round score.
-            mSilverLayoutManager.setReverseLayout(true);
-            mSilverLayoutManager.setStackFromEnd(true);
+            //mSilverLayoutManager.setReverseLayout(true);
+            //mSilverLayoutManager.setStackFromEnd(true);
             mRecyclerSilverView.setLayoutManager(mSilverLayoutManager);
             RecyclerViewAdapter mSilverAdapter = new RecyclerViewAdapter(this, Constants.SILVER, players);
-            mSilverAdapter.setColor("#eeeee0");  //color silver
+            mSilverAdapter.setBgColor("#eeeee0");  //color silver
             mRecyclerSilverView.setAdapter(mSilverAdapter);
             mSilverDB = new FireBaseDBReader(this, mClub, Constants.SILVER, mInnings, mSilverAdapter, mRecyclerSilverView);
-            mSilverDB.fetchThisRoundScore();
+            mSilverDB.fetchOverallScore();
         }
     }
 
@@ -329,18 +334,23 @@ public class MainActivity extends AppCompatActivity {
                 "2.  Season is divided into several \"Innings\" (say 1 per month)\n\n" +
                 "3.  Players are ranked by points. Players of a winning Doubles team are awarded 1 point each." +
                 " Winner of Singles game is awarded 2 points. No points for a loss.\n\n" +
-                "4.  At the start of a new Innings, the three lowest placed players of Gold group are relegated into" +
-                " Silver group and top three players of the Silver group are promoted to Gold group." +
-                " For this shuffle, only the points accumulated over the last Innings are considered.\n\n" +
-                "5.  First game on each court on game days are warm-up games. No groups or points for these games.\n\n" +
-                "6.  After warm-up, games are played among players of the same group, such that all" +
+                "4.  At the start of a new Innings, points accumulated over the last Innings are considered to shuffle" +
+                " the players. Shuffling rules:\n" +
+                "        (i)  Top 3 players of Silver move to Gold & Bottom 3 players of Gold move to Silver. If there is a tie, player selection is done on criteria in the order:" +
+                " (i.1) higher win percentage, (i.2) most number of wins" +
+                " (i.3) most number of games played (i.4) toss\n" +
+                "        (ii)  Once the above rule is applied, the win % of the players are compared, for those who have at least played 12 games in that month." +
+                " If the player with the highest win % is in Silver Group, then he is shuffled with the player with the lowest win % from Gold group." +
+                " Please note that it is quite possible that the player being moved from Gold group due to this could be a player who just moved to Gold due to rule 1" +
+                " or he could be a player who was already in Gold group before applying shuffling rule 1.\n\n" +
+                "5.  After warm-up, games are played among players of the same group, such that all" +
                 " possible combination of pairings are covered (at least once) for that day. \n\n" +
-                "7.  Any new member to club starts in the Silver group.\n\n" +
-                "8.  If guests are playing, points are not counted for that game.\n\n" +
-                "9.  If there are less than 4 players from a group on any game day, you should play at least 1 singles per player in attendance." +
+                "6.  Any new member to club starts in the Silver group.\n\n" +
+                "7.  If guests are playing, points are not counted for that game.\n\n" +
+                "8.  If there are less than 4 players from a group on any game day, you should play at least 1 singles per player in attendance." +
                 " Ideally, singles between all possible combinations of that group on that day should be played.\n\n" +
-                "10. If there are not enough players on a day, mix and match (after the singles). Points are still counted.\n\n" +
-                "11. Scores and results can be entered into ScoreTally after each game.\n\n")
+                "9. If there are not enough players on a day, mix and match (after the singles). Points are still counted.\n\n" +
+                "10. Scores and results can be entered into ScoreTally after each game.\n\n")
                 .setTitle("Rules")
                 .setNeutralButton("Ok", null)
                 .show();

@@ -74,7 +74,7 @@ public class Summary extends AppCompatActivity {
         LinearLayoutManager mGoldLayoutManager = new LinearLayoutManager(parent.getContext());
         mRecyclerGoldView.setLayoutManager(mGoldLayoutManager);
 
-        final ArrayList<GameJournal> goldGameList = new ArrayList<>();
+        final ArrayList<GameJournalDBEntry> goldGameList = new ArrayList<>();
         final ArrayList<String> goldGameListKeys = new ArrayList<>();
         DatabaseReference dbRef = mDatabase.child(data.mClub).child(Constants.JOURNAL).child(data.mInnings).child(data.mRoundName).child(Constants.GOLD);
         Query myQuery = dbRef.orderByKey();
@@ -82,7 +82,7 @@ public class Summary extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
-                    GameJournal jEntry = child.getValue(GameJournal.class);
+                    GameJournalDBEntry jEntry = child.getValue(GameJournalDBEntry.class);
                     goldGameListKeys.add(child.getKey());
                     goldGameList.add(jEntry);
                     //Log.w(TAG, "gold fetchGames:" + child.getKey() + " data=" + jEntry.toReadableString());
@@ -113,7 +113,7 @@ public class Summary extends AppCompatActivity {
             //firebase DB filter allows only descending order, So, reverse the order so that highest score is shown first
             //Innings score (This round) is fetched first (see below), so that the sorting is on current round score.
             mRecyclerSilverView.setLayoutManager(mSilverLayoutManager);
-            final ArrayList<GameJournal> silverGameList = new ArrayList<>();
+            final ArrayList<GameJournalDBEntry> silverGameList = new ArrayList<>();
             final ArrayList<String> silverGameListKeys = new ArrayList<>();
             DatabaseReference dbRef2 = mDatabase.child(data.mClub).child(Constants.JOURNAL).child(data.mInnings).child(data.mRoundName).child(Constants.SILVER);
             Query myQuery2 = dbRef2.orderByKey();
@@ -121,7 +121,7 @@ public class Summary extends AppCompatActivity {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     for (DataSnapshot child : dataSnapshot.getChildren()) {
-                        GameJournal jEntry = child.getValue(GameJournal.class);
+                        GameJournalDBEntry jEntry = child.getValue(GameJournalDBEntry.class);
                         silverGameListKeys.add(child.getKey());
                         silverGameList.add(jEntry);
                         //Log.w(TAG, "silver fetchGames:" + child.getKey() + " data=" + jEntry.toReadableString());
