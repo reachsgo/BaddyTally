@@ -21,11 +21,13 @@ import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.text.style.SuperscriptSpan;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
@@ -87,8 +89,8 @@ public class MainActivity extends AppCompatActivity {
 
         //firebase DB filter allows only descending order, So, reverse the order so that highest score is shown first
         //Innings score (This round) is fetched first (see below), so that the sorting is on current round score.
-        //mGoldLayoutManager.setReverseLayout(true);
-        //mGoldLayoutManager.setStackFromEnd(true);
+        mGoldLayoutManager.setReverseLayout(true);   //without this the focus stay at the end of the list
+        mGoldLayoutManager.setStackFromEnd(true);
         // SGO: Above revering not needed anymore as the sorting is now done in adapter. After DB restructuring to add win%,
         //      orderByChild on a list child doesnt seem to be working. Needs more investigation.
 
@@ -119,8 +121,8 @@ public class MainActivity extends AppCompatActivity {
             LinearLayoutManager mSilverLayoutManager = new LinearLayoutManager(parent.getContext());
             //firebase DB filter allows only descending order, So, reverse the order so that highest score is shown first
             //Innings score (This round) is fetched first (see below), so that the sorting is on current round score.
-            //mSilverLayoutManager.setReverseLayout(true);
-            //mSilverLayoutManager.setStackFromEnd(true);
+            mSilverLayoutManager.setReverseLayout(true);
+            mSilverLayoutManager.setStackFromEnd(true);
             mRecyclerSilverView.setLayoutManager(mSilverLayoutManager);
             RecyclerViewAdapter mSilverAdapter = new RecyclerViewAdapter(this, Constants.SILVER, players);
             mSilverAdapter.setBgColor("#eeeee0");  //color silver
@@ -198,13 +200,14 @@ public class MainActivity extends AppCompatActivity {
                 break;
             // action with ID action_settings was selected
             case R.id.action_settings:
-                if (Constants.ROOT.equals(SharedData.getInstance().mRole)) {
-                    Intent myIntent = new Intent(MainActivity.this, Settings.class);
-                    MainActivity.this.startActivity(myIntent);
-                } else {
-                    Toast.makeText(this, "No settings option for you!", Toast.LENGTH_SHORT)
+                /*
+                if (!Constants.ROOT.equals(SharedData.getInstance().mRole)) {
+                    Toast.makeText(this, "Some options might not be available to you!", Toast.LENGTH_SHORT)
                             .show();
-                }
+                }*/
+                Intent settingsIntent = new Intent(MainActivity.this, Settings.class);
+                MainActivity.this.startActivity(settingsIntent);
+
                 break;
             case R.id.action_delcache:
                 SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
@@ -254,8 +257,7 @@ public class MainActivity extends AppCompatActivity {
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                 builder.setMessage("Version: " + BuildConfig.VERSION_NAME)
                         .setTitle(Constants.APPNAME)
-                        .setNeutralButton("Ok", null)
-                        .show();
+                        .setNeutralButton("Ok", null).show();
                 break;
             default:
                 break;
@@ -282,7 +284,7 @@ public class MainActivity extends AppCompatActivity {
                         SharedData.getInstance().mInnings = mInnings;
                         mRoundName = val.round;
                         SharedData.getInstance().mRoundName = mRoundName;
-                        SharedData.getInstance().mInningsDBKey = Integer.toString(count);
+                        SharedData.getInstance().mInningsDBKey = count;
                     }
                     count++;
                 }

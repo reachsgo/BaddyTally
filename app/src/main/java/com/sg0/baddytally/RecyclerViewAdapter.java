@@ -55,13 +55,15 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     }
 
     public void sortPlayers() {
+        SharedData.getInstance().sortPlayers(mPlayers, false);
+        /*
         Collections.sort(mPlayers, new Comparator<PlayerData>() {
             @Override
             public int compare(PlayerData p1, PlayerData p2) {
                 return Integer.valueOf(p2.getPointsInt_innings()).compareTo(p1.getPointsInt_innings());  //descending order
                 //return Integer.valueOf(p1.getPointsInt_innings()).compareTo(p2.getPointsInt_innings()); //ascending order
             }
-        });
+        }); */
         Log.d(TAG, "SGO sortPlayers: Sorted mPlayers: " + Integer.toString(mPlayers.size()));
     }
 
@@ -116,8 +118,19 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         builder.setTitle(mPlayers.get(position).getName() + " stats:");
         Spanned spanString = (Spanned) TextUtils.concat(mPlayers.get(position).getPtsDetailFormat_innings(), "\n", mPlayers.get(position).getPtsDetailFormat_season());
         builder.setMessage(spanString)
-                .setNeutralButton("Ok", null)
-                .show();
+                .setNeutralButton("Ok", null);
+        AlertDialog dialog =  builder.show();
+        // Must call show() prior to fetching text view
+        TextView messageView = dialog.findViewById(android.R.id.message);
+        if (messageView != null) {
+            messageView.setGravity(Gravity.CENTER);
+        }
+
+        final int alertTitle = mContext.getResources().getIdentifier("alertTitle", "id", "android");
+        TextView titleView = (TextView) dialog.findViewById(alertTitle);  //android.R.id.title is also not working
+        if (titleView != null) {
+            titleView.setGravity(Gravity.CENTER);   //this is not working
+        }
     }
 
     private void showOptions(final View view, final ViewHolder holder) {
@@ -143,7 +156,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         popup.show();//showing popup menu
     }
 
-    private void showEditText(final ViewHolder holder, final int key) {
+    private void showEditText(final ViewHolder holder, final Integer key) {
         AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
         int position = holder.getAdapterPosition();
         if (null == mPlayers.get(position)) return;

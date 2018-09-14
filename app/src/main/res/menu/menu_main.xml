@@ -2,7 +2,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/action_settings"
-        android:orderInCategory="1"
+        android:orderInCategory="50"
         android:title="@string/action_settings"
         app:showAsAction="never" />
     <item
@@ -13,7 +13,7 @@
         android:title="Refresh"/>
     <item
         android:id="@+id/action_enter"
-        android:orderInCategory="98"
+        android:orderInCategory="1"
         app:showAsAction="never"
         android:title="Enter score"/>
     <item

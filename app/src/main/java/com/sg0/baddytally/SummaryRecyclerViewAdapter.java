@@ -111,7 +111,7 @@ public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecy
         if (!singles) {
             DatabaseReference dbRef_winner2 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(jEntry.getmW2());
             dbRef_winner2.addListenerForSingleValueEvent(new UpdateScores(mContext, singles, true, dbRef_winner2, true, true));
-            DatabaseReference dbRef_loser2 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(jEntry.getmL1());
+            DatabaseReference dbRef_loser2 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(jEntry.getmL2());
             dbRef_loser2.addListenerForSingleValueEvent(new UpdateScores(mContext, singles, false, dbRef_loser2, true, true));
             /*
             //delete score from club/innings/group/player

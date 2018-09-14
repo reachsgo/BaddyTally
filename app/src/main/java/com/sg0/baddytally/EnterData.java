@@ -476,7 +476,7 @@ public class EnterData extends AppCompatActivity {
         jDBEntryRef.setValue(jEntry);
         Log.i(TAG, "WRITTEN jEntry: " + jEntry.toReadableString());
         updateDB(winner1, winner2, loser1, loser2);
-        mDatabase.child(mClub).child(Constants.INNINGS).child(SharedData.getInstance().mInningsDBKey).child("round").setValue(mRoundName);
+        mDatabase.child(mClub).child(Constants.INNINGS).child(SharedData.getInstance().mInningsDBKey.toString()).child("round").setValue(mRoundName);
         SharedData.getInstance().mRoundName = mRoundName;
         Log.d(TAG, "WRITTEN mRoundName: " + mRoundName + " data=" + SharedData.getInstance().toString());
         return true;

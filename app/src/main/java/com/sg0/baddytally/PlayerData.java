@@ -11,18 +11,27 @@ import android.text.style.UnderlineSpan;
 import java.util.ArrayList;
 import java.util.List;
 
+
+enum ShuffleFlag {
+    UNKNOWN,
+    CANDIDATE,
+    RELEGATE,
+    PROMOTE
+}
+
 class PlayerData {
     private String name;
-    //private String innings_score;
-    //private String overall_score;
     private String group;
     public List<PointsDBEntry> points;
+
+    private ShuffleFlag shuffleFlag;
 
     public PlayerData(String group) {
         this.name = "Player";
         //this.innings_score = "This\nRound";
         //this.overall_score = "Overall";
         this.group = group;
+        shuffleFlag = ShuffleFlag.UNKNOWN;
         points = new ArrayList<>(2);
         points.add(new PointsDBEntry ());  //season
         points.add(new PointsDBEntry ());  //innings
@@ -137,6 +146,30 @@ class PlayerData {
         points.get(Constants.INNINGS_IDX).wonMatch(singles);
     }
 
+    public void markToRelegate(){
+        shuffleFlag = ShuffleFlag.RELEGATE;
+    }
+
+    public void markToPromote(){
+        shuffleFlag = ShuffleFlag.PROMOTE;
+    }
+
+    public void mark(){
+        shuffleFlag = ShuffleFlag.CANDIDATE;
+    }
+
+    public boolean isMarked(){
+        return ((shuffleFlag == ShuffleFlag.CANDIDATE) || isMarkedToRelegate() || isMarkedToPromote());
+    }
+
+    public boolean isMarkedToRelegate(){
+        return shuffleFlag == ShuffleFlag.RELEGATE;
+    }
+
+    public boolean isMarkedToPromote(){
+        return shuffleFlag == ShuffleFlag.PROMOTE;
+    }
+
     public SpannableString getPtsFormat_season(){
         String tempString = getPoints_season() + "\n" + getWinPercentage_season() + "%";
         SpannableString spanString = new SpannableString(tempString);
@@ -153,7 +186,10 @@ class PlayerData {
 
     public SpannableString getPtsDetailFormat_season(){
         String heading = "\n Season ";
-        String tempString = heading + "\n\n\tPoints: " + getPoints_season() + "\n\tWon: " + getGamesWon_season() + "\n\tPlayed: " + getGamesPlayed_season()  +"\n\tWin%: " + getWinPercentage_season();
+        String tempString = heading + "\n\n\tPoints: " + getPoints_season() +
+                "\n\tWon: " + getGamesWon_season() + "\n\tPlayed: " +
+                getGamesPlayed_season()  +"\n\tWin%: " +
+                getWinPercentage_season() + "%";
         SpannableString spanString = new SpannableString(tempString);
         spanString.setSpan(new UnderlineSpan(), 0, heading.length(), 0);
         spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, heading.length(), 0);
@@ -162,7 +198,10 @@ class PlayerData {
 
     public SpannableString getPtsDetailFormat_innings(){
         String heading = "\n Innings ";
-        String tempString = heading + "\n\n\tPoints: " + getPoints_innings() + "\n\tWon: " + getGamesWon_innings() + "\n\tPlayed: " + getGamesPlayed_innings()  +"\n\tWin%: " + getWinPercentage_innings();
+        String tempString = heading + "\n\n\tPoints: " + getPoints_innings() +
+                "\n\tWon: " + getGamesWon_innings() +
+                "\n\tPlayed: " + getGamesPlayed_innings()  +
+                "\n\tWin%: " + getWinPercentage_innings()  + "%";
         SpannableString spanString = new SpannableString(tempString);
         spanString.setSpan(new UnderlineSpan(), 0, heading.length()+1, 0);
         spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, heading.length(), 0);
@@ -171,7 +210,8 @@ class PlayerData {
 
     @Override
     public String toString() {
-        return "PlayerData{" + group + "/" + name + ": season=" +
+        String shuFlag = isMarkedToPromote() ? "P" : (isMarkedToRelegate() ? "R" : "U");
+        return "PlayerData{" + group + "/" + name + ": flag=" + shuFlag + "season=" +
                 points.get(Constants.SEASON_IDX).toString() + " innings=" +
                 points.get(Constants.INNINGS_IDX).toString() + "}";
     }

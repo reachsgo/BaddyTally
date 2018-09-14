@@ -50,12 +50,15 @@ class FireBaseDBReader {
     public void fetchOverallScore() {
         if (mInnings.isEmpty()) return;
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.GROUPS).child(mGroup);
-        //Children with a numeric value come next, sorted in ascending order. If multiple children have the same numerical value for the specified child node, they are sorted by key.
-        String orderBy = Integer.toString(Constants.INNINGS_IDX) + "/pts";
-        Log.w(TAG, "SGO: fetchOverallScore orderBy:" + orderBy);
-        Query myQuery = dbRef.orderByChild("pts");
+        //firebase documentation: Children with a numeric value come next, sorted in ascending order.
+        //         If multiple children have the same numerical value for the specified child node, they are sorted by key.
+        //String orderBy = Integer.toString(Constants.INNINGS_IDX) + "/pts";
+        //Log.w(TAG, "SGO: fetchOverallScore orderBy:" + orderBy);
+        //Query myQuery = dbRef.orderByChild("pts");
+        //SGO: orderByChild did not work! Is it due to the list of data in each player DB field?
+        //workaround is to do the list sorting in java.
         //myQuery.addValueEventListener(new ValueEventListener() {
-        myQuery.addListenerForSingleValueEvent(new ValueEventListener() {
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
 
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -75,80 +78,12 @@ class FireBaseDBReader {
                         Log.w(TAG, mLogStr + " name=" + name + " iPts (" + iPts.toString() + ") sPts=" + sPts.toString());
                         mPlayers.add(new PlayerData( mGroup, name, points));
                     }
-
-                    /*
-                    Integer score = child.getValue(Integer.class);
-                    if(null==score) continue;
-                    String name = child.getKey();
-                    boolean playerFound = false;
-                    Log.w(TAG, mLogStr + "] child (" + name + ") score=" + score.toString());
-                    for (int i = 0; i < mPlayers.size(); i++) {
-                        //Log.w(TAG, "fetchThisRoundScore[" + Integer.toString(i) + "] getName=["+mPlayers[idx].get(i).getName()+"] name=["+name+"]");
-                        if (mPlayers.get(i).getName().equalsIgnoreCase(name)) {
-                            mPlayers.get(i).setPts_season(score.toString());
-                            //Log.w(TAG, mLogStr + "onDataChange =====> child (" + name + ") set overall score=" + score.toString());
-                            playerFound = true;
-                        }
-                    }
-                    if (!playerFound) {
-                        PlayerData player = new PlayerData(name, "0", score.toString(), mGroup);
-                        mPlayers.add(player);
-                    }*/
-              //  }
-                /*
-                Collections.sort(mPlayers, new Comparator<PlayerData>() {
-                    @Override
-                    public int compare(PlayerData playerData, PlayerData obj2) {
-                        return Integer.valueOf(playerData.getPointsInt_innings()).compareTo(obj2.getPointsInt_innings());  //descending order
-                    }
-                });*/
-
-                        /*Comparator<PlayerData>(){
-                    public int compare(EmployeeClass obj1, EmployeeClass obj2) {
-                        // ## Ascending order
-                        return obj1.firstName.compareToIgnoreCase(obj2.firstName); // To compare string values
-                        // return Integer.valueOf(obj1.empId).compareTo(obj2.empId); // To compare integer values
-
-                        // ## Descending order
-                        // return obj2.firstName.compareToIgnoreCase(obj1.firstName); // To compare string values
-                        // return Integer.valueOf(obj2.empId).compareTo(obj1.empId); // To compare integer values
-                    }
-                });*/
                 if (mViewAdapter != null) {
                     mView.smoothScrollToPosition(mPlayers.size()-1);  //scroll back to the top of the list to show highest point scorers
                     mViewAdapter.sortPlayers();
                     mViewAdapter.notifyDataSetChanged();
                 }
             }
-
-            /*
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.w(TAG, "onDataChange:" + mLogStr);
-                for (DataSnapshot child : dataSnapshot.getChildren()) {
-                    Integer score = child.getValue(Integer.class);
-                    if(null==score) continue;
-                    String name = child.getKey();
-                    boolean playerFound = false;
-                    Log.w(TAG, mLogStr + "] child (" + name + ") score=" + score.toString());
-                        for (int i = 0; i < mPlayers.size(); i++) {
-                            //Log.w(TAG, "fetchThisRoundScore[" + Integer.toString(i) + "] getName=["+mPlayers[idx].get(i).getName()+"] name=["+name+"]");
-                            if (mPlayers.get(i).getName().equalsIgnoreCase(name)) {
-                                mPlayers.get(i).setPts_season(score.toString());
-                                //Log.w(TAG, mLogStr + "onDataChange =====> child (" + name + ") set overall score=" + score.toString());
-                                playerFound = true;
-                            }
-                        }
-                    if (!playerFound) {
-                        PlayerData player = new PlayerData(name, "0", score.toString(), mGroup);
-                        mPlayers.add(player);
-                    }
-                }
-                if (mViewAdapter != null) {
-                    mView.smoothScrollToPosition(mPlayers.size()-1);  //scroll back to the top of the list to show highest point scorers
-                    mViewAdapter.notifyDataSetChanged();
-                }
-            }*/
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
