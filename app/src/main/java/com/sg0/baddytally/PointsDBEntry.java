@@ -74,15 +74,19 @@ public class PointsDBEntry {
     }
 
     public int deleteMatch (final boolean singles, final boolean winner){
-        this.pts--;
-        if(singles) this.pts--;
-        if(this.pts<0) this.pts=0;
+        if(winner) {
+            //for the winner, reduce points
+            this.pts--; //points
+            if(singles) this.pts--;
+            if(this.pts<0) this.pts=0;
+            //and the number of wins
+            this.W--;  //number of wins
+            if(this.W<0) this.W=0;
+        }
 
+        //reduce total_games_played for both winner & loser
         this.P--;  //games played
         if(this.P<0) this.P=0;
-
-        if (winner) this.W--;  //number of wins
-        if(this.W<0) this.W=0;
 
         return this.pts;
     }
@@ -95,4 +99,9 @@ public class PointsDBEntry {
                 ", Games Won = " + W +
                 '}';
     }
+
+    public String toStringShort() {
+        return pts + "=>" + W +"/" + P;
+    }
+
 }

@@ -8,9 +8,11 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
@@ -151,6 +153,15 @@ public class LoginActivity extends AppCompatActivity {
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+
+        FloatingActionButton fab = findViewById(R.id.fab_return);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                killActivity();
+            }
+        });
+
     }
 
     private void prepareForLogin(String club, String secpd) {
@@ -189,8 +200,9 @@ public class LoginActivity extends AppCompatActivity {
                             mRootCode = child.getValue(String.class);
                             break;
                     }
-                    Log.w(TAG, "fetchInitialData: onDataChange:" + mAdminCode + "/" + mRootCode);
+
                 }
+                Log.w(TAG, "fetchInitialData: onDataChange:" + mAdminCode + "/" + mRootCode);
                 attemptLogin();
             }
 
@@ -209,7 +221,7 @@ public class LoginActivity extends AppCompatActivity {
      * errors are presented and no actual login attempt is made.
      */
     private void attemptLogin() {
-        //Log.v(TAG, "attemptLogin:" + mAdminCode + ":" + mMemCode);
+
         // Reset errors.
         mPasswordView.setError(null);
 
@@ -233,6 +245,8 @@ public class LoginActivity extends AppCompatActivity {
             focusView = mPasswordView;
             cancel = true;
         }
+
+        Log.v(TAG, "attemptLogin(" + club + "," + secpd + "):" + mAdminCode + ":" + mMemCode);
 
         if (cancel) {
             // There was an error; don't attempt login and focus the first
@@ -300,7 +314,7 @@ public class LoginActivity extends AppCompatActivity {
             };
 
             AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
-            builder.setTitle(SharedData.getInstance().getRedString("Really?"));
+            builder.setTitle(SharedData.getInstance().getColorString("Really?", Color.RED));
             builder.setMessage("You are about to create a new round!\nAre you sure?")
                     .setPositiveButton("Yes", dialogClickListener)
                     .setNegativeButton("No", dialogClickListener).show();
@@ -317,12 +331,12 @@ public class LoginActivity extends AppCompatActivity {
         myIntent.putExtra("gametype", mGameTypeRadioButton.getText());
         myIntent.putExtra("group", mGroupRadioButton.getText());
         myIntent.putExtra("new_round", newRoundFlag);
-        LoginActivity.this.startActivity(myIntent);
+        LoginActivity.this.startActivityForResult(myIntent,Constants.ENTERDATA_ACTIVITY);
     }
 
     private boolean isPasswordValid(String password) {
         //TODO: Replace this with your own logic
-        return password.length() > 4;
+        return password.length() > 3;
     }
 
     /**

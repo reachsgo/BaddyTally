@@ -1,6 +1,9 @@
 package com.sg0.baddytally;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -10,9 +13,15 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.TextUtils;
+import android.text.style.RelativeSizeSpan;
+import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
@@ -22,8 +31,11 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-
+import java.util.Date;
+import java.util.Locale;
 
 
 public class Summary extends AppCompatActivity {
@@ -35,7 +47,38 @@ public class Summary extends AppCompatActivity {
     private RecyclerView.Adapter mSilverAdapter;
 
     private void killActivity(){
+        /*
+        if(mDBUpdated) {
+            Intent resultIntent = new Intent();
+            //setResult(Activity.RESULT_FIRST_USER, resultIntent);  //hint to refresh the main page
+            setResult(Constants.RESULT_DBUPDATED);
+            Log.d(TAG, "SGO: DB updated: setting result");
+        }*/
+        Log.d(TAG, "SGO: killActivity: returning OK");
+        setResult(RESULT_OK);
         finish();
+    }
+
+    private void setTitle(String round) {
+        if (!TextUtils.isEmpty(round)) {
+            //show a more human readable round name (date format w/o HH:mm)
+            SimpleDateFormat sdf = new SimpleDateFormat(Constants.ROUND_DATEFORMAT, Locale.CANADA);
+            try {
+                Date d = sdf.parse(round);
+                sdf.applyPattern("yyyy-MM-dd");
+                round = sdf.format(d);
+            } catch (ParseException ex) {
+                Log.w(TAG, "setTitle ParseException:" + ex.getMessage());
+            }
+            final String title = Constants.APPSHORT + "  Summary";
+            String tempString = title + "\nRound: " + round;
+            SpannableString spanString = new SpannableString(tempString);
+            spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, title.length(), 0);
+            spanString.setSpan(new StyleSpan(Typeface.ITALIC), title.length(), tempString.length(), 0);
+            spanString.setSpan(new RelativeSizeSpan(0.8f), title.length(), tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            TextView header = findViewById(R.id.header);
+            header.setText(spanString);
+        }
     }
 
     @Override
@@ -52,6 +95,33 @@ public class Summary extends AppCompatActivity {
                 killActivity();
             }
         });
+
+        TextView mGoldHeader = findViewById(R.id.gold_group);
+        TextView mSilverHeader = findViewById(R.id.silver_group);
+        mGoldHeader.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                //show only Gold group, if done a 2nd time, go back to normal.
+                LinearLayout silverView = findViewById(R.id.silver_parentview);
+                if (silverView.getVisibility() == View.GONE)
+                    silverView.setVisibility(View.VISIBLE);
+                else
+                    silverView.setVisibility(View.GONE);
+                return false;
+            }
+        });
+        mSilverHeader.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                //show only Silver group, if done a 2nd time, go back to normal.
+                LinearLayout goldView = findViewById(R.id.gold_parentview);
+                if (goldView.getVisibility() == View.GONE)
+                    goldView.setVisibility(View.VISIBLE);
+                else
+                    goldView.setVisibility(View.GONE);
+                return false;
+            }
+        });
     }
 
     @Override
@@ -59,7 +129,7 @@ public class Summary extends AppCompatActivity {
         super.onStart();
         DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference();
         SharedData data = SharedData.getInstance();
-
+        setTitle(SharedData.getInstance().mRoundName);
 
         mRecyclerGoldView = findViewById(R.id.gold_journal_view);
         // use this setting to improve performance if you know that changes
@@ -70,7 +140,7 @@ public class Summary extends AppCompatActivity {
             mRecyclerGoldView.setBackgroundTintList(ContextCompat.getColorStateList(Summary.this, R.color.colorGold));
         }
         // use a linear layout manager
-        LinearLayout parent = findViewById(R.id.gold_journal_parent);
+        LinearLayout parent = findViewById(R.id.gold_parentview);
         LinearLayoutManager mGoldLayoutManager = new LinearLayoutManager(parent.getContext());
         mRecyclerGoldView.setLayoutManager(mGoldLayoutManager);
 
@@ -87,7 +157,7 @@ public class Summary extends AppCompatActivity {
                     goldGameList.add(jEntry);
                     //Log.w(TAG, "gold fetchGames:" + child.getKey() + " data=" + jEntry.toReadableString());
                 }
-                mGoldAdapter = new SummaryRecyclerViewAdapter(Summary.this,  Constants.GOLD, goldGameListKeys, goldGameList);
+                mGoldAdapter = new SummaryRecyclerViewAdapter(Summary.this, Constants.GOLD, goldGameListKeys, goldGameList);
                 mRecyclerGoldView.setAdapter(mGoldAdapter);
                 mGoldAdapter.notifyDataSetChanged();
             }
@@ -101,14 +171,14 @@ public class Summary extends AppCompatActivity {
 
 
         if(SharedData.getInstance().mNumOfGroups==1) {
-            findViewById(R.id.silver_journal_parent).setVisibility(View.GONE);
+            findViewById(R.id.silver_parentview).setVisibility(View.GONE);
         } else {
             mRecyclerSilverView = findViewById(R.id.silver_journal_view);
             // use this setting to improve performance if you know that changes
             // in content do not change the layout size of the RecyclerView
             mRecyclerSilverView.setHasFixedSize(true);
             // use a linear layout manager
-            parent = findViewById(R.id.silver_journal_parent);
+            parent = findViewById(R.id.silver_parentview);
             LinearLayoutManager mSilverLayoutManager = new LinearLayoutManager(parent.getContext());
             //firebase DB filter allows only descending order, So, reverse the order so that highest score is shown first
             //Innings score (This round) is fetched first (see below), so that the sorting is on current round score.

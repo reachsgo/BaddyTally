@@ -1,181 +1,247 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/settings_ll"
-    android:background="@color/colorPrimary"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textColor="@color/colorBlack"
-        android:background="@color/colorPrimaryDark"
-        android:textStyle="bold"
-        android:textSize="18sp"
-        android:padding="5dp"
-        android:text="@string/app_name_settings" />
+    tools:context=".Settings">
 
     <LinearLayout
-        android:id="@+id/enter_ll"
+        android:id="@+id/settings_ll"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:background="@color/colorBlack"
-        android:orientation="horizontal">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <!-- Extra linear layout is added below to achieve symmetry b/w enter & delete rows  -->
-        <LinearLayout
-            android:layout_width="50dp"
-            android:layout_height="match_parent"
-            android:layout_margin="5dp"
-            android:layout_weight="2"
-            android:orientation="horizontal">
-        <EditText
-            android:id="@+id/newuser"
+        <TextView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:textSize="16sp"
-            android:textColor="@color/colorWhite"
-            android:textColorHint="@color/colorWhite"
-            android:hint="new user name"
-            android:maxLines="1"
-            android:maxLength="8"
-            android:layout_gravity="center"
-            android:singleLine="true"/>
-        </LinearLayout>
-
-        <RadioGroup
-            android:id="@+id/nu_gamegroup_radiogroup"
-            android:layout_width="30dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_gravity="center">
-            <RadioButton
-                android:id="@+id/nu_gamegroup_gold"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/radio_gold"
-                android:textStyle="bold"
-                android:textColor="@color/colorGold" />
-            <RadioButton
-                android:id="@+id/nu_gamegroup_silver"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/radio_silver"
-                android:textStyle="bold"
-                android:textColor="@color/colorSilver"/>
-        </RadioGroup>
-
-        <Button
-            android:id="@+id/enter_button"
-            style="?android:textAppearanceSmall"
-            android:layout_width="30dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_gravity="center"
-            android:layout_marginEnd="5dp"
-            android:text="@string/action_enter"
             android:background="@color/colorPrimaryDark"
-            android:textColor="#fff"
+            android:padding="5dp"
+            android:text="@string/app_name_settings"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
             android:textStyle="bold" />
-    </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/delete_ll"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:background="@color/colorBlack"
-        android:orientation="horizontal">
-        <!-- Extra linear layout is added below to achieve symmetry b/w enter & delete rows  -->
         <LinearLayout
-            android:layout_width="50dp"
-            android:layout_height="match_parent"
-            android:layout_margin="5dp"
-            android:layout_weight="2"
+            android:id="@+id/enter_ll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:background="@color/colorPrimary"
             android:orientation="horizontal">
-        <Spinner
-            android:id="@+id/del_spinner"
-            android:theme="@style/ThemeOverlay.AppCompat.Light"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="5dp"
-            android:layout_marginEnd="5dp"
-            android:layout_weight="2"
-            android:layout_gravity="center"/>
+
+            <!-- Extra linear layout is added below to achieve symmetry b/w enter & delete rows  -->
+            <LinearLayout
+                android:layout_width="50dp"
+                android:layout_height="match_parent"
+                android:layout_weight="2"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/newuser"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:hint="new user name"
+                    android:maxLength="8"
+                    android:maxLines="1"
+                    android:singleLine="true"
+                    android:textColor="@android:color/black"
+                    android:textColorHint="@android:color/darker_gray"
+                    android:textSize="16sp"
+                    android:textStyle="italic" />
+            </LinearLayout>
+
+            <RadioGroup
+                android:id="@+id/nu_gamegroup_radiogroup"
+                android:layout_width="30dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_weight="1">
+
+                <RadioButton
+                    android:id="@+id/nu_gamegroup_gold"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/radio_gold"
+                    android:textColor="@color/colorGold"
+                    android:textStyle="bold" />
+
+                <RadioButton
+                    android:id="@+id/nu_gamegroup_silver"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/radio_silver"
+                    android:textColor="@android:color/darker_gray"
+                    android:textStyle="bold" />
+            </RadioGroup>
+
+            <Button
+                android:id="@+id/enter_button"
+                style="?android:textAppearanceSmall"
+                android:layout_width="30dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginEnd="5dp"
+                android:layout_weight="1"
+                android:background="@color/colorPrimaryDark"
+                android:text="@string/action_enter"
+                android:textColor="@android:color/black"
+                android:textStyle="bold" />
         </LinearLayout>
 
-        <RadioGroup
-            android:id="@+id/del_gamegroup_radiogroup"
-            android:layout_width="30dp"
+        <LinearLayout
+            android:id="@+id/delete_ll"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_weight="1">
-            <RadioButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/radio_gold"
-                android:textStyle="bold"
-                android:textColor="@color/colorGold" />
+            android:layout_margin="10dp"
+            android:background="@color/colorPrimary"
+            android:orientation="horizontal">
+            <!-- Extra linear layout is added below to achieve symmetry b/w enter & delete rows  -->
+            <LinearLayout
+                android:layout_width="50dp"
+                android:layout_height="match_parent"
+                android:layout_margin="5dp"
+                android:layout_weight="2"
+                android:orientation="horizontal">
 
-            <RadioButton
+                <Spinner
+                    android:id="@+id/del_spinner"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center"
+                    android:layout_marginEnd="5dp"
+                    android:layout_marginStart="5dp"
+                    android:layout_weight="2"
+                    android:theme="@style/ThemeOverlay.AppCompat.Light" />
+            </LinearLayout>
+
+            <RadioGroup
+                android:id="@+id/del_gamegroup_radiogroup"
+                android:layout_width="30dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_weight="1">
+
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/radio_gold"
+                    android:textColor="@color/colorGold"
+                    android:textStyle="bold" />
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/radio_silver"
+                    android:textColor="@android:color/darker_gray"
+                    android:textStyle="bold" />
+            </RadioGroup>
+
+            <Button
+                android:id="@+id/del_button"
+                style="?android:textAppearanceSmall"
+                android:layout_width="30dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginEnd="5dp"
+                android:layout_weight="1"
+                android:background="@color/colorPrimaryDark"
+                android:text="delete"
+                android:textColor="@android:color/black"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/newinnings_ll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:background="@color/colorPrimary"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/newinnings"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/radio_silver"
-                android:textStyle="bold"
-                android:textColor="@color/colorSilver" />
-        </RadioGroup>
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:hint="new innings name"
+                android:maxLength="5"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:textColor="@android:color/black"
+                android:textColorHint="@android:color/darker_gray"
+                android:textSize="16sp"
+                android:textStyle="italic" />
 
-        <Button
-            android:id="@+id/del_button"
-            style="?android:textAppearanceSmall"
-            android:layout_width="30dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_gravity="center"
-            android:layout_marginEnd="5dp"
-            android:text="delete"
-            android:background="@color/colorPrimaryDark"
-            android:textColor="#fff"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/newinnings_ll"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:background="@color/colorBlack"
-        android:orientation="horizontal">
-
-        <EditText
-            android:id="@+id/newinnings"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textSize="16sp"
-            android:textColor="@color/colorWhite"
-            android:textColorHint="@color/colorWhite"
-            android:hint="new innings name"
-            android:maxLines="1"
-            android:maxLength="8"
-            android:layout_marginStart="5dp"
-            android:layout_marginEnd="5dp"
-            android:layout_gravity="center"
-            android:singleLine="true"/>
             <Button
                 android:id="@+id/createNewInnings_btn"
                 style="?android:textAppearanceSmall"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:layout_margin="5dp"
                 android:layout_weight="1"
-            android:layout_width="wrap_content"
+                android:background="@color/colorPrimaryDark"
+                android:text="Start New Innings"
+                android:textColor="@android:color/black"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:background="@color/colorPrimary"
+        android:orientation="horizontal">
+        <Button
+            android:id="@+id/createNewClub_btn"
+            style="?android:textAppearanceSmall"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_margin="10dp"
-            android:text="Start New Innings"
+            android:layout_margin="5dp"
             android:background="@color/colorPrimaryDark"
-            android:textColor="#fff"
+            android:text="Create New Club"
+            android:textColor="@android:color/black"
             android:textStyle="bold" />
-</LinearLayout>
+    </LinearLayout>
 
-</LinearLayout>
+        <LinearLayout
+            android:id="@+id/clearcache_ll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:background="@color/colorPrimary"
+            android:orientation="horizontal">
+
+            <Switch
+                android:id="@+id/clearcache_sw"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="5dp"
+                android:layout_marginStart="20dp"
+                android:text="Clear cache"
+                android:textColor="@android:color/black"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:contentDescription="smash"
+            android:src="@drawable/birdie" />
+
+    </LinearLayout>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fab_return"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:layout_margin="16dp"
+        android:src="@drawable/return_arrow" />
+</android.support.design.widget.CoordinatorLayout>

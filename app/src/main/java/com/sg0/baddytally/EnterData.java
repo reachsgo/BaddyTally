@@ -1,10 +1,13 @@
 package com.sg0.baddytally;
 
+import android.app.ActionBar;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -94,7 +97,7 @@ public class EnterData extends AppCompatActivity {
 
     private String createNewRoundName(boolean commit) {
         Date c = Calendar.getInstance().getTime();
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.CANADA);
+        SimpleDateFormat df = new SimpleDateFormat(Constants.ROUND_DATEFORMAT, Locale.CANADA);
         String rndName = df.format(c);
         if (commit) {
             Log.w(TAG, "createNewRoundName: committing:" + rndName);
@@ -107,6 +110,7 @@ public class EnterData extends AppCompatActivity {
     }
 
     private void killActivity(){
+        setResult(RESULT_OK);
         finish();
     }
 
@@ -131,7 +135,6 @@ public class EnterData extends AppCompatActivity {
         mGroup = myIntent.getStringExtra("group");
         String mNewRoundFlag = myIntent.getStringExtra("new_round");
         Log.w(TAG, "onCreate :" + SharedData.getInstance().toString() + "/" + mGroup + "/" + mGameType + "/" + mNewRoundFlag);
-
         mSingles = Constants.SINGLES.equals(mGameType);
         mDatabase = FirebaseDatabase.getInstance().getReference();
         mRoundName = "";
@@ -174,11 +177,17 @@ public class EnterData extends AppCompatActivity {
         if(mSingles && players.size()<2){
             Toast.makeText(EnterData.this, "Not enough players to play Singles in group " + mGroup,
                     Toast.LENGTH_LONG).show();
-            finish();
+            killActivity();
         } else if(!mSingles && players.size()<4){
             Toast.makeText(EnterData.this, "Not enough players to play Doubles in group " + mGroup,
                     Toast.LENGTH_LONG).show();
-            finish();
+            killActivity();
+        }
+
+        if(SharedData.getInstance().mInningsDBKey == -1) {
+            Toast.makeText(EnterData.this, "No Active Innings!",
+                    Toast.LENGTH_LONG).show();
+            killActivity();
         }
 
         final Button enterButton = findViewById(R.id.enter_button);
@@ -193,7 +202,7 @@ public class EnterData extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent myIntent = new Intent(EnterData.this, Summary.class);
-                EnterData.this.startActivity(myIntent);
+                EnterData.this.startActivityForResult(myIntent, Constants.SUMMARY_ACTIVITY);
             }
         });
 
@@ -409,7 +418,7 @@ public class EnterData extends AppCompatActivity {
         };
 
         AlertDialog.Builder builder = new AlertDialog.Builder(EnterData.this);
-        builder.setTitle(SharedData.getInstance().getRedString("Really?"));
+        builder.setTitle(SharedData.getInstance().getColorString("Really?", Color.RED));
         builder.setMessage(message + "\n\nWould be nice if you can play all combinations in your group, before repeating." +
                 "\n\nYou still want to enter this score?")
                 .setPositiveButton("Yes", dialogClickListener)
@@ -498,6 +507,7 @@ public class EnterData extends AppCompatActivity {
             DatabaseReference dbRef_loser2 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(loser2);
             dbRef_loser2.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, false, dbRef_loser2, false,false));
         }
+        SharedData.getInstance().setDBUpdated(true);
 
         /*
         //add score to club/innings/group/player

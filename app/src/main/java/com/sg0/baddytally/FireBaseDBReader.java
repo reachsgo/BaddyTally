@@ -48,7 +48,8 @@ class FireBaseDBReader {
     }
 
     public void fetchOverallScore() {
-        if (mInnings.isEmpty()) return;
+        Log.w(TAG, "fetchOverallScore:" + mLogStr);
+        if (mClub.isEmpty()) return;
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.GROUPS).child(mGroup);
         //firebase documentation: Children with a numeric value come next, sorted in ascending order.
         //         If multiple children have the same numerical value for the specified child node, they are sorted by key.

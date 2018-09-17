@@ -23,13 +23,10 @@ class PlayerData {
     private String name;
     private String group;
     public List<PointsDBEntry> points;
-
     private ShuffleFlag shuffleFlag;
 
     public PlayerData(String group) {
         this.name = "Player";
-        //this.innings_score = "This\nRound";
-        //this.overall_score = "Overall";
         this.group = group;
         shuffleFlag = ShuffleFlag.UNKNOWN;
         points = new ArrayList<>(2);
@@ -45,6 +42,13 @@ class PlayerData {
         this.points = pts;
     }
 
+    public PlayerData(PlayerData pd) {
+        this.name = pd.name;
+        this.group = pd.group;
+        this.points = pd.points;
+        this.shuffleFlag = pd.shuffleFlag;
+    }
+
     public String getName() {
         return name;
     }
@@ -58,20 +62,14 @@ class PlayerData {
         return Integer.toString(points.get(Constants.INNINGS_IDX).getPts());
     }
 
+
+    public String getPoints(final int idx) {
+        return Integer.toString(points.get(idx).getPts());
+    }
+
     public String getPoints_season() {
         return Integer.toString(points.get(Constants.SEASON_IDX).getPts());
     }
-
-    public String getPoints(final int idx) {
-        switch(idx) {
-            case Constants.INNINGS_IDX:
-                return getPoints_innings();
-            case Constants.SEASON_IDX:
-                return getPoints_season();
-        }
-        return "unknown";
-    }
-
 
     public int getPointsInt_innings() {
         return points.get(Constants.INNINGS_IDX).getPts();
@@ -80,8 +78,6 @@ class PlayerData {
     public void setPts_innings(Integer innings_score) {
         points.get(Constants.INNINGS_IDX).setPts(innings_score);
     }
-
-
 
     public void setPts_season(Integer overall_score) {
         points.get(Constants.SEASON_IDX).setPts(overall_score);
@@ -114,18 +110,32 @@ class PlayerData {
         return points.get(Constants.INNINGS_IDX);
     }
 
+    public String getGamesWon (final int idx) {
+        return Integer.toString(points.get(idx).getW());
+    }
+
     public String getGamesWon_season () {
         return Integer.toString(points.get(Constants.SEASON_IDX).getW());
-    }
-    public String getGamesPlayed_season () {
-        return Integer.toString(points.get(Constants.SEASON_IDX).getP());
     }
 
     public String getGamesWon_innings () {
         return Integer.toString(points.get(Constants.INNINGS_IDX).getW());
     }
+
+    public String getGamesPlayed (final int idx) {
+        return Integer.toString(points.get(idx).getP());
+    }
+
+    public String getGamesPlayed_season () {
+        return Integer.toString(points.get(Constants.SEASON_IDX).getP());
+    }
+
     public String getGamesPlayed_innings () {
         return Integer.toString(points.get(Constants.INNINGS_IDX).getP());
+    }
+
+    public String getWinPercentage (final int idx) {
+        return Integer.toString(points.get(idx).getWinPercentage());
     }
 
     public String getWinPercentage_season () {
@@ -211,9 +221,16 @@ class PlayerData {
     @Override
     public String toString() {
         String shuFlag = isMarkedToPromote() ? "P" : (isMarkedToRelegate() ? "R" : "U");
-        return "PlayerData{" + group + "/" + name + ": flag=" + shuFlag + "season=" +
+        return "PlayerData{" + group + "/" + name + ": flag=" + shuFlag + " season=" +
                 points.get(Constants.SEASON_IDX).toString() + " innings=" +
                 points.get(Constants.INNINGS_IDX).toString() + "}";
+    }
+
+    public String toStringShort() {
+        String shuFlag = isMarkedToPromote() ? "P" : (isMarkedToRelegate() ? "R" : "U");
+        return group + "/" + name + ": \'" + shuFlag + "\' S=[" +
+                points.get(Constants.SEASON_IDX).toStringShort() + "] I=" +
+                points.get(Constants.INNINGS_IDX).toStringShort() + "] ";
     }
 
     public String toPrintString() {

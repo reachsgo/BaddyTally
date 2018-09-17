@@ -169,6 +169,16 @@ class GameJournalDBEntry {
         return "";
     }
 
+    public String getWinnersString() {
+        if (getmW2().isEmpty()) return getmW1();
+        else return getmW1() + "/" + getmW2();
+    }
+
+    public String getLosersString() {
+        if (getmL2().isEmpty()) return getmL1();
+        else return getmL1() + "/" + getmL2();
+    }
+
     public String toReadableString() {
         return mIn + "/" + mDate + "/" + mGT + "/" + mGNo + ": " +
                 mW1 + "/" + mW2 + " vs " +
@@ -185,7 +195,7 @@ class GameJournalDBEntry {
         }
 
         return  winner + " vs " +
-                loser + " : " + mWS + "-" + mLS;
+                loser + "\n" + mWS + "-" + mLS;
     }
 
 }

@@ -27,6 +27,7 @@
         android:orientation="vertical">
 
         <TextView
+            android:id="@+id/gold_group"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
@@ -35,6 +36,7 @@
             android:padding="5dp"
             android:text="Gold"
             android:textSize="18sp"
+            android:textColor="@android:color/black"
             android:textStyle="bold|italic" />
 
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -51,29 +53,42 @@
                 android:gravity="center"
                 android:layout_weight="60"/>
             <TextView
-                android:layout_width="80dp"
+                android:layout_width="60dp"
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
                 android:text=""
                 android:gravity="start"
                 android:layout_weight="50"/>
-
-            <TextView
+            <LinearLayout
+                android:background="@android:color/background_light"
                 android:layout_width="60dp"
+                android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/gold_header_innings"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
                 android:gravity="center_horizontal"
+                android:layout_weight="1"
                 android:text="Innings"
                 android:textColor="@android:color/white"
+                android:background="@android:color/black"
                 android:textSize="16sp" />
+            </LinearLayout>
+            <LinearLayout
+                android:background="@android:color/background_light"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content">
             <TextView
-                android:layout_width="50dp"
+                android:id="@+id/gold_header_season"
                 android:layout_height="wrap_content"
+                android:layout_width="0dp"
+                android:layout_weight="1"
                 android:textSize="16sp"
                 android:text="Season"
                 android:textColor="@android:color/white"
-                android:gravity="center_horizontal"
-                android:layout_weight="20"/>
+                android:background="@android:color/black"
+                android:gravity="center_horizontal" />
+            </LinearLayout>
 
         </LinearLayout>
 
@@ -94,6 +109,7 @@
         android:orientation="vertical">
 
         <TextView
+            android:id="@+id/silver_group"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
@@ -127,22 +143,36 @@
                 android:gravity="start"
                 android:layout_weight="50"/>
 
-            <TextView
+            <LinearLayout
+                android:background="@android:color/background_light"
                 android:layout_width="60dp"
+                android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/silver_header_innings"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="20"
+                android:layout_weight="1"
                 android:gravity="center_horizontal"
                 android:text="Innings"
+                android:background="@android:color/black"
                 android:textColor="@android:color/white"
                 android:textSize="16sp" />
+            </LinearLayout>
+            <LinearLayout
+                android:background="@android:color/background_light"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content">
             <TextView
-                android:layout_width="50dp"
+                android:id="@+id/silver_header_season"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:textSize="16sp"
                 android:text="Season"
+                android:background="@android:color/black"
                 android:textColor="@android:color/white"
-                android:gravity="center_horizontal"
-                android:layout_weight="20"/>
+                android:gravity="center_horizontal" />
+            </LinearLayout>
         </LinearLayout>
 
         <android.support.v7.widget.RecyclerView

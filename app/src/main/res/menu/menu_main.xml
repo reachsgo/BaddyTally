@@ -21,11 +21,7 @@
         android:orderInCategory="99"
         app:showAsAction="never"
         android:title="Round Summary"/>
-    <item
-        android:id="@+id/action_delcache"
-        android:orderInCategory="100"
-        app:showAsAction="never"
-        android:title="Delete cache"/>
+
     <item
         android:id="@+id/action_rules"
         android:orderInCategory="101"

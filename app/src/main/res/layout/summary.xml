@@ -3,7 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".Summary">
 
     <LinearLayout
@@ -11,8 +10,19 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+        <TextView
+            android:id="@+id/header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/colorPrimaryDark"
+            android:padding="5dp"
+            android:text="@string/app_name_summary"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
         <LinearLayout
-            android:id="@+id/gold_journal_parent"
+            android:id="@+id/gold_parentview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_margin="10dp"
@@ -20,6 +30,7 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/gold_group"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
@@ -27,6 +38,7 @@
                 android:gravity="center"
                 android:padding="5dp"
                 android:text="Gold"
+                android:textColor="@android:color/black"
                 android:textSize="18sp"
                 android:textStyle="bold|italic" />
 
@@ -39,7 +51,7 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/silver_journal_parent"
+            android:id="@+id/silver_parentview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_margin="10dp"
@@ -47,6 +59,7 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/silver_group"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
@@ -71,7 +84,6 @@
         android:id="@+id/fab_return"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="end|bottom"
-        android:layout_margin="16dp"
+        android:layout_gravity="end"
         android:src="@drawable/return_arrow" />
 </android.support.design.widget.CoordinatorLayout>

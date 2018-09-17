@@ -38,11 +38,13 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     private Context mContext;
     private ArrayList<PlayerData> mPlayers;
     private String mBgColor;
+    private boolean descending;
 
     public RecyclerViewAdapter(Context context, String group, ArrayList<PlayerData> players) {
         mContext = context;
         this.mPlayers = players;
         String mGroup = group;
+        descending = false;
     }
 
     public void setPlayers(ArrayList<PlayerData> players) {
@@ -55,7 +57,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     }
 
     public void sortPlayers() {
-        SharedData.getInstance().sortPlayers(mPlayers, false);
+        SharedData.getInstance().sortPlayers(mPlayers, Constants.INNINGS_IDX, false, mContext, false);
         /*
         Collections.sort(mPlayers, new Comparator<PlayerData>() {
             @Override
@@ -65,6 +67,18 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             }
         }); */
         Log.d(TAG, "SGO sortPlayers: Sorted mPlayers: " + Integer.toString(mPlayers.size()));
+    }
+
+    public void sortOnSeason(){
+        descending = ! descending;  //change the sort order
+        SharedData.getInstance().sortPlayers(mPlayers, Constants.SEASON_IDX, descending, mContext, false);
+        notifyDataSetChanged();
+    }
+
+    public void sortOnInnings(){
+        descending = ! descending;  //change the sort order
+        SharedData.getInstance().sortPlayers(mPlayers, Constants.INNINGS_IDX, descending, mContext, false);
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -115,7 +129,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         int position = holder.getAdapterPosition();
         if (null == mPlayers.get(position)) return;
         AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
-        builder.setTitle(mPlayers.get(position).getName() + " stats:");
+        builder.setTitle(SharedData.getInstance().getTitleStr(mPlayers.get(position).getName() + " stats:", mContext));
         Spanned spanString = (Spanned) TextUtils.concat(mPlayers.get(position).getPtsDetailFormat_innings(), "\n", mPlayers.get(position).getPtsDetailFormat_season());
         builder.setMessage(spanString)
                 .setNeutralButton("Ok", null);
@@ -173,7 +187,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
                 period = "Season";
                 break;
         }
-        builder.setTitle("Enter new " + period + " score for " + mPlayers.get(position).getName() + ":");
+        builder.setTitle(SharedData.getInstance().getTitleStr("Enter new " + period + " score for " + mPlayers.get(position).getName() + ":", mContext));
         input.setSelection(input.getText().length());  //move cursor to end
         builder.setView(input);
         builder.setNeutralButton("Ok", new DialogInterface.OnClickListener() {
