@@ -7,6 +7,7 @@ class Constants {
     public static final String GROUPS = "groups";
     public static final String INNINGS = "innings";
     public static final String INTERNALS = "tmp";
+    public static final String HISTORY = "story";
     public static final String SEASON = "season";
     public static final String PROFILE = "profile";
     public static final String JOURNAL = "journal";

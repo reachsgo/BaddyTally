@@ -12,9 +12,16 @@ import android.text.style.StyleSpan;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Random;
 
 public class SharedData {
@@ -30,10 +37,17 @@ public class SharedData {
     public ArrayList<PlayerData> mGoldPlayers;
     public ArrayList<PlayerData> mSilverPlayers;
     public Integer mInningsDBKey;
-    public boolean mDBUpdated;
+    private boolean mDBUpdated;
+    private boolean mUserNotifyEnabled;
+    private String mStoreHistory;
 
     private static SharedData sSoleInstance;
     private static final String TAG = "SharedData";
+    private static final String SHUFFLE_START = "SH_ST";
+    private static final String SHUFFLE_SUCCESS = "SH_E";
+    private static final String SHUFFLE_FAIL = "SH_F";
+    private static final String NEWUSER_CREATED = "NEW_U";
+    private static final String USER_DELETED = "USR_D";
 
     private SharedData(){
         clear();
@@ -60,6 +74,8 @@ public class SharedData {
         mSilverPlayers = null;
         mInningsDBKey = -1;
         mDBUpdated = false;
+        mUserNotifyEnabled = true;
+        mStoreHistory = "";
     }
 
     public boolean isRoot() {
@@ -79,6 +95,84 @@ public class SharedData {
         mRoundName = "";
         mInningsDBKey = -1;
         setDBUpdated(true);
+    }
+
+    private void addHistory(Context context, final String story) {
+        Date c = Calendar.getInstance().getTime();
+        SimpleDateFormat df = new SimpleDateFormat(Constants.ROUND_DATEFORMAT, Locale.CANADA);
+        String dateStr = df.format(c);
+        synchronized(context) {
+            //Better to be synchronized. These are called from different firebase-DB-update threads, in case of shuffling scenario.
+            if (isUserNotifyEnabled()) {
+                //All the user delete/create log can be added as a single entry.
+                final DatabaseReference inningsDBRef = FirebaseDatabase.getInstance().getReference().child(SharedData.getInstance().mClub).child(Constants.INTERNALS).child(Constants.HISTORY);
+                DatabaseReference newHistory = inningsDBRef.push();
+                newHistory.setValue(dateStr + "#" + mUser + "#" + story);
+            } else mStoreHistory += story + ",";
+        }
+        Log.w(TAG, "History added: [" + dateStr + ":" + mUser + ":" + story + "]");
+    }
+
+    public String parseHistory(String storyLine) {
+        if(storyLine.contains(NEWUSER_CREATED) && storyLine.contains(USER_DELETED)) {
+            //this is detailed info of Shuffling. Too big to print on phone!
+            return"";
+        } else if(storyLine.contains(SHUFFLE_START))
+            return"";  //ignore
+
+        String resultStr = storyLine.replace("#", "  ");
+        String tmpStr = resultStr.replace("=", " : ");
+
+        //only one of the below can appear in a line
+        if(tmpStr.contains(NEWUSER_CREATED)) resultStr = tmpStr.replace(NEWUSER_CREATED, "Created");
+        else if(tmpStr.contains(USER_DELETED)) resultStr = tmpStr.replace(USER_DELETED, "Deleted");
+        else if(tmpStr.contains(SHUFFLE_SUCCESS)) resultStr = tmpStr.replace(SHUFFLE_SUCCESS, "Shuffle Successful");
+        else if(tmpStr.contains(SHUFFLE_FAIL)) resultStr = tmpStr.replace(SHUFFLE_FAIL, "Shuffle Failed");
+
+        return resultStr;
+    }
+
+    public void addShuffleStart2History (Context context, final String newInningsName) {
+        addHistory(context, SHUFFLE_START + "=" + newInningsName);
+    }
+
+    public void addShuffleSuccess2History (Context context, final String newInningsName) {
+        addHistory(context, SHUFFLE_SUCCESS + "=" + newInningsName);
+    }
+
+    public void addShuffleFailure2History (Context context, final String newInningsName) {
+        addHistory(context, SHUFFLE_FAIL + "=" + newInningsName);
+    }
+
+    public void addNewUserCreation2History (Context context, final String newUserName) {
+        addHistory(context, NEWUSER_CREATED + "=" + newUserName);
+    }
+
+    public void addUserDeletion2History (Context context, final String userName) {
+        addHistory(context, USER_DELETED + "=" + userName);
+    }
+
+    public void disableUserNotify(Context context) {
+        synchronized(context) {
+            mUserNotifyEnabled = false;
+            mStoreHistory = "";
+        }
+    }
+
+    public void enableUserNotify(Context context) {
+        synchronized(context) {
+            mUserNotifyEnabled = true;
+            addHistory(context,mStoreHistory);
+        }
+    }
+
+    public boolean isUserNotifyEnabled() {
+        return mUserNotifyEnabled == true;
+    }
+
+    public void showToast(final Context c, final CharSequence s, final int d ) {
+        if(mUserNotifyEnabled) Toast.makeText(c, s, d).show();
+        Log.i(TAG, s.toString());
     }
 
     public SpannableStringBuilder getColorString(CharSequence text, int color) {
@@ -199,7 +293,7 @@ public class SharedData {
         if(!descending) Collections.reverse(playersList);
         if(showToasts && !infoLog[0].isEmpty()) {
             Toast.makeText(context,
-                    "Tossed a coin to sort: " + infoLog[0], Toast.LENGTH_LONG).show();
+                    "Tossed a coin to sort: " + infoLog[0], Toast.LENGTH_SHORT).show();
         }
         Log.d(TAG, "sortPlayers: Sorted playersList size: " + Integer.toString(playersList.size()));
     }

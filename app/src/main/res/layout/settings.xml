@@ -25,7 +25,7 @@
             android:id="@+id/enter_ll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp"
+            android:layout_margin="5dp"
             android:background="@color/colorPrimary"
             android:orientation="horizontal">
 
@@ -93,7 +93,7 @@
             android:id="@+id/delete_ll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp"
+            android:layout_margin="5dp"
             android:background="@color/colorPrimary"
             android:orientation="horizontal">
             <!-- Extra linear layout is added below to achieve symmetry b/w enter & delete rows  -->
@@ -155,7 +155,7 @@
             android:id="@+id/newinnings_ll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp"
+            android:layout_margin="5dp"
             android:background="@color/colorPrimary"
             android:orientation="horizontal">
 
@@ -188,30 +188,13 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="10dp"
-        android:background="@color/colorPrimary"
-        android:orientation="horizontal">
-        <Button
-            android:id="@+id/createNewClub_btn"
-            style="?android:textAppearanceSmall"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_margin="5dp"
-            android:background="@color/colorPrimaryDark"
-            android:text="Create New Club"
-            android:textColor="@android:color/black"
-            android:textStyle="bold" />
-    </LinearLayout>
+
 
         <LinearLayout
             android:id="@+id/clearcache_ll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp"
+            android:layout_margin="5dp"
             android:background="@color/colorPrimary"
             android:orientation="horizontal">
 
@@ -227,6 +210,45 @@
 
         </LinearLayout>
 
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:background="@color/colorPrimary"
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/createNewClub_btn"
+                style="?android:textAppearanceSmall"
+                android:layout_width="match_parent"
+                android:layout_height="25dp"
+                android:layout_gravity="center"
+                android:layout_margin="5dp"
+                android:background="@color/colorPrimaryDark"
+                android:text="Create New Club"
+                android:textColor="@android:color/black"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:background="@color/colorPrimary"
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/history_btn"
+                style="?android:textAppearanceSmall"
+                android:layout_width="match_parent"
+                android:layout_height="25dp"
+                android:layout_gravity="center"
+                android:layout_margin="5dp"
+                android:background="@color/colorPrimaryDark"
+                android:text="History"
+                android:textColor="@android:color/black"
+                android:textStyle="bold" />
+        </LinearLayout>
 
         <ImageView
             android:layout_width="match_parent"

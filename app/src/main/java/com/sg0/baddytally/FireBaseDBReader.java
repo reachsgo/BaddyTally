@@ -11,12 +11,9 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
-import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -32,10 +29,6 @@ class FireBaseDBReader {
     private final ArrayList<PlayerData> mPlayers;
     private final String mLogStr;
 
-    public ArrayList<PlayerData> getPlayers() {
-        return mPlayers;
-    }
-
     public FireBaseDBReader(Context context, String club, String group, String innings, RecyclerViewAdapter viewAdapter, RecyclerView view) {
         mContext = context;
         mInnings = innings;
@@ -45,6 +38,10 @@ class FireBaseDBReader {
         mView = view;
         mPlayers = new ArrayList<>();
         mLogStr = "[" + mClub + "." + mGroup + "." + mInnings + "]";
+    }
+
+    public ArrayList<PlayerData> getPlayers() {
+        return mPlayers;
     }
 
     public void fetchOverallScore() {
@@ -65,22 +62,23 @@ class FireBaseDBReader {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 Log.w(TAG, "onDataChange:" + mLogStr);
                 //for (DataSnapshot child : dataSnapshot.getChildren()) {
-                    GenericTypeIndicator<Map<String, List<PointsDBEntry>>> genericTypeIndicator = new GenericTypeIndicator<Map<String, List<PointsDBEntry>>>() {};
-                    Map<String, List<PointsDBEntry>> map = dataSnapshot.getValue(genericTypeIndicator );
-                    if(null==map) return;
-                    Log.v(TAG, "FETCH: group:" + dataSnapshot.getKey());
-                    int count = 0;
-                    for (Map.Entry<String,List<PointsDBEntry> > entry : map.entrySet()) {
-                        //PlayerDBEntry player = child.getValue(PlayerDBEntry.class);
-                        String name = entry.getKey();
-                        List<PointsDBEntry> points =  entry.getValue();
-                        PointsDBEntry sPts = points.get(Constants.SEASON_IDX);
-                        PointsDBEntry iPts = points.get(Constants.INNINGS_IDX);
-                        Log.w(TAG, mLogStr + " name=" + name + " iPts (" + iPts.toString() + ") sPts=" + sPts.toString());
-                        mPlayers.add(new PlayerData( mGroup, name, points));
-                    }
+                GenericTypeIndicator<Map<String, List<PointsDBEntry>>> genericTypeIndicator = new GenericTypeIndicator<Map<String, List<PointsDBEntry>>>() {
+                };
+                Map<String, List<PointsDBEntry>> map = dataSnapshot.getValue(genericTypeIndicator);
+                if (null == map) return;
+                Log.v(TAG, "FETCH: group:" + dataSnapshot.getKey());
+                int count = 0;
+                for (Map.Entry<String, List<PointsDBEntry>> entry : map.entrySet()) {
+                    //PlayerDBEntry player = child.getValue(PlayerDBEntry.class);
+                    String name = entry.getKey();
+                    List<PointsDBEntry> points = entry.getValue();
+                    PointsDBEntry sPts = points.get(Constants.SEASON_IDX);
+                    PointsDBEntry iPts = points.get(Constants.INNINGS_IDX);
+                    Log.w(TAG, mLogStr + " name=" + name + " iPts (" + iPts.toString() + ") sPts=" + sPts.toString());
+                    mPlayers.add(new PlayerData(mGroup, name, points));
+                }
                 if (mViewAdapter != null) {
-                    mView.smoothScrollToPosition(mPlayers.size()-1);  //scroll back to the top of the list to show highest point scorers
+                    mView.smoothScrollToPosition(mPlayers.size() - 1);  //scroll back to the top of the list to show highest point scorers
                     mViewAdapter.sortPlayers();
                     mViewAdapter.notifyDataSetChanged();
                 }
