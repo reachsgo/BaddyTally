@@ -1,5 +1,6 @@
 package com.sg0.baddytally;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -11,21 +12,17 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -36,7 +33,6 @@ import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
-import android.widget.SpinnerAdapter;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -55,14 +51,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 
 class TaskParams {
@@ -98,11 +90,10 @@ public class Settings extends AppCompatActivity {
     private PlayerData hwPD;  //highest win% Player Data
     private PlayerData lwPD;  //lowest win% Player Data
     private String mWinPercInfo; //Info on Win % shuffling rule application
-    private int mTimeNeededInMs;
     private boolean mDBConnected;
     private boolean mDBLock;
 
-    private void killActivity(){
+    private void killActivity() {
         finish();
     }
 
@@ -110,11 +101,11 @@ public class Settings extends AppCompatActivity {
         view.setEnabled(enabled);
         //view.setClickable(false);
         view.setAlpha(.5f);  //making it semi-transparent
-        Log.w(TAG, "enableDisableView called..." + view.getId());
+        //Log.w(TAG, "enableDisableView called..." + view.getId());
         //now do the same for all the children views.
-        if ( view instanceof ViewGroup) {
-            ViewGroup group = (ViewGroup)view;
-            for ( int idx = 0 ; idx < group.getChildCount() ; idx++ ) {
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int idx = 0; idx < group.getChildCount(); idx++) {
                 enableDisableView(group.getChildAt(idx), enabled);
             }
         }
@@ -131,7 +122,6 @@ public class Settings extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.settings);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        mTimeNeededInMs = 0;
         mDatabase = FirebaseDatabase.getInstance().getReference();
         mCommon = SharedData.getInstance();
         mWinPercInfo = "";
@@ -149,8 +139,6 @@ public class Settings extends AppCompatActivity {
             ll = findViewById(R.id.newinnings_ll);
             enableDisableView(ll, false);
             Log.w(TAG, "onCreate : LL is disabled");
-
-            findViewById(R.id.history_btn).setVisibility(View.GONE);
 
         } else {
             //root user
@@ -170,6 +158,10 @@ public class Settings extends AppCompatActivity {
             mDelRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(RadioGroup group, int checkedId) {
+                    if (!mCommon.isDBConnected()) {
+                        mCommon.showToast(Settings.this, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
+                        return;
+                    }
                     // checkedId is the RadioButton selected
                     fetchDataAndUpdateSpinner();
                 }
@@ -190,53 +182,12 @@ public class Settings extends AppCompatActivity {
                 } //onClick
             });
 
-
-            Button history_btn = findViewById(R.id.history_btn);
-            history_btn.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.INTERNALS).child(Constants.HISTORY);
-                    dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            String history = "";
-                            for (DataSnapshot child : dataSnapshot.getChildren()) {
-                                String storyLine = child.getValue(String.class);
-                                if(null==storyLine) continue;
-                                String parsed = mCommon.parseHistory(storyLine);
-                                if (!parsed.isEmpty()) history += parsed + "\n";
-                            }
-
-                            AlertDialog.Builder builder = new AlertDialog.Builder(Settings.this);
-                            builder.setMessage(mCommon.getSizeString(history, 0.7f))
-                                    .setTitle(mCommon.getTitleStr("History:", Settings.this))
-                                    .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialogInterface, int i) {
-                                            return;
-                                        }
-                                    }).show();
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                        }
-                    });
-
-                } //onClick
-            });
-
-            if (!mCommon.mClub.isEmpty()) {
-                //If already signed in for a club, dont show this.
-                Log.w(TAG, "createNewClub_btn.setOnClickListener: NOT empty club name");
-
-            }
         } //root user else
 
         Switch clearcache_sw = findViewById(R.id.clearcache_sw);
         clearcache_sw.setChecked(false);
         clearcache_sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @SuppressLint("ApplySharedPref")
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean bChecked) {
                 if (bChecked) {
@@ -252,9 +203,45 @@ public class Settings extends AppCompatActivity {
                     //Restart the app: Needed to re-invoke Application.onCreate() to disable DB persistence,
                     //though that behavior is very inconsistent. See comments in ScoreTally.java.
                     setResult(Constants.RESTARTAPP);
-                    finish();
+                    killActivity();
                 }
             }
+        });
+
+
+        Button history_btn = findViewById(R.id.history_btn);
+        history_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.INTERNALS).child(Constants.HISTORY);
+                dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        StringBuilder history = new StringBuilder();
+                        for (DataSnapshot child : dataSnapshot.getChildren()) {
+                            String storyLine = child.getValue(String.class);
+                            if (null == storyLine) continue;
+                            String parsed = mCommon.parseHistory(storyLine);
+                            if (!parsed.isEmpty()) history.append(parsed).append("\n");
+                        }
+
+                        AlertDialog.Builder builder = new AlertDialog.Builder(Settings.this);
+                        builder.setMessage(mCommon.getSizeString(history.toString(), 0.7f))
+                                .setTitle(mCommon.getTitleStr("History:", Settings.this))
+                                .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                        return;
+                                    }
+                                }).show();
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+            } //onClick
         });
 
         Button createNewClub_btn = findViewById(R.id.createNewClub_btn);
@@ -310,21 +297,22 @@ public class Settings extends AppCompatActivity {
         email.setType("message/rfc822");
         startActivity(Intent.createChooser(email, "Choose an Email client :"));
     }
-    private void onClickNewUser(){
-        String tmpName =  ((EditText)findViewById(R.id.newuser)).getText().toString();
-        if(TextUtils.isEmpty(tmpName)) {
-            Log.w(TAG, "newuserAddBtn.setOnClickListener: empty user name");
+
+    private void onClickNewUser() {
+        String tmpName = ((EditText) findViewById(R.id.newuser)).getText().toString();
+        if (TextUtils.isEmpty(tmpName)) {
+            Log.w(TAG, "onClickNewUser: empty user name");
             return;
         }
-        final String name = tmpName.toUpperCase().charAt(0) + tmpName.substring(1,tmpName.length());
-        int selectedId = ((RadioGroup)findViewById(R.id.nu_gamegroup_radiogroup)).getCheckedRadioButtonId();
-        Log.w(TAG, "onClickNewUser:" + name + "selct:" + selectedId);
+        final String name = tmpName.toUpperCase().charAt(0) + tmpName.substring(1, tmpName.length());
+        int selectedId = ((RadioGroup) findViewById(R.id.nu_gamegroup_radiogroup)).getCheckedRadioButtonId();
+        //Log.w(TAG, "onClickNewUser:" + name + "selct:" + selectedId);
         if (selectedId < 0) {
-            Log.w(TAG, "newuserAddBtn.setOnClickListener: button not selected");
+            Log.w(TAG, "onClickNewUser: button not selected");
             return;
         }
-        final String group = ((RadioButton)findViewById(selectedId)).getText().toString();
-        Log.i(TAG, "newuserAddBtn.setOnClickListener:" + name + ":" + group);
+        final String group = ((RadioButton) findViewById(selectedId)).getText().toString();
+        Log.i(TAG, "onClickNewUser:" + name + ":" + group);
 
         DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
             @Override
@@ -351,12 +339,18 @@ public class Settings extends AppCompatActivity {
     }
 
     private void createNewUser(final String name, final String group, final PointsDBEntry seasonPts, final boolean notify) {
+
+        if (!mCommon.isDBConnected()) {
+            mCommon.showToast(Settings.this, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
+            return;
+        }
+
         final String club = mCommon.mClub;
         final String innings = mCommon.mInnings;
 
         DatabaseReference dbRef = mDatabase.child(club).child(Constants.GROUPS).child(group).child(name);
-        final List<PointsDBEntry> points =  new ArrayList<>();
-        if(null==seasonPts)  //if nothing to be carried over, set all 0s
+        final List<PointsDBEntry> points = new ArrayList<>();
+        if (null == seasonPts)  //if nothing to be carried over, set all 0s
             points.add(Constants.SEASON_IDX, new PointsDBEntry());
         else //carry over season points.
             points.add(Constants.SEASON_IDX, seasonPts);
@@ -369,28 +363,28 @@ public class Settings extends AppCompatActivity {
                     mCommon.showToast(Settings.this, "New user data (GROUPS/group) could not be saved:" + databaseError.getMessage(),
                             Toast.LENGTH_LONG);
                 } else {
-                    if(notify)
+                    if (notify)
                         mCommon.showToast(Settings.this, "New user " + name + " created in \"" + group +
-                                    "\" group of " + club,
-                            Toast.LENGTH_SHORT);
+                                        "\" group of " + club,
+                                Toast.LENGTH_SHORT);
                     mCommon.setDBUpdated(true);
                     mCommon.addNewUserCreation2History(Settings.this, group + "/" + name);
-                    ((EditText)findViewById(R.id.newuser)).setText("");
-                    ((EditText)findViewById(R.id.newuser)).setHint("new user name");
+                    ((EditText) findViewById(R.id.newuser)).setText("");
+                    ((EditText) findViewById(R.id.newuser)).setHint("new user name");
                 }
             }
         });
 
-         //hide keyboard
-            if(getCurrentFocus()!=null) {
-                InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-                if(null!=inputMethodManager)
-                    inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
-            }
+        //hide keyboard
+        if (getCurrentFocus() != null) {
+            InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (null != inputMethodManager)
+                inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+        }
 
-        if(notify && mCommon.isUserNotifyEnabled())
-            Snackbar.make(findViewById(R.id.settings_ll), name + " is being added to " + club + "/" + group + "/" + innings,
-                    Snackbar.LENGTH_LONG).setAction("Action", null).show();
+        //if(notify && mCommon.isUserNotifyEnabled())
+        //    Snackbar.make(findViewById(R.id.settings_ll), name + " is being added to " + club + "/" + group + "/" + innings,
+        //            Snackbar.LENGTH_LONG).setAction("Action", null).show();
     }
 
     private void fetchDataAndUpdateSpinner() {
@@ -416,6 +410,7 @@ public class Settings extends AppCompatActivity {
             }
         });
     }
+
     private void updateSpinner() {
         mPlayerListAdapter = null;
         mPlayerListAdapter = new ArrayAdapter<>(this,
@@ -427,33 +422,31 @@ public class Settings extends AppCompatActivity {
         //Set the text color of the Spinner's selected view (not a drop down list view)
         mDelSpinner.setSelection(0, true);
         View v = mDelSpinner.getSelectedView();
-        if (v!=null) ((TextView)v).setTextColor(getResources().getColor(R.color.colorWhite));
+        if (v != null) ((TextView) v).setTextColor(getResources().getColor(R.color.colorWhite));
 
         //Set the listener for when each option is clicked.
-        mDelSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener()
-        {
+        mDelSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 
             @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id)
-            {
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 //Change the selected item's text color
                 ((TextView) view).setTextColor(getResources().getColor(R.color.colorWhite));
                 Log.v(TAG, "updateSpinner, mDelSpinner:onItemSelected:" + position);
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent)
-            {
+            public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+        Log.v(TAG, "updateSpinner... done");
     }
 
-    private void onClickDelete(){
-        if(null==mDelSpinner.getSelectedItem()) return;
+    private void onClickDelete() {
+        if (null == mDelSpinner.getSelectedItem()) return;
         final String name = mDelSpinner.getSelectedItem().toString();
-        int selectedId = ((RadioGroup)findViewById(R.id.del_gamegroup_radiogroup)).getCheckedRadioButtonId();
-        final String group = ((RadioButton)findViewById(selectedId)).getText().toString();
-        Log.v(TAG, "newuserAddBtn.setOnClickListener:" + name + ":" + group);
+        int selectedId = ((RadioGroup) findViewById(R.id.del_gamegroup_radiogroup)).getCheckedRadioButtonId();
+        final String group = ((RadioButton) findViewById(selectedId)).getText().toString();
+        Log.v(TAG, "onClickDelete:" + name + ":" + group);
 
         DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
             @Override
@@ -480,6 +473,10 @@ public class Settings extends AppCompatActivity {
     }
 
     private void deleteUser(final String name, final String group, final boolean notify) {
+        if (!mCommon.isDBConnected()) {
+            mCommon.showToast(Settings.this, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
+            return;
+        }
         final String club = mCommon.mClub;
         final String innings = mCommon.mInnings;
         //Create user with 0 overall score.
@@ -491,30 +488,29 @@ public class Settings extends AppCompatActivity {
                     mCommon.showToast(Settings.this, "DB (delete user: GROUPS/group) error: " + databaseError.getMessage(),
                             Toast.LENGTH_LONG);
                 } else {
-                    if(notify)
+                    if (notify)
                         mCommon.showToast(Settings.this, name + " deleted from \"" + group +
-                                    "\" group of " + club, Toast.LENGTH_SHORT);
-                    if(null!=mPlayerList)  mPlayerList.remove(name);
-                    if(null!=mPlayerListAdapter) mPlayerListAdapter.notifyDataSetChanged();
+                                "\" group of " + club, Toast.LENGTH_SHORT);
+                    if (null != mPlayerList) mPlayerList.remove(name);
+                    if (null != mPlayerListAdapter) mPlayerListAdapter.notifyDataSetChanged();
                     mCommon.setDBUpdated(true);
                     mCommon.addUserDeletion2History(Settings.this, group + "/" + name);
                 }
             }
         });
 
-        if(notify && mCommon.isUserNotifyEnabled())
-                Snackbar.make(findViewById(R.id.settings_ll), name + " is being deleted from " + club + "/" + group + "/" + innings,
-                    Snackbar.LENGTH_LONG).setAction("Action", null).show();
+        //if(notify && mCommon.isUserNotifyEnabled())
+        //        Snackbar.make(findViewById(R.id.settings_ll), name + " is being deleted from " + club + "/" + group + "/" + innings,
+        //            Snackbar.LENGTH_LONG).setAction("Action", null).show();
     }
 
-    // 1. if there is no innings before, create a new one.
-    // 2. create new entry under club/innings/ with {1:true, 2:""}
-    // 3. Dry run: apply shuffling rule1: top 3 silver players swapped to bottom 3 gold players
-    // 4. Dry run: apply shuffling rule2: highest win% player (if in silver) to be moved to gold
-    // 5. Wait for user confirmation if the shuffling rules applied make sense
-    // 6. Do the player swaps in DB
-    // 1. set current innings entry under club/innings/<current> to {1:false, 2:xxx}
-    // 2. create new entry under club/innings/ with {1:true, 2:""}
+    // 1. if there is no innings before, create a new one & return.
+    // 2. Dry run: apply shuffling rule1: top 3 silver players swapped to bottom 3 gold players
+    // 3. Dry run: apply shuffling rule2: highest win% player (if in silver) to be moved to gold
+    // 4. Wait for user confirmation if the shuffling rules applied make sense
+    // 5. Do the player swaps in DB (in a background task, after making sure that there is a DB connection)
+    // 6. set current innings entry under club/innings/<current> to {1:false, 2:xxx}
+    // 7. create new entry under club/innings/ with {1:true, 2:""}
     private void onClickCreateNewInnings() {
         String tmpName = ((EditText) findViewById(R.id.newinnings)).getText().toString();
         if (TextUtils.isEmpty(tmpName)) {
@@ -524,6 +520,12 @@ public class Settings extends AppCompatActivity {
         mNewInningsName = tmpName.toUpperCase().charAt(0) + tmpName.substring(1, tmpName.length());
 
         if (mCommon.mInnings.isEmpty()) {
+
+            if (!mCommon.isDBConnected()) {
+                mCommon.showToast(Settings.this, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
+                return;
+            }
+
             // There are no innings created yet or there are no "current" innings. Just create the first innings with current=true.
             // No need of any shuffling. : createNewInnings
 
@@ -541,7 +543,7 @@ public class Settings extends AppCompatActivity {
                     //From firebase docs: Note: Because doTransaction() is called multiple times, it must be able to handle null data.
                     //Even if there is existing data in your remote database, it may not be locally cached when the
                     // transaction function is run, resulting in null for the initial value.
-                    if(null == innings) {
+                    if (null == innings) {
                         //no innings in DB
 
                         //java.lang.RuntimeException: Can't create handler inside thread that has not called Looper.prepare()
@@ -574,8 +576,9 @@ public class Settings extends AppCompatActivity {
                 public void onComplete(@Nullable DatabaseError error, boolean committed, @Nullable DataSnapshot dataSnapshot) {
                     Log.i(TAG, "onClickCreateNewInnings, runTransaction, onComplete: " + mNewInningsName);
                     if (error != null || !committed || dataSnapshot == null) {
-                        if(error != null) Log.w(TAG, "onClickCreateNewInnings: onComplete: Failed:", error.toException());
-                        else Log.w(TAG, "getDBLock: onComplete: Failed:");
+                        if (error != null)
+                            Log.w(TAG, "onClickCreateNewInnings: onComplete: Failed:", error.toException());
+                        else Log.w(TAG, "onClickCreateNewInnings: onComplete: Failed:");
                         return;
                     } else {
                         Log.w(TAG, "onClickCreateNewInnings: onComplete: Success:");
@@ -583,61 +586,28 @@ public class Settings extends AppCompatActivity {
                     }
                     createUnlockedDBLock();
                     mCommon.setDBUpdated(true); //notify Main to refresh view
-                    mTimeNeededInMs = 2000;
                     //postInningsCreate();   //SGO: You can create a new thread here, but not in doTransaction
-                    finish();
+                    killActivity();
                 }
             });
-            /*
-            roundQuery.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    GenericTypeIndicator<List<InningsDBEntry>> t = new GenericTypeIndicator<List<InningsDBEntry>>() {
-                    };
-                    List<InningsDBEntry> innings = dataSnapshot.getValue(t);
-                    if (null != innings && innings.size() > 0) {
-                        Toast.makeText(Settings.this, "Found " + innings.size() + " innings already in DB", Toast.LENGTH_SHORT)
-                                .show();
-                        Log.w(TAG, "innings already in DB:" + innings.toString());
-                        userConfirmation1();
-                        return;
-                    }
-
-                    //No innings found in DB, create a new one.
-                    innings = new ArrayList<>();
-                    innings.add(new InningsDBEntry(mNewInningsName, true, ""));
-                    inningsDBRef.setValue(innings);
-
-                    Log.i(TAG, "First innings created: " + mNewInningsName);
-                    postInningsCreate();
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
-                    Log.w(TAG, "onClickCreateNewInnings: onCancelled", databaseError.toException());
-                    Toast.makeText(Settings.this, "Innings DB error on read: " + databaseError.toString(), Toast.LENGTH_SHORT)
-                            .show();
-                }
-            }); */
         } else {  //innings already exists
-            Log.w(TAG, "innings exists:" + mCommon.mInnings.toString());
-            if(mNewInningsName.equals(mCommon.mInnings)) {
+            Log.w(TAG, "innings exists:" + mCommon.mInnings);
+            if (mNewInningsName.equals(mCommon.mInnings)) {
                 Log.w(TAG, "onClickCreateNewInnings: same innings name:" + mNewInningsName);
                 Toast.makeText(Settings.this, "Current innings name is already set to " + mNewInningsName, Toast.LENGTH_LONG)
                         .show();
-            }
-            else userConfirmation1();
+            } else userConfirmation1();
         }
-
     }
 
-    private void userConfirmation1 () {
+    //You really meant to create a new innings?
+    private void userConfirmation1() {
 
         //hide keyboard
         //getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
-        if(getCurrentFocus()!=null) {
+        if (getCurrentFocus() != null) {
             InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-            if(null!=inputMethodManager)
+            if (null != inputMethodManager)
                 inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
         }
 
@@ -659,7 +629,7 @@ public class Settings extends AppCompatActivity {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(Settings.this);
         builder.setMessage("You are about to create a new Innings.\n" +
-                "Gold & Silver player lists will be updated accordingly.\n\n" +
+                "Gold & Silver player lists will be updated as needed.\n\n" +
                 "Are you sure?")
                 .setTitle(mCommon.getColorString("Warning", Color.RED))
                 .setPositiveButton("Yes", dialogClickListener)
@@ -669,7 +639,6 @@ public class Settings extends AppCompatActivity {
     private void getNumOfPlayersToShuffle() {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(Settings.this);
-
         final Spinner shuffleNumSpinner = new Spinner(Settings.this);
         List<Integer> spinnerArray = new ArrayList<>();
         spinnerArray.add(0);
@@ -694,11 +663,11 @@ public class Settings extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
                 Integer shufNumPlayers = (Integer) shuffleNumSpinner.getSelectedItem();
-                if(shufNumPlayers==0) {
+                if (shufNumPlayers == 0) {
                     //if no shuffling to be done, just create the new innings.
-                    createNewInnings();
                     Toast.makeText(Settings.this, "Created new innings, no shuffling to be performed!", Toast.LENGTH_SHORT)
                             .show();
+                    createNewInnings();
                     return;
                 }
                 identifyPlayersToShuffle(shufNumPlayers);
@@ -707,10 +676,11 @@ public class Settings extends AppCompatActivity {
         Dialog d = builder.show();
 
     }
+
     private void identifyPlayersToShuffle(final int shufNumPlayers) {
         if (mCommon.mInnings.isEmpty()) return;
-        mTimeNeededInMs = 0;
-        mAllPlayers  = new HashMap<String, ArrayList<PlayerData>>() {};
+        mAllPlayers = new HashMap<String, ArrayList<PlayerData>>() {
+        };
         //Retrieve latest list from DB
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
                 .child(mCommon.mClub)
@@ -736,10 +706,10 @@ public class Settings extends AppCompatActivity {
                         Log.w(TAG, logStr + " name=" + name + " iPts (" + iPts.toString() + ") sPts=" + sPts.toString());
                         pList.add(new PlayerData(group, name, points));
                     }
-                    if(Constants.SILVER.equals(group))
-                        mCommon.sortPlayers(pList, Constants.INNINGS_IDX,false, Settings.this, true);  //sort ascending for silver (last 3 to be shuffled)
+                    if (Constants.SILVER.equals(group))
+                        mCommon.sortPlayers(pList, Constants.INNINGS_IDX, false, Settings.this, true);  //sort ascending for silver (last 3 to be shuffled)
                     else
-                        mCommon.sortPlayers(pList,Constants.INNINGS_IDX, true, Settings.this, true);  //sort descending for gold (last 3 to be shuffled)
+                        mCommon.sortPlayers(pList, Constants.INNINGS_IDX, true, Settings.this, true);  //sort descending for gold (last 3 to be shuffled)
                     Log.w(TAG, logStr + " pList =" + pList.toString());
                     mAllPlayers.put(group, pList);
                 }
@@ -747,14 +717,20 @@ public class Settings extends AppCompatActivity {
 
                 //TODO: Make group names configurable
                 Map.Entry<String, ArrayList<PlayerData>> entry = mAllPlayers.entrySet().iterator().next();
-                final ArrayList<PlayerData> silverNewPL = new ArrayList<> (mAllPlayers.get(Constants.SILVER));
-                final ArrayList<PlayerData> goldNewPL = new ArrayList<> (mAllPlayers.get(Constants.GOLD));
+                final ArrayList<PlayerData> silverNewPL = new ArrayList<>(mAllPlayers.get(Constants.SILVER));
+                final ArrayList<PlayerData> goldNewPL = new ArrayList<>(mAllPlayers.get(Constants.GOLD));
                 Log.w(TAG, "identifyPlayersToShuffle: Silver players:" + silverNewPL.toString());
                 Log.w(TAG, "identifyPlayersToShuffle: Gold players:" + goldNewPL.toString());
 
-                if(silverNewPL.size()<shufNumPlayers || goldNewPL.size()<shufNumPlayers) {
+                if (silverNewPL.size() < shufNumPlayers || goldNewPL.size() < shufNumPlayers) {
                     Toast.makeText(Settings.this, "Not enough players to shuffle: " + silverNewPL.size() + "," + goldNewPL.size(),
                             Toast.LENGTH_LONG).show();
+                    AlertDialog.Builder builder = new AlertDialog.Builder(Settings.this);
+                    builder.setMessage("You asked to shuffle " + shufNumPlayers + " players. But, not enough players in the groups.\n" +
+                            "Gold group has " + goldNewPL.size() + ".\n" +
+                            "Silver group has " + silverNewPL.size() + ".")
+                            .setTitle(SharedData.getInstance().getColorString("Play nice!", Color.RED))
+                            .setNeutralButton("Ok", null).show();
                     return;
                 }
 
@@ -765,7 +741,7 @@ public class Settings extends AppCompatActivity {
                 lwPD = null;
                 //Note that xxNewPL (new Player Lists) are used as input during the dry run so that the new lists can be marked.
                 String gTrace = shufflePlayers(shufNumPlayers, Constants.GOLD, silverOldPL, goldNewPL, true); //dry_run
-                String sTrace = shufflePlayers(shufNumPlayers, Constants.SILVER, goldOldPL, silverNewPL,   true); //dry_run
+                String sTrace = shufflePlayers(shufNumPlayers, Constants.SILVER, goldOldPL, silverNewPL, true); //dry_run
                 final ArrayList<PlayerData> fullPL = createWinPercentageList(silverNewPL, goldNewPL);
                 String winPercTrace = shuffleThePlayerWithHighestWinPercentage(fullPL, true);  //post-Shuffle Action dry_run
 
@@ -781,10 +757,11 @@ public class Settings extends AppCompatActivity {
                             case DialogInterface.BUTTON_POSITIVE:
                                 //Yes button clicked, now do all the DB operations together
 
-                                // This is the CRITICAL SECTION on this operation. All the DB operations involved to
+                                // This is the CRITICAL SECTION of this operation. All the DB operations involved to
                                 // create a new innings are done together here. But, still the n/w connectivity could
                                 // go down amidst the operations. That would leave the DB in a bad state!
-                                // So, persistence is enabled for "root" user (who has the permission to create a new innings)
+                                // So, DB state is checked first and a lock is acquired.
+
                                 TaskParams tp = new TaskParams(shufNumPlayers, goldOldPL, goldNewPL, silverOldPL, silverNewPL, fullPL);
                                 mDBConnected = false;
                                 mDBLock = false;
@@ -793,18 +770,6 @@ public class Settings extends AppCompatActivity {
                                 BackgroundTask task = new BackgroundTask(Settings.this, Settings.this);
                                 mCommon.disableUserNotify(Settings.this);
                                 task.execute(tp);
-
-                                /*
-                                                    resetInningsData();  //do first before mAllPlayers list becomes stale. Thus, avoiding another DB read.
-                    //Remove last 3 from silver, list is in ascending order. Player with most points at the end;
-                    //Add last 3 from gold, Gold list is in descending order. Player with least points at the end;
-                    shufflePlayers(shufNumPlayers, Constants.SILVER, goldOldPL, silverNewPL,  false); //not a dry_run, real thing!
-                    shufflePlayers(shufNumPlayers, Constants.GOLD, silverOldPL, goldNewPL,  false); //not a dry_run, real thing!
-                    shuffleThePlayerWithHighestWinPercentage(fullPL, false); //real thing!
-                    createNewInnings();  //this is assumed to be the last operation always.
-
-*/
-
                                 break;
 
                             case DialogInterface.BUTTON_NEGATIVE:
@@ -815,9 +780,9 @@ public class Settings extends AppCompatActivity {
                 };
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(Settings.this);
-                builder.setTitle(mCommon.getTitleStr("Shuffling",Settings.this));
+                builder.setTitle(mCommon.getTitleStr("Shuffling", Settings.this));
                 builder.setMessage("You are about to shuffle the below players. You cannot undo these changes." +
-                        gTrace +  sTrace + winPercTrace + "\n\nAre you sure?")
+                        gTrace + sTrace + winPercTrace + "\n\nAre you sure?")
                         .setTitle(mCommon.getColorString("There is no coming back!", Color.RED))
                         .setPositiveButton("Yes", dialogClickListener)
                         .setNegativeButton("No", dialogClickListener).show();
@@ -839,14 +804,15 @@ public class Settings extends AppCompatActivity {
     private String shufflePlayers(final int shufNumPlayers, final String groupName,
                                   ArrayList<PlayerData> srcList,
                                   ArrayList<PlayerData> targetList,
-                                  final boolean dry_run){
+                                  final boolean dry_run) {
         //remove last 3 from targetList
         String header = "\n\n" + groupName.toUpperCase() + ":\n";
-        String trace = "";
-        for (int idx=1; idx<=shufNumPlayers; idx++) {
-            if(dry_run) {
-                trace += "\t\t" + targetList.get(targetList.size() - idx).getName() + " (" + targetList.get(targetList.size() - idx).getPoints_innings() + ")";
-                if(Constants.SILVER.equals(groupName)) targetList.get(targetList.size() - idx).markToPromote();
+        StringBuilder trace = new StringBuilder();
+        for (int idx = 1; idx <= shufNumPlayers; idx++) {
+            if (dry_run) {
+                trace.append("\t\t").append(targetList.get(targetList.size() - idx).getName()).append(" (").append(targetList.get(targetList.size() - idx).getPoints_innings()).append(")");
+                if (Constants.SILVER.equals(groupName))
+                    targetList.get(targetList.size() - idx).markToPromote();
                 else targetList.get(targetList.size() - idx).markToRelegate();
             } else {
                 deleteUser(targetList.get(targetList.size() - 1).getName(), groupName, false);  //delete from DB
@@ -858,12 +824,12 @@ public class Settings extends AppCompatActivity {
 
         //add last 3 from srcList to targetList
         //trace += "\n" + groupName + ": add ";
-        for (int idx=1; idx<=shufNumPlayers; idx++) {
-            if(dry_run) {
+        for (int idx = 1; idx <= shufNumPlayers; idx++) {
+            if (dry_run) {
+                //No need to mark the source list (which will be the old list). Marking of target list is already done above.
                 //trace += srcList.get(srcList.size() - idx).getName() + " (" + srcList.get(srcList.size() - idx).getPoints_innings() + ") ";
                 //if(Constants.SILVER.equals(groupName)) targetList.get(targetList.size() - idx).markToRelegate();
                 //else targetList.get(targetList.size() - idx).markToPromote();
-                ;
             } else {
                 //create New user in DB: carry over season points from srcList
                 createNewUser(srcList.get(srcList.size() - idx).getName(), groupName,
@@ -873,12 +839,9 @@ public class Settings extends AppCompatActivity {
                 targetList.add(srcList.get(srcList.size() - idx));
             }
         }
-        if (!trace.isEmpty()) {
-            //there are things to do!
-            mTimeNeededInMs += 3000;  //add to the progress bar timing; it is not done twice as trace is filled only for dry_run.
+        if (trace.length() > 0) {
             return header + trace;
-        }
-        else return trace;  //nothing to do.
+        } else return trace.toString();  //nothing to do.
     }
 
     private ArrayList<PlayerData> createWinPercentageList(ArrayList<PlayerData> sPL, ArrayList<PlayerData> gPL) {
@@ -908,47 +871,42 @@ public class Settings extends AppCompatActivity {
                 winPercSet.add(Integer.valueOf(pd.getWinPercentage_innings()));   //descending order
             }
             Log.w(funStr, winPercSet.toString());
-            Integer[] winPercArray =  winPercSet.toArray(new Integer[winPercSet.size()]);  //convert to array, to iterate through the set
+            Integer[] winPercArray = winPercSet.toArray(new Integer[winPercSet.size()]);  //convert to array, to iterate through the set
 
             //check if the Player with highest win% is in Gold group or already marked to be shuffled.
             Log.w(funStr, "Full PL:" + fullPL.toString());
             //ArrayList<PlayerData> hwpList = new ArrayList<>();
             hwPD = null;
-            boolean found = false;
-            Integer highestWinPerc = winPercArray[ 0 ];  //get first element; list is in descending order
-            //for (Integer highestWinPerc : winPercSet.descendingSet()) {  //descending order
-                Log.w(TAG, " highestWinPerc=" + highestWinPerc);
-                for (PlayerData pd : fullPL) {
-                    if (Integer.valueOf(pd.getGamesPlayed_innings()) < Constants.SHUFFLE_WINPERC_NUM_GAMES) {
-                        Log.w(funStr, "not considered (< min games):" + pd.getName());
+            Integer highestWinPerc = winPercArray[0];  //get first element; list is in descending order
+            Log.w(TAG, " highestWinPerc=" + highestWinPerc);
+            for (PlayerData pd : fullPL) {
+                if (Integer.valueOf(pd.getGamesPlayed_innings()) < Constants.SHUFFLE_WINPERC_NUM_GAMES) {
+                    Log.w(funStr, "not considered (< min games):" + pd.getName());
+                    continue;
+                }
+                if (pd.getWinPercentage_innings().equals(highestWinPerc.toString())) {
+                    Log.w(funStr, "high win%:" + pd.toStringShort());
+                    if (Constants.GOLD.equals(pd.getGroup())) {
+                        Log.w(funStr, pd.getName() + " already in GOLD");
+                        mWinPercInfo = pd.getName() + "(" + pd.getWinPercentage_innings() + "%) is already in gold group";
                         continue;
-                    }
-                    if (pd.getWinPercentage_innings().equals(highestWinPerc.toString())) {
-                        Log.w(funStr, "high win%:" + pd.toStringShort());
-                        if (Constants.GOLD.equals(pd.getGroup())) {
-                            Log.w(funStr, pd.getName() + " already in GOLD");
-                            mWinPercInfo = pd.getName() + "(" + pd.getWinPercentage_innings() + "%) is already in gold group.";
+                    } else {  //highest win percentage is in silver group
+                        if (pd.isMarkedToPromote()) {
+                            Log.w(funStr, pd.getName() + " already marked to be promoted to GOLD");
+                            mWinPercInfo = pd.getName() + "(" + pd.getWinPercentage_innings() + "%) is already getting promoted to gold group";
                             continue;
-                        } else {  //highest win percentage is in silver group
-                            if (pd.isMarkedToPromote()) {
-                                Log.w(funStr, pd.getName() + " already marked to be promoted to GOLD");
-                                mWinPercInfo = pd.getName() + "(" + pd.getWinPercentage_innings() + "%) is already getting promoted to gold group.";
-                                continue;
-                            } else {
-                                Log.w(funStr, pd.getName() + " to be +++promoted+++ to GOLD");
-                                mWinPercInfo = "";
-                                hwPD = new PlayerData(pd);
-                                found = true;
-                                break;
-                            }
+                        } else {
+                            Log.w(funStr, pd.getName() + " to be +++promoted+++ to GOLD");
+                            mWinPercInfo = pd.getName() + "(" + pd.getWinPercentage_innings() + "%) will be promoted to gold group";
+                            hwPD = new PlayerData(pd);
+                            break;
                         }
                     }
-                } //fullPL loop
-                //if (found) break;
-            //} //winPercSet loop
+                }
+            } //fullPL loop
 
             if (hwPD == null) {
-                if(mWinPercInfo.isEmpty())
+                if (mWinPercInfo.isEmpty())
                     mCommon.showToast(Settings.this, "Highest win% player not found in Silver group", Toast.LENGTH_LONG);
                 else
                     mCommon.showToast(Settings.this, "Win% shuffling result: " + mWinPercInfo, Toast.LENGTH_LONG);
@@ -961,8 +919,8 @@ public class Settings extends AppCompatActivity {
             //find the lowest win% player from Gold group who is not marked to be shuffled.
             //ArrayList<PlayerData> lwpList = new ArrayList<>();
             lwPD = null;  //lowest win% Player Data
-            found = false;
-            for (int i = winPercArray.length - 1; i>=0; i--) {  //ascending order
+            boolean found = false;
+            for (int i = winPercArray.length - 1; i >= 0; i--) {  //ascending order
                 Integer lowestWinPerc = winPercArray[i];
                 Log.w(funStr, " lowestWinPerc=" + lowestWinPerc);
                 for (ListIterator iterator = fullPL.listIterator(fullPL.size()); iterator.hasPrevious(); ) {  //iterate reverse
@@ -972,11 +930,11 @@ public class Settings extends AppCompatActivity {
                         if (Constants.SILVER.equals(pd.getGroup())) {
                             Log.w(funStr, pd.getName() + " already in SILVER");
                             //But, Is he marked to be promoted?
-                            if(pd.isMarkedToPromote()) {
+                            if (pd.isMarkedToPromote()) {
                                 Log.w(funStr, pd.getName() + " to be +++relegated +++ to SILVER, though he just got promoted");
                                 lwPD = new PlayerData(pd);
                                 found = true;
-                                mWinPercInfo += " & " + pd.getName() + "(" + pd.getWinPercentage_innings() + "%) will be moved back to silver group.";
+                                mWinPercInfo += " & " + pd.getName() + "(" + pd.getWinPercentage_innings() + "%) will be moved BACK to silver group.";
                                 break;
                             }
                             continue;
@@ -998,9 +956,8 @@ public class Settings extends AppCompatActivity {
             } //winPercSet loop
 
 
-
             if (lwPD == null) {
-                if(mWinPercInfo.isEmpty())
+                if (mWinPercInfo.isEmpty())
                     mCommon.showToast(Settings.this, "Lowest win% player not found in Gold group", Toast.LENGTH_LONG);  //should never happen
                 else
                     mCommon.showToast(Settings.this, "Win% shuffling result: " + mWinPercInfo, Toast.LENGTH_LONG);
@@ -1016,22 +973,22 @@ public class Settings extends AppCompatActivity {
             }
 
             //if you reached here, you have decided to shuffle. show the shuffling results.
-            if(!mWinPercInfo.isEmpty()) {
+            if (!mWinPercInfo.isEmpty()) {
                 mCommon.showToast(Settings.this, "Win% shuffling result: " + mWinPercInfo, Toast.LENGTH_LONG);
             }
 
-        }  else { //not a dry_run
-            if(hwPD==null && lwPD==null) {
+        } else { //not a dry_run
+            if (hwPD == null && lwPD == null) {
                 //Win% shuffling rule application did not find any changes to be done.
                 return "";
-            }else if(hwPD==null || lwPD==null) {
+            } else if (hwPD == null || lwPD == null) {
                 //Win% shuffling rule application went wrong somewhere.
                 mCommon.showToast(Settings.this, "Win% shuffling went wrong! ", Toast.LENGTH_SHORT);
                 Log.w(funStr, "Win% shuffling went wrong!");
                 return "";
             }
 
-            if(hwPD.getWinPercentage_innings().equals(lwPD.getWinPercentage_innings())) {
+            if (hwPD.getWinPercentage_innings().equals(lwPD.getWinPercentage_innings())) {
                 Log.w(funStr, "High Win% == Low Win%:" + hwPD.toStringShort() + " & " + lwPD.toStringShort());
                 return "";
             }
@@ -1040,7 +997,6 @@ public class Settings extends AppCompatActivity {
             //Toast.makeText(Settings.this, "Win% shuffling result: " + mWinPercInfo, Toast.LENGTH_LONG)
             //        .show();
 
-            if(!dry_run) mTimeNeededInMs += 2000;  //add to the progress bar timing
             //Move the highest win% player to Gold
             deleteUser(hwPD.getName(), Constants.SILVER, false);  //delete from Silver DB
             createNewUser(hwPD.getName(), Constants.GOLD, hwPD.getPointsDBEntry_season(), false);
@@ -1056,7 +1012,7 @@ public class Settings extends AppCompatActivity {
 
     }
 
-    private void createNewInnings(){
+    private void createNewInnings() {
         final DatabaseReference inningsDBRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.INNINGS);
         Query roundQuery = inningsDBRef.orderByKey();
         roundQuery.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -1065,9 +1021,9 @@ public class Settings extends AppCompatActivity {
                 GenericTypeIndicator<List<InningsDBEntry>> t = new GenericTypeIndicator<List<InningsDBEntry>>() {
                 };
                 List<InningsDBEntry> innings = dataSnapshot.getValue(t);
-                if(null==innings) return;
+                if (null == innings) return;
                 Log.v(TAG, "createNewInnings: key:" + dataSnapshot.getKey());
-                innings.get(mCommon.mInningsDBKey).current = false;
+                if(-1 != mCommon.mInningsDBKey) innings.get(mCommon.mInningsDBKey).current = false;
                 innings.add(new InningsDBEntry(mNewInningsName, true, ""));
                 //now, write back the updated list with new innings.
                 inningsDBRef.setValue(innings);
@@ -1085,8 +1041,8 @@ public class Settings extends AppCompatActivity {
     //reset the innings data of all players
     private void resetInningsData() {
         DatabaseReference mClubDBRef = mDatabase.child(mCommon.mClub);
-        for (ArrayList<PlayerData>  pList : mAllPlayers.values()) {
-            for(PlayerData playerData : pList) {
+        for (ArrayList<PlayerData> pList : mAllPlayers.values()) {
+            for (PlayerData playerData : pList) {
                 mClubDBRef.child(Constants.GROUPS).child(playerData.getGroup())
                         .child(playerData.getName()).child(Integer.toString(Constants.INNINGS_IDX))
                         .setValue(new PointsDBEntry());
@@ -1106,26 +1062,6 @@ public class Settings extends AppCompatActivity {
         //    -- added advantage is that a DB online check is done before the critical operation is performed
         //    -- there are comments saying that performing a write makes sure that the DB is in sync.
         //       (but that might be only for that particular DB tree, anyways!)
-        DatabaseReference connectedRef = FirebaseDatabase.getInstance().getReference(".info/connected");
-        connectedRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot snapshot) {
-                boolean connected = snapshot.getValue(Boolean.class);
-                if (connected) {
-                    Log.w(TAG, "connected");
-                    mDBConnected = true;
-                } else {
-                    Log.w(TAG, "not connected");
-                    mDBConnected = false;
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError error) {
-                Log.w(TAG, "Listener was cancelled");
-                mDBConnected = false;
-            }
-        });
 
         final DatabaseReference inningsDBRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.INTERNALS).child("locked");
         inningsDBRef.runTransaction(new Transaction.Handler() {
@@ -1133,9 +1069,9 @@ public class Settings extends AppCompatActivity {
             @Override
             public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
                 Boolean locked = mutableData.getValue(Boolean.class);
-                if(locked == null) return Transaction.success(mutableData);
+                if (locked == null) return Transaction.success(mutableData);
                 else {
-                    if(locked) {
+                    if (locked) {
                         Log.w(TAG, "getDBLock: Already locked");
                         return Transaction.abort();
                     } else {
@@ -1150,7 +1086,8 @@ public class Settings extends AppCompatActivity {
             @Override
             public void onComplete(@Nullable DatabaseError error, boolean committed, @Nullable DataSnapshot dataSnapshot) {
                 if (error != null || !committed || dataSnapshot == null) {
-                    if(null!=error) Log.w(TAG, "getDBLock: onComplete: Failed:", error.toException());
+                    if (null != error)
+                        Log.w(TAG, "getDBLock: onComplete: Failed:", error.toException());
                     else Log.w(TAG, "getDBLock: onComplete: Failed:");
                     mDBLock = false;
                 } else {
@@ -1163,17 +1100,17 @@ public class Settings extends AppCompatActivity {
         });
     }
 
-    private void postInningsCreate() {
-        //Some cleanup & final activities.
-        //((EditText) findViewById(R.id.newinnings)).setText("");
-        //((EditText) findViewById(R.id.newinnings)).setHint("new innings name");
-        Log.w(TAG, "postInningsCreate: mTimeNeededInMs=" + mTimeNeededInMs);
-        //BackgroundTask task = new BackgroundTask(Settings.this, Settings.this);
-        //task.execute();
 
-    }
+    //// Background task to update DB
 
-
+    //TODO: Ideally AsyncTask should be static or leaks might occur.
+    /*
+    Non-static inner classes holds a reference to the containing class. When you declare AsyncTask as an inner class,
+    it might live longer than the containing Activity class. This is because of the implicit reference to the containing class.
+    This will prevent the activity from being garbage collected, hence the memory leak.
+    We should avoid using non-static inner classes in an activity if instances of the inner class could outlive the activity’s lifecycle.
+    But, it is not a problem in our case as the Activity is closed only after the Asynctask is done. See completeShuffling.
+     */
     private class BackgroundTask extends AsyncTask<TaskParams, Void, String> {
         private ProgressDialog dialog;
         private Context mContext;
@@ -1205,10 +1142,10 @@ public class Settings extends AppCompatActivity {
             }, 5000);
         }
 
-        private void completeShuffling(final String result){
+        private void completeShuffling(final String result) {
             Log.v(TAG, "BackgroundTask: completeShuffling");
             mCommon.enableUserNotify(Settings.this);   //Toasts are allowed after this.
-            if(result.isEmpty()) {
+            if (result.isEmpty()) {
                 Toast.makeText(Settings.this, "New Innings created successfully!", Toast.LENGTH_SHORT)
                         .show();
                 mCommon.addShuffleSuccess2History(Settings.this, mNewInningsName);
@@ -1218,7 +1155,7 @@ public class Settings extends AppCompatActivity {
             }
             //mNewInningsName = "";   //This resulted in new innings to be created with empty name; not thread safe!
 
-            if(result.isEmpty())
+            if (result.isEmpty())
                 killActivity();   //new innings created, go back to main page.
             else {
                 Toast.makeText(Settings.this, result, Toast.LENGTH_SHORT)
@@ -1229,16 +1166,13 @@ public class Settings extends AppCompatActivity {
 
         @Override
         protected String doInBackground(TaskParams... params) {
-            String errStr = "";
             TaskParams tp = params[0];
             try {
-                Log.w(TAG, "BackgroundTask: mTimeNeededInMs=" + mTimeNeededInMs);
-                for(int i=0; i<5; i++) {
+                for (int i = 0; i < 5; i++) {
                     Thread.sleep(2000);
-                    if(!mDBConnected) {
+                    if (!mCommon.isDBConnected()) {
                         Log.w(TAG, "doInBackground: DB is not connected");
-                        errStr =  "DB is not connected, try again later...";
-                        return errStr;
+                        return "DB is not connected, try again later...";
                     } else Log.w(TAG, "doInBackground: DB is connected");
 
                     if (mDBLock) {
@@ -1269,11 +1203,9 @@ public class Settings extends AppCompatActivity {
             }
 
             Log.w(TAG, "doInBackground: failure! DB is not reachable, try again later...");
-            errStr = "DB is not reachable, try again later...";
-            return errStr;
+            return "DB is not reachable, try again later...";
         }
-
-    }
+    }  //BackgroundTask
 
 
 }

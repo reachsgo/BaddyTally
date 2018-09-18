@@ -186,6 +186,7 @@ public class LoginActivity extends AppCompatActivity {
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(null==dataSnapshot) return;
                 Log.w(TAG, "fetchInitialData: onDataChange");
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
                     if(null==child) continue;

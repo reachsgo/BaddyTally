@@ -55,7 +55,7 @@ class FireBaseDBReader {
         //Query myQuery = dbRef.orderByChild("pts");
         //SGO: orderByChild did not work! Is it due to the list of data in each player DB field?
         //workaround is to do the list sorting in java.
-        //myQuery.addValueEventListener(new ValueEventListener() {
+
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
 
             @Override
@@ -94,48 +94,4 @@ class FireBaseDBReader {
         mViewAdapter.setPlayers(mPlayers);
     }
 
-    public void fetchThisRoundScore() {
-        if (mInnings.isEmpty()) return;
-        //fetchOverallScore();
-/*
-        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(mInnings).child(mGroup);
-        Query myQuery = dbRef.orderByValue();
-        //myQuery.addValueEventListener(new ValueEventListener() {
-        myQuery.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                for (DataSnapshot child : dataSnapshot.getChildren()) {
-                    Integer score = child.getValue(Integer.class);
-                    if(null==score) continue;
-                    String name = child.getKey();
-                    boolean playerFound = false;
-                    //Log.w(TAG, "fetchThisRoundScore [" + mRound+":"+group + "] child (" + name + ") innings score=" + score.toString());
-                    if (mPlayers != null) {
-                        //Log.w(TAG, mLogStr + "fetchThisRoundScore "+ name);
-                        for (int i = 0; i < mPlayers.size(); i++) {
-                            //Log.w(TAG, "fetchThisRoundScore[" + Integer.toString(i) + "] getName=["+mPlayers[idx].get(i).getName()+"] name=["+name+"]");
-                            if (mPlayers.get(i).getName().equalsIgnoreCase(name)) {
-                                mPlayers.get(i).setPts_innings(score.toString());
-                                //Log.w(TAG, mLogStr + "fetchThisRoundScore =====> child (" + name + ") set innings score=" + score.toString());
-                                playerFound = true;
-                            }
-                        }
-                    }
-                    if (!playerFound) {
-                        PlayerData player = new PlayerData(name, score.toString(),"0", mGroup);
-                        mPlayers.add(player);
-                    }
-                }
-                if (mViewAdapter != null) mViewAdapter.notifyDataSetChanged();
-                fetchOverallScore();
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                Log.w(TAG, "fetchThisRoundScore:onCancelled:" + mLogStr, databaseError.toException());
-                Toast.makeText(mContext, "DB error while fetching round score: " + databaseError.toString(),
-                        Toast.LENGTH_LONG).show();
-            }
-        }); */
-    }
 }

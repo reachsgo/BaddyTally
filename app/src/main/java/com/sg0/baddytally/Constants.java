@@ -28,7 +28,7 @@ class Constants {
     public static final int SEASON_IDX = 0;
     public static final int INNINGS_IDX = 1;
     public static final String ROUND_DATEFORMAT = "yyyy-MM-dd'T'HH:mm";
-    public static final int SHUFFLE_WINPERC_NUM_GAMES = 2;
+    public static final int SHUFFLE_WINPERC_NUM_GAMES = 12;
     public static final int SETTINGS_ACTIVITY = 100;
     public static final int LOGIN_ACTIVITY = 101;
     public static final int SUMMARY_ACTIVITY = 102;

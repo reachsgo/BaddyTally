@@ -1,7 +1,5 @@
 package com.sg0.baddytally;
 
-import android.app.ActionBar;
-import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
@@ -26,7 +24,6 @@ import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.text.style.SuperscriptSpan;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -41,7 +38,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.MutableData;
-import com.google.firebase.database.Query;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 
@@ -49,7 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class MainActivity extends AppCompatActivity implements CallbackRoutine{
+public class MainActivity extends AppCompatActivity implements CallbackRoutine {
 
     private static final String TAG = "MainActivity";
     private FireBaseDBReader mGoldDB;
@@ -80,9 +76,9 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
             else tempString += " ";
             SpannableString spanString = new SpannableString(tempString);
             spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPNAME.length(), 0);
-            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPNAME.length(), tempString.length()-1, 0);
-            spanString.setSpan(new SuperscriptSpan(), tempString.length()-1, tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            spanString.setSpan(new RelativeSizeSpan(0.5f), tempString.length()-1, tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPNAME.length(), tempString.length() - 1, 0);
+            spanString.setSpan(new SuperscriptSpan(), tempString.length() - 1, tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spanString.setSpan(new RelativeSizeSpan(0.5f), tempString.length() - 1, tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             getSupportActionBar().setTitle(""); //workaround for title getting truncated.
             getSupportActionBar().setTitle(spanString);
         }
@@ -99,7 +95,8 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
         mOptionsMenu = null;
         mClub = "";
         mRefreshing = true;
-        mGoldAdapter = null;;
+        mGoldAdapter = null;
+        ;
         mSilverAdapter = null;
         SharedData.getInstance().mNumOfGroups = Constants.NUM_OF_GROUPS;
         //SGO: Test single user group
@@ -135,7 +132,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
         findViewById(R.id.gold_header_season).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(null!=mGoldAdapter) {
+                if (null != mGoldAdapter) {
                     mGoldAdapter.sortOnSeason();
                     selectedEffect(R.id.gold_header_season, R.id.gold_header_innings);
                 }
@@ -145,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
         findViewById(R.id.gold_header_innings).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(null!=mGoldAdapter) {
+                if (null != mGoldAdapter) {
                     mGoldAdapter.sortOnInnings();
                     selectedEffect(R.id.gold_header_innings, R.id.gold_header_season);
                 }
@@ -155,7 +152,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
         findViewById(R.id.silver_header_season).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(null!=mSilverAdapter) {
+                if (null != mSilverAdapter) {
                     mSilverAdapter.sortOnSeason();
                     selectedEffect(R.id.silver_header_season, R.id.silver_header_innings);
                 }
@@ -165,7 +162,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
         findViewById(R.id.silver_header_innings).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(null!=mSilverAdapter) {
+                if (null != mSilverAdapter) {
                     mSilverAdapter.sortOnInnings();
                     selectedEffect(R.id.silver_header_innings, R.id.silver_header_season);
                 }
@@ -175,15 +172,16 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
         //Initial effect, players are sorted on innings by default.
         selectedEffect(R.id.gold_header_innings, R.id.gold_header_season);
         selectedEffect(R.id.silver_header_innings, R.id.silver_header_season);
+
     }
 
-    private void selectedEffect(final int selectedViewId, final int otherViewId){
+    private void selectedEffect(final int selectedViewId, final int otherViewId) {
         TextView tv = findViewById(selectedViewId);
-        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams)tv.getLayoutParams();
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) tv.getLayoutParams();
         params.setMargins(10, 1, 1, 10); //substitute parameters for left, top, right, bottom
         tv.setLayoutParams(params);
         tv = findViewById(otherViewId);
-        params = (LinearLayout.LayoutParams)tv.getLayoutParams();
+        params = (LinearLayout.LayoutParams) tv.getLayoutParams();
         params.setMargins(0, 0, 0, 0); //substitute parameters for left, top, right, bottom
         tv.setLayoutParams(params);
     }
@@ -191,16 +189,18 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
     @Override
     protected void onResume() {
         super.onResume();
+        //Maintain DB connection state
+        SharedData.getInstance().setUpDBConnectionListener();
         mInitialAttempt = false;
         SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
         String club = prefs.getString(Constants.DATA_CLUB, "");
         if (club.isEmpty()) {
             mInitialAttempt = true;
-            Log.d(TAG, "SGO onResume: mInitialAttempt=" + mInitialAttempt);
+            Log.d(TAG, "onResume: mInitialAttempt=" + mInitialAttempt);
             Toast.makeText(this, "Click Settings to sign-in to your club ", Toast.LENGTH_LONG)
                     .show();
         } else {
-            Log.d(TAG, "SGO onResume: mInitialAttempt=" + mInitialAttempt);
+            Log.d(TAG, "onResume: mInitialAttempt=" + mInitialAttempt);
 
             mClub = club;
             SharedData.getInstance().mClub = mClub;
@@ -211,7 +211,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
             fetchInnings();
             if (mOptionsMenu != null) {
                 //For scenarios where onResume() is called after onCreateOptionsMenu()
-                Log.d(TAG, "SGO onResume() is called after onCreateOptionsMenu()");
+                Log.d(TAG, "onResume() is called after onCreateOptionsMenu()");
                 //((MenuItem) mOptionsMenu.findItem(R.id.action_settings)).setVisible(true);
                 mOptionsMenu.findItem(R.id.action_summary).setVisible(true);
                 MenuItem mEnterDataItem = mOptionsMenu.findItem(R.id.action_enter);
@@ -225,13 +225,13 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Log.d(TAG, "SGO onActivityResult: requestCode=" + requestCode + " resultCode=" + resultCode);
+        Log.d(TAG, "onActivityResult: requestCode=" + requestCode + " resultCode=" + resultCode);
         /* dont worry about the activity code, RESULT_FIRST_USER is used to know if view needs to be refreshed or not.
         switch (requestCode) {  //case (SETTINGS_ACTIVITY): {
          */
 
-        if(resultCode == Constants.RESTARTAPP) {
-            Log.d(TAG, "SGO onActivityResult: RESTARTING app");
+        if (resultCode == Constants.RESTARTAPP) {
+            Log.d(TAG, "onActivityResult: RESTARTING app");
             Intent mStartActivity = new Intent(MainActivity.this, MainActivity.class);
             int mPendingIntentId = 3331;  //some random number.
             PendingIntent mPendingIntent = PendingIntent.getActivity(MainActivity.this, 0, mStartActivity,
@@ -241,12 +241,12 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
             System.exit(0);
         }
 
-                if (SharedData.getInstance().isDBUpdated()) {
-                    // cache is cleared, refresh the main view
-                    finish();
-                    startActivity(getIntent());
-                    SharedData.getInstance().setDBUpdated(false);
-                }
+        if (SharedData.getInstance().isDBUpdated()) {
+            // cache is cleared, refresh the main view
+            finish();
+            startActivity(getIntent());
+            SharedData.getInstance().setDBUpdated(false);
+        }
     }
 
     @Override
@@ -255,19 +255,18 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
         inflater.inflate(R.menu.menu_main, menu);
         mOptionsMenu = menu;
         MenuItem mEnterDataItem = mOptionsMenu.findItem(R.id.action_enter);
-        Log.d(TAG, "SGO onCreateOptionsMenu: mInitialAttempt=" + mInitialAttempt);
+        Log.d(TAG, "onCreateOptionsMenu: mInitialAttempt=" + mInitialAttempt);
         if (mInitialAttempt) {
             mEnterDataItem.setTitle("Club Sign-in");
             //((MenuItem) menu.findItem(R.id.action_settings)).setVisible(false);
-            ((MenuItem) menu.findItem(R.id.action_summary)).setVisible(false);
-            Log.d(TAG, "SGO onCreateOptionsMenu: INITIAL ATTEMPT");
-        }
-        else {
+            menu.findItem(R.id.action_summary).setVisible(false);
+            Log.d(TAG, "onCreateOptionsMenu: INITIAL ATTEMPT");
+        } else {
             //For scenarios where onCreateOptionsMenu() is called after onResume()
-            Log.d(TAG, "SGO onCreateOptionsMenu() is called after onResume");
+            Log.d(TAG, "onCreateOptionsMenu() is called after onResume");
             mEnterDataItem.setTitle("Enter Score");
-            ((MenuItem) menu.findItem(R.id.action_settings)).setVisible(true);
-            ((MenuItem) menu.findItem(R.id.action_summary)).setVisible(true);
+            menu.findItem(R.id.action_settings).setVisible(true);
+            menu.findItem(R.id.action_summary).setVisible(true);
             if (Constants.MEMBER.equals(SharedData.getInstance().mRole))
                 mEnterDataItem.setEnabled(false);
         }
@@ -286,15 +285,14 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
                 break;
             // action with ID action_settings was selected
             case R.id.action_settings:
-                /*
-                if (!Constants.ROOT.equals(SharedData.getInstance().mRole)) {
-                    Toast.makeText(this, "Some options might not be available to you!", Toast.LENGTH_SHORT)
-                            .show();
-                }*/
+                //If DB connection is sleeping, wake it up!
+                SharedData.getInstance().wakeUpDBConnection();
                 Intent settingsIntent = new Intent(MainActivity.this, Settings.class);
                 MainActivity.this.startActivityForResult(settingsIntent, Constants.SETTINGS_ACTIVITY);
                 break;
             case R.id.action_enter:
+                //If DB connection is sleeping, wake it up!
+                SharedData.getInstance().wakeUpDBConnection();
                 if (mInitialAttempt) {
                     Intent myIntent = new Intent(MainActivity.this, LoginActivity.class);
                     MainActivity.this.startActivity(myIntent);
@@ -309,7 +307,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
                     data.mGoldPlayers = mGoldDB.getPlayers();
                     if (mSilverDB != null) data.mSilverPlayers = mSilverDB.getPlayers();
                     Log.d(TAG, "Creating LoginActivity: data = " + data.toString());
-                    MainActivity.this.startActivityForResult(myIntent,Constants.LOGIN_ACTIVITY);
+                    MainActivity.this.startActivityForResult(myIntent, Constants.LOGIN_ACTIVITY);
                 } else {
                     Toast.makeText(this, "No connectivity, try after some time...", Toast.LENGTH_SHORT)
                             .show();
@@ -320,6 +318,8 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
                     Toast.makeText(this, "You have to Sign-in first.", Toast.LENGTH_SHORT)
                             .show();
                 } else {
+                    //If DB connection is sleeping, wake it up!
+                    SharedData.getInstance().wakeUpDBConnection();
                     Intent myIntent = new Intent(MainActivity.this, Summary.class);
                     MainActivity.this.startActivityForResult(myIntent, Constants.SUMMARY_ACTIVITY);
                 }
@@ -331,7 +331,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
                 //int versionCode = BuildConfig.VERSION_CODE;
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                 builder.setMessage("Version: " + BuildConfig.VERSION_NAME)
-                        .setTitle(SharedData.getInstance().getTitleStr(Constants.APPNAME,MainActivity.this))
+                        .setTitle(SharedData.getInstance().getTitleStr(Constants.APPNAME, MainActivity.this))
                         .setNeutralButton("Ok", null).show();
                 break;
             default:
@@ -405,7 +405,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
 
     private void fetchInnings() {
         //Read DB only on startup & refresh. Otherwise on every resume of app, data is read from DB and that adds to the DB traffic.
-        if(!mRefreshing) return;
+        if (!mRefreshing) return;
 
         Toast.makeText(this, "Refreshing...", Toast.LENGTH_SHORT)
                 .show();
@@ -419,23 +419,26 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
                 GenericTypeIndicator<List<InningsDBEntry>> t = new GenericTypeIndicator<List<InningsDBEntry>>() {
                 };
                 List<InningsDBEntry> innings = mutableData.getValue(t);
-                if(null == innings) {
+                if (null == innings) {
                     //no innings in DB
                     SharedData.getInstance().mInnings = "";
                     return Transaction.success(mutableData);
                 }
-
-                for (int i=innings.size()-1; i>=0; i--) {  //reverse to get "true" value first
+                //reset the values to be read fresh from DB. This makes sure that DB is the master, in case of manual updates.
+                SharedData.getInstance().mInnings = "";
+                SharedData.getInstance().mRoundName = "";
+                SharedData.getInstance().mInningsDBKey = -1;
+                for (int i = innings.size() - 1; i >= 0; i--) {  //reverse to get "true" value first
                     InningsDBEntry val = innings.get(i);
-                    if (null!=val)
-                        Log.v(TAG, "fetchInnings: SGO Read from DB:" + innings.indexOf(val) + " data:" + val.toString());
-                    if (null!=val && val.current) {
+                    if (null != val)
+                        Log.v(TAG, "fetchInnings: Read from DB:" + innings.indexOf(val) + " data:" + val.toString());
+                    if (null != val && val.current) {
                         mInnings = val.name;
                         SharedData.getInstance().mInnings = mInnings;
                         mRoundName = val.round;
                         SharedData.getInstance().mRoundName = mRoundName;
                         SharedData.getInstance().mInningsDBKey = innings.indexOf(val);
-                        Log.v(TAG, "fetchInnings: SGO key:" + SharedData.getInstance().mInningsDBKey + " data:" + val.toString());
+                        Log.v(TAG, "fetchInnings: key:" + SharedData.getInstance().mInningsDBKey + " data:" + val.toString());
                         break;
                     }
                 }
@@ -450,51 +453,13 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine{
             }
         });
 
-        /*
-        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.INNINGS);
-        Query roundQuery = dbRef.orderByChild("current");  //ordered by "current" value: false first & then true
-        roundQuery.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                GenericTypeIndicator<List<InningsDBEntry>> t = new GenericTypeIndicator<List<InningsDBEntry>>() {
-                };
-                List<InningsDBEntry> innings = dataSnapshot.getValue(t);
-                if(null==innings) return;
-                //Log.v(TAG, "fetchInnings: key:" + dataSnapshot.getKey());
-                //for (InningsDBEntry val : innings) {
-                for (int i=innings.size()-1; i>=0; i--) {  //reverse to get "true" value first
-                    InningsDBEntry val = innings.get(i);
-                    if (null!=val)
-                        Log.v(TAG, "fetchInnings: SGO Read from DB:" + innings.indexOf(val) + " data:" + val.toString());
-                    if (null!=val && val.current) {
-                        mInnings = val.name;
-                        SharedData.getInstance().mInnings = mInnings;
-                        mRoundName = val.round;
-                        SharedData.getInstance().mRoundName = mRoundName;
-                        SharedData.getInstance().mInningsDBKey = innings.indexOf(val);
-                        Log.v(TAG, "fetchInnings: SGO key:" + SharedData.getInstance().mInningsDBKey + " data:" + val.toString());
-                        break;
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                Log.w(TAG, "fetchInnings: onCancelled", databaseError.toException());
-                Toast.makeText(MainActivity.this, "Innings DB error: " + databaseError.toString(), Toast.LENGTH_SHORT)
-                        .show();
-            }
-        });
-        */
-
-
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.PROFILE);
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 Log.v(TAG, "fetchProfile: onDataChange");
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
-                    if(null==child) continue;
+                    if (null == child) continue;
                     switch (child.getKey()) {
                         case "admincode":
                             SharedData.getInstance().mAdminCode = child.getValue(String.class);

@@ -42,6 +42,12 @@ public class ScoreTally extends Application {
             Please be aware that transactions *will not* be persisted across database restarts.
             See https://www.firebase.com/docs/android/guide/offline-capabilities.html#section-handling-transactions-offline for more details.
              */
+
+            //Finally, the working recipe:
+            // 1. persistence is not enabled for any user
+            // 2. dbconnected state is maintained from ".info/connected" DB param using ValueEventListener
+            // 3. Before starting any Activity that needs DB update, DB connection is woken up by
+            //    doing a write on a dummy DB param
         } else {
             FirebaseDatabase.getInstance().setPersistenceEnabled(false);
             Log.d(TAG, "onCreate: DB Persistence disabled");

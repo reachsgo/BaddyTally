@@ -22,4 +22,7 @@
     <string name="action_enter">Enter</string>
     <string name="action_summary">Summary of this round</string>
     <string name="check_new_round">Start a new round of games</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

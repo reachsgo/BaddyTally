@@ -2,7 +2,6 @@ package com.sg0.baddytally;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -89,19 +88,12 @@ public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecy
 
         AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
         builder.setTitle(SharedData.getInstance().getTitleStr("Game stats:", mContext));
-        //Spanned spanString = (Spanned) TextUtils.concat(mPlayers.get(position).getPtsDetailFormat_innings(), "\n", mPlayers.get(position).getPtsDetailFormat_season());
-        Spanned spanString = (Spanned) TextUtils.concat( "\n", SharedData.getInstance().getStyleString(jEntry.toJournalEntry(), Typeface.ITALIC),
-                        "\n\nDate: " + jEntry.getmDate() +
+        Spanned spanString = (Spanned) TextUtils.concat("\n", SharedData.getInstance().getStyleString(jEntry.toJournalEntry(), Typeface.ITALIC),
+                "\n\nDate: " + jEntry.getmDate() +
                         "\nInnings: " + jEntry.getmIn() +
                         "\nEntered by: " + jEntry.getmU() +
-                        "\nPlayers repeated: " + (jEntry.getmGNo()>1 ? "Yes" : "No"));
+                        "\nPlayers repeated: " + (jEntry.getmGNo() > 1 ? "Yes" : "No"));
         builder.setMessage(spanString);
-        /*
-        builder.setMessage("\n" + jEntry.toJournalEntry() +
-                "\nDate: " + jEntry.getmDate() +
-                "\nInnings: " + jEntry.getmIn() +
-                "\nEntered by: " + jEntry.getmU() +
-                 "\nGame num: " + jEntry.getmGNo()); */
         builder.setNeutralButton("Ok", null);
         builder.show();
     }
@@ -122,12 +114,15 @@ public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecy
         CharSequence gameDetails = SharedData.getInstance().getStyleString(jEntry.getWinnersString() + "  vs  " + jEntry.getLosersString(), Typeface.ITALIC);
         pMenu.add(gameDetails);
         pMenu.add(" ");
-        pMenu.addSubMenu(Menu.NONE, DELETE_IDX, Menu.NONE,"Delete"); //groupId, itemId, order, title
-        pMenu.addSubMenu(Menu.NONE, CANCEL_IDX, Menu.NONE,"Cancel"); //groupId, itemId, order, title
+        pMenu.addSubMenu(Menu.NONE, DELETE_IDX, Menu.NONE, "Delete"); //groupId, itemId, order, title
+        pMenu.addSubMenu(Menu.NONE, CANCEL_IDX, Menu.NONE, "Cancel"); //groupId, itemId, order, title
         popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
-                if (CANCEL_IDX == menuItem.getItemId()) { popup.dismiss(); return false; }
+                if (CANCEL_IDX == menuItem.getItemId()) {
+                    popup.dismiss();
+                    return false;
+                }
                 Log.v(TAG, "onMenuItemClick DELETE");
 
                 deleteGameJournal(position);
@@ -151,6 +146,12 @@ public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecy
     }
 
     private void deleteGameJournal(final int position) {
+
+        if (!SharedData.getInstance().isDBConnected()) {
+            Toast.makeText(mContext, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         GameJournalDBEntry jEntry = mGameJournalDBEntry.get(position);
         String jKey = mGameJournalKeys.get(position);
         DatabaseReference mClubDBRef = FirebaseDatabase.getInstance().getReference().child(SharedData.getInstance().mClub);
@@ -161,9 +162,6 @@ public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecy
         }
         boolean singles = Constants.SINGLES.equals(jEntry.getmGT()); //game type
 
-        //delete score from club/innings/group/player
-        //DatabaseReference dbRef_winner1 = mClubDBRef.child(SharedData.getInstance().mInnings).child(mGroup).child(jEntry.getmW1());
-        //dbRef_winner1.addListenerForSingleValueEvent(new UpdateScores(mContext, singles, jEntry.getmW1(), dbRef_winner1, true,true));
         //delete score from club/GROUPS/group/player
         DatabaseReference dbRef_winner1 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(jEntry.getmW1());
         dbRef_winner1.addListenerForSingleValueEvent(new UpdateScores(mContext, singles, true, dbRef_winner1, true, true));
@@ -174,14 +172,6 @@ public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecy
             dbRef_winner2.addListenerForSingleValueEvent(new UpdateScores(mContext, singles, true, dbRef_winner2, true, true));
             DatabaseReference dbRef_loser2 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(jEntry.getmL2());
             dbRef_loser2.addListenerForSingleValueEvent(new UpdateScores(mContext, singles, false, dbRef_loser2, true, false));
-            /*
-            //delete score from club/innings/group/player
-            DatabaseReference dbRef_winner2 = mClubDBRef.child(SharedData.getInstance().mInnings).child(mGroup).child(jEntry.getmW2());
-            dbRef_winner2.addListenerForSingleValueEvent(new UpdateScores(mContext, singles, jEntry.getmW2(), dbRef_winner2, true, true));
-            //delete score from club/GROUPS/group/player
-            dbRef_winner2 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(jEntry.getmW2());
-            dbRef_winner2.addListenerForSingleValueEvent(new UpdateScores(mContext, singles, jEntry.getmW2(), dbRef_winner2, true, false));
-            */
         }
 
         //delete journal entry from club/JOURNAL/innings/round/group/
@@ -191,7 +181,7 @@ public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecy
         SharedData.getInstance().setDBUpdated(true);
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    class ViewHolder extends RecyclerView.ViewHolder {
         final TextView journalEntry;
         final TextView journalEntryUser;
         final LinearLayout parentLayout;

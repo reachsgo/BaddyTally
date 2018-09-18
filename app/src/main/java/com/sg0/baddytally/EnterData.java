@@ -185,7 +185,7 @@ public class EnterData extends AppCompatActivity {
         }
 
         if(SharedData.getInstance().mInningsDBKey == -1) {
-            Toast.makeText(EnterData.this, "No Active Innings!",
+            Toast.makeText(EnterData.this, "No current innings, Create innings first!",
                     Toast.LENGTH_LONG).show();
             killActivity();
         }
@@ -194,6 +194,10 @@ public class EnterData extends AppCompatActivity {
         enterButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if(!SharedData.getInstance().isDBConnected()) {
+                    Toast.makeText(EnterData.this, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 fetchGames();
             }
         });
@@ -388,8 +392,14 @@ public class EnterData extends AppCompatActivity {
             if (games.playedBefore(p1, p2, p3, p4)) {
                 if (mSingles)
                     showAlert(p1 + " has already played against " + p3 + " today!");
-                else
-                    showAlert(p1 + "/" + p2 + " or " + p3 + "/" + p4 + " have already played as a team today!");
+                else {  //doubles
+                    String alertStr = "";
+                    if ( games.getPlayerPartner(p1).equalsIgnoreCase(p2) )
+                        alertStr = p1 + " and " + p2 + " have already played as a team today!";
+                    if ( games.getPlayerPartner(p3).equalsIgnoreCase(p4) )
+                        alertStr += "\n" + p3 + " and " + p4 + " have also played as a team today!";
+                    showAlert(alertStr);
+                }
                 return;
             }
         }
@@ -426,6 +436,11 @@ public class EnterData extends AppCompatActivity {
     }
 
     private boolean enterData(boolean dry_run) {
+
+        if(-1 == SharedData.getInstance().mInningsDBKey) {
+            Toast.makeText(EnterData.this, "No current innings, Create innings first!", Toast.LENGTH_SHORT).show();
+            return false;
+        }
         String p1 = mSpinner_P1.getSelectedItem().toString();
         String p3 = mSpinner_P3.getSelectedItem().toString();
         String p2 = "";
@@ -508,22 +523,6 @@ public class EnterData extends AppCompatActivity {
             dbRef_loser2.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, false, dbRef_loser2, false,false));
         }
         SharedData.getInstance().setDBUpdated(true);
-
-        /*
-        //add score to club/innings/group/player
-        DatabaseReference dbRef_winner1 = mDatabase.child(mClub).child(mInnings).child(mGroup).child(winner1);
-        dbRef_winner1.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, winner1, dbRef_winner1, false,true));
-        //add score to club/GROUPS/group/player
-        dbRef_winner1 = mDatabase.child(mClub).child(Constants.GROUPS).child(mGroup).child(winner1);
-        dbRef_winner1.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, winner1, dbRef_winner1, false,false));
-        if (mSingles) return;
-        //add score to club/innings/group/player
-        DatabaseReference dbRef_winner2 = mDatabase.child(mClub).child(mInnings).child(mGroup).child(winner2);
-        dbRef_winner2.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, winner2, dbRef_winner2, false, true));
-        //add score to club/GROUPS/group/player
-        dbRef_winner2 = mDatabase.child(mClub).child(Constants.GROUPS).child(mGroup).child(winner2);
-        dbRef_winner2.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, winner2, dbRef_winner2, false,  false));
-        */
     }
 
 }

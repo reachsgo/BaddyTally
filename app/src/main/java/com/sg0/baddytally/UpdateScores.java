@@ -58,34 +58,6 @@ class UpdateScores implements ValueEventListener {
             Toast.makeText(mContext, "Points updated for " + mPlayerName + ": " + prevScore + " -> " + newScore,
                     Toast.LENGTH_SHORT).show();
         }
-
-        /*
-        //PlayerData pData = new PlayerData(mPlayers.get(position).getGroup(), mPlayers.get(position).getName(), list);
-        Log.v(TAG, "FETCH: player data[" + key + "] : " + list.get(key).toString());
-        if(Integer.toString(list.get(key).getPts()).equals(mPlayers.get(position).getPoints(key))) {
-            //Current Value in DB is same as that is in the list. This makes sure that the mPlayers list is not stale!
-            list.get(key).setPts(score);
-            childDBRef.setValue(list);
-            Toast.makeText(mContext, "Updated innings score to " + score + " for " + mPlayers.get(position).toPrintString(), Toast.LENGTH_LONG).show();
-            mPlayers.get(position).setPoints(key, score);
-            notifyDataSetChanged();
-        } else {
-            Toast.makeText(mContext, "DB not in sync with local data, Try refreshing...", Toast.LENGTH_LONG).show();
-        }
-
-        int score = dataSnapshot.getValue(Integer.class);
-        int prevScore = score;
-        if(mDelete) {
-            score--;
-            if (mSingles) score--;   //-2 for singles
-        } else {
-            score++;
-            if (mSingles) score++;   //+2 for singles
-        }
-        if(score<0) score=0;
-        Log.w(TAG, "Points updated for "+ mPlayerName + ": " + prevScore + " -> " + score);
-        */
-
     }
 
     @Override

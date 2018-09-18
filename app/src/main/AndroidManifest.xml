@@ -3,13 +3,13 @@
     package="com.sg0.baddytally">
 
     <application
-        android:name="com.sg0.baddytally.ScoreTally"
+        android:name=".ScoreTally"
+        android:fullBackupContent="@xml/backup_descriptor"
         android:icon="@drawable/birdie"
         android:label="@string/app_name"
         android:roundIcon="@drawable/birdie"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar"
-        android:fullBackupContent="@xml/backup_descriptor">
+        android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
@@ -21,11 +21,12 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".LoginActivity" android:noHistory="true"
-            android:label="@string/title_activity_login" />
-        <activity android:name=".EnterData"></activity>
-        <activity android:name=".Summary"></activity>
-        <activity android:name=".Settings"></activity>
+            android:name=".LoginActivity"
+            android:label="@string/title_activity_login"
+            android:noHistory="true" />
+        <activity android:name=".EnterData" />
+        <activity android:name=".Summary" />
+        <activity android:name=".Settings" />
     </application>
 
 </manifest>

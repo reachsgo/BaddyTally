@@ -58,15 +58,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     public void sortPlayers() {
         SharedData.getInstance().sortPlayers(mPlayers, Constants.INNINGS_IDX, false, mContext, false);
-        /*
-        Collections.sort(mPlayers, new Comparator<PlayerData>() {
-            @Override
-            public int compare(PlayerData p1, PlayerData p2) {
-                return Integer.valueOf(p2.getPointsInt_innings()).compareTo(p1.getPointsInt_innings());  //descending order
-                //return Integer.valueOf(p1.getPointsInt_innings()).compareTo(p2.getPointsInt_innings()); //ascending order
-            }
-        }); */
-        Log.d(TAG, "SGO sortPlayers: Sorted mPlayers: " + Integer.toString(mPlayers.size()));
     }
 
     public void sortOnSeason(){
@@ -141,7 +132,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         }
 
         final int alertTitle = mContext.getResources().getIdentifier("alertTitle", "id", "android");
-        TextView titleView = (TextView) dialog.findViewById(alertTitle);  //android.R.id.title is also not working
+        TextView titleView = dialog.findViewById(alertTitle);  //android.R.id.title is also not working
         if (titleView != null) {
             titleView.setGravity(Gravity.CENTER);   //this is not working
         }
@@ -209,6 +200,12 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     }
 
     private void updatedDB(final ViewHolder holder, final int key, final Integer score) {
+
+        if(!SharedData.getInstance().isDBConnected()) {
+            Toast.makeText(mContext, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         final int position = holder.getAdapterPosition();
         try {
             //just being too conservative!! not sure if the below code will be ever hit.
@@ -256,73 +253,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
                 Toast.makeText(mContext, "DB error while fetching innings score, Try refreshing...", Toast.LENGTH_LONG).show();
             }
         });
-
-                /*
-                final DatabaseReference childDBRef = mClubDBRef.child(SharedData.getInstance().mInnings)
-                                                              .child(mPlayers.get(position).getGroup())
-                                                              .child(mPlayers.get(position).getName());
-                childDBRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        Integer currentScoreInDB = dataSnapshot.getValue(Integer.class);
-                        if(null==currentScoreInDB) return;
-                        if(currentScoreInDB.toString().equals(mPlayers.get(position).getPoints_innings())) {
-                            //Current Value in DB is same as that is in the list. This makes sure that the mPlayers list is not stale!
-                            childDBRef.setValue(score);
-                            Toast.makeText(mContext, "Updated innings score to " + score + " for " + mPlayers.get(position).toPrintString(), Toast.LENGTH_LONG).show();
-                            mPlayers.get(position).setPts_innings(score);
-                            notifyDataSetChanged();
-                        } else {
-                            Toast.makeText(mContext, "DB not in sync with local data, Try refreshing...", Toast.LENGTH_LONG).show();
-                        }
-                    }
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-                        Toast.makeText(mContext, "DB error while fetching innings score, Try refreshing...", Toast.LENGTH_LONG).show();
-                    }
-                });
-                break;
-            case Constants.SEASON:
-                //update DB attribute club/GROUPS/group/player
-                final DatabaseReference childDBRef = mClubDBRef.child(Constants.GROUPS)
-                        .child(mPlayers.get(position).getGroup())
-                        .child(mPlayers.get(position).getName());
-                childDBRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        GenericTypeIndicator<List<PointsDBEntry>> genericTypeIndicator = new GenericTypeIndicator<List<PointsDBEntry>>() {};
-                        List<PointsDBEntry> list = dataSnapshot.getValue(genericTypeIndicator );
-                        if(null==list || list.size() != 2) return;
-                        Log.v(TAG, "FETCH: player:" + dataSnapshot.getKey());
-                        //PlayerData pData = new PlayerData(mPlayers.get(position).getGroup(), mPlayers.get(position).getName(), list);
-                        Log.v(TAG, "FETCH: player innings data:" + list.get(Constants.INNINGS_IDX).toString());
-                        if(Integer.toString(list.get(Constants.INNINGS_IDX).getPts()).equals(mPlayers.get(position).getPoints_innings())) {
-                final DatabaseReference seasonDBRef = mClubDBRef.child(Constants.GROUPS)
-                        .child(mPlayers.get(position).getGroup())
-                        .child(mPlayers.get(position).getName());
-                seasonDBRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        Integer currentScoreInDB = dataSnapshot.getValue(Integer.class);
-                        if(null==currentScoreInDB) return;
-                        if(currentScoreInDB.toString().equals(mPlayers.get(position).getPoints_season())) {
-                            seasonDBRef.setValue(score);
-                            Toast.makeText(mContext, "Updated season score to " + score + " for " + mPlayers.get(position).toPrintString(), Toast.LENGTH_LONG).show();
-                            mPlayers.get(position).setPts_season(score);
-                            notifyDataSetChanged();
-                        } else {
-                            Toast.makeText(mContext, "DB not in sync with local data, Try refreshing...", Toast.LENGTH_LONG).show();
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-                        Toast.makeText(mContext, "DB error while fetching season core, Try refreshing...", Toast.LENGTH_LONG).show();
-                    }
-                });
-                break;
-        }*/
-
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {

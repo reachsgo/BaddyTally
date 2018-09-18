@@ -153,7 +153,7 @@ class GameJournalDBEntry {
         return false;
     }
 
-    private String getPlayerPartner(String player) {
+    public String getPlayerPartner(String player) {
         if (Constants.SINGLES.equals(mGT)) {
             return "";
         }
