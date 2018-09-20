@@ -12,6 +12,7 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
@@ -34,14 +35,19 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.GenericTypeIndicator;
+import com.google.firebase.database.MutableData;
+import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
 
     private static final String TAG = "LoginActivity";
 
@@ -106,6 +112,12 @@ public class LoginActivity extends AppCompatActivity {
             mPasswordView.setText(secpd);
         }
 
+        SharedData data = SharedData.getInstance();
+        Date c = Calendar.getInstance().getTime();
+        SimpleDateFormat df = new SimpleDateFormat(Constants.ROUND_DATEFORMAT_SHORT, Locale.CANADA);
+        String todaysDate = df.format(c);
+        Log.d(TAG, "onCreate LoginActivity["+ todaysDate + "]: data = " + data.toString());
+
         final String club = prefs.getString(Constants.DATA_CLUB, "");
         final String user = prefs.getString(Constants.DATA_USER, "");
         if (club.isEmpty()) {
@@ -113,17 +125,19 @@ public class LoginActivity extends AppCompatActivity {
             mGameTypeRadioGroup.setVisibility(View.GONE);
             mGroupRadioGroup.setVisibility(View.GONE);
             mCheckNewRound.setVisibility(View.GONE);
+            findViewById(R.id.current_round).setVisibility(View.GONE);
+            findViewById(R.id.time_now).setVisibility(View.GONE);
         }else {
             mClubView.setText(club);
             mUserView.setText(user);
+            String roundStr =  "Active round: ";
+            if(data.mRoundName.isEmpty()) roundStr += "None";
+            else roundStr += SharedData.getInstance().getShortRoundName(data.mRoundName);
+            ((TextView)findViewById(R.id.current_round)).setText(roundStr);
+            ((TextView)findViewById(R.id.time_now)).setText(("Today's date: " + df.format(c)));
         }
 
         if(!mInitialAttempt) {
-            SharedData data = SharedData.getInstance();
-            Date c = Calendar.getInstance().getTime();
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd", Locale.CANADA);
-            String todaysDate = df.format(c);
-            Log.d(TAG, "onCreate LoginActivity["+ todaysDate + "]: data = " + data.toString());
             //If this a new date, then check new round flag.
             if(data.mRoundName.contains(todaysDate))
                 mCheckNewRound.setChecked(false);
@@ -182,38 +196,18 @@ public class LoginActivity extends AppCompatActivity {
             attemptLogin();
             return;
         }
-        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.PROFILE);
-        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(null==dataSnapshot) return;
-                Log.w(TAG, "fetchInitialData: onDataChange");
-                for (DataSnapshot child : dataSnapshot.getChildren()) {
-                    if(null==child) continue;
-                    switch (child.getKey()) {
-                        case "admincode":
-                            mAdminCode = child.getValue(String.class);
-                            break;
-                        case "memcode":
-                            mMemCode = child.getValue(String.class);
-                            break;
-                        case "rootcode":
-                            mRootCode = child.getValue(String.class);
-                            break;
-                    }
 
-                }
-                Log.w(TAG, "fetchInitialData: onDataChange:" + mAdminCode + "/" + mRootCode);
-                attemptLogin();
-            }
+        SharedData.getInstance().fetchProfile(LoginActivity.this, LoginActivity.this , mClub);
+    }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                Log.w(TAG, "fetchInitialData: onCancelled", databaseError.toException());
-                Toast.makeText(LoginActivity.this,
-                        "Login Profile DB error:" + databaseError.toString(), Toast.LENGTH_LONG).show();
-            }
-        });
+    //Callback after profile is fetched from DB. See SharedData impl of fetchProfile()
+    public void profileFetched() {
+        SharedData data = SharedData.getInstance();
+        Log.w(TAG, "profileFetched invoked ...." + data.toString());
+        mAdminCode = data.mAdminCode;
+        mMemCode = data.mMemCode;
+        mRootCode = data.mRootCode;
+        attemptLogin();
     }
 
     /**
@@ -280,6 +274,10 @@ public class LoginActivity extends AppCompatActivity {
         editor.putString(Constants.DATA_ROLE, mRole);
         editor.putString(Constants.DATA_USER, mUser);
         editor.apply();
+        SharedData data = SharedData.getInstance();
+        data.mClub = club;
+        data.mRole = mRole;
+        data.mUser = mUser;
 
         showProgress(false);
         if (mInitialAttempt) {

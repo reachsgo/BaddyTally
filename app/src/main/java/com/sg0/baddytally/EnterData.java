@@ -3,12 +3,14 @@ package com.sg0.baddytally;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -19,6 +21,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
@@ -94,6 +97,7 @@ public class EnterData extends AppCompatActivity {
     private String mSpinner_P4_selection;
 
     private DatabaseReference mDatabase;
+    private ProgressDialog mProgressDialog;
 
     private String createNewRoundName(boolean commit) {
         Date c = Calendar.getInstance().getTime();
@@ -137,6 +141,7 @@ public class EnterData extends AppCompatActivity {
         Log.w(TAG, "onCreate :" + SharedData.getInstance().toString() + "/" + mGroup + "/" + mGameType + "/" + mNewRoundFlag);
         mSingles = Constants.SINGLES.equals(mGameType);
         mDatabase = FirebaseDatabase.getInstance().getReference();
+        mProgressDialog = null;
         mRoundName = "";
         if(!mNewRoundFlag.equals(Constants.NEWROUND)) {
             mRoundName = SharedData.getInstance().mRoundName;  //use the value read from DB
@@ -145,6 +150,10 @@ public class EnterData extends AppCompatActivity {
             mRoundName = createNewRoundName(true);
         }
         Log.w(TAG, "mRoundName=" + mRoundName);
+
+        String title = (String)((TextView)findViewById(R.id.enterdata_header)).getText();
+        title += ": " + mGroup;
+        ((TextView)findViewById(R.id.enterdata_header)).setText(title);
     }
 
     @Override
@@ -397,7 +406,7 @@ public class EnterData extends AppCompatActivity {
                     if ( games.getPlayerPartner(p1).equalsIgnoreCase(p2) )
                         alertStr = p1 + " and " + p2 + " have already played as a team today!";
                     if ( games.getPlayerPartner(p3).equalsIgnoreCase(p4) )
-                        alertStr += "\n" + p3 + " and " + p4 + " have also played as a team today!";
+                        alertStr += "\n" + p3 + " and " + p4 + " have already played as a team today!";
                     showAlert(alertStr);
                 }
                 return;
@@ -421,7 +430,6 @@ public class EnterData extends AppCompatActivity {
 
                     case DialogInterface.BUTTON_NEGATIVE:
                         //No button clicked
-                        //killActivity();
                         break;
                 }
             }
@@ -434,6 +442,8 @@ public class EnterData extends AppCompatActivity {
                 .setPositiveButton("Yes", dialogClickListener)
                 .setNegativeButton("No", dialogClickListener).show();
     }
+
+
 
     private boolean enterData(boolean dry_run) {
 
@@ -488,29 +498,62 @@ public class EnterData extends AppCompatActivity {
         //Do not proceed to do tha actual DB update, if this is a dry run.
         if (dry_run) return true;
 
-        //Toast.makeText(EnterData.this, winners + " won!", Toast.LENGTH_SHORT).show();
-        Snackbar.make(findViewById(R.id.enterdata_ll), winners + " won!", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show();
         Log.i(TAG, "enterData: " + winners + " vs " + losers + " : " + winningScore.toString() + "-" + losingScore.toString());
+        final GamePlayers gamePlayers = new GamePlayers(winner1, winner2, loser1, loser2, winners, winningScore, losingScore);
 
-        GameJournalDBEntry jEntry = new GameJournalDBEntry(mRoundName, mInnings, SharedData.getInstance().mUser);
-        jEntry.setResult(createNewRoundName(false), mGameType, winner1, winner2, loser1, loser2, winningScore, losingScore);
-        jEntry.setmGNo(mGameNum);
-        DatabaseReference jDBEntryRef = mDatabase.child(mClub).child(Constants.JOURNAL).child(mInnings).child(mRoundName).child(mGroup).push();
-        jDBEntryRef.setValue(jEntry);
-        Log.i(TAG, "WRITTEN jEntry: " + jEntry.toReadableString());
-        updateDB(winner1, winner2, loser1, loser2);
-        mDatabase.child(mClub).child(Constants.INNINGS).child(SharedData.getInstance().mInningsDBKey.toString()).child("round").setValue(mRoundName);
-        SharedData.getInstance().mRoundName = mRoundName;
-        Log.d(TAG, "WRITTEN mRoundName: " + mRoundName + " data=" + SharedData.getInstance().toString());
+        if(null!=mProgressDialog) return false;   //attempt to press Enter button repeatedly
+        mProgressDialog = new ProgressDialog(EnterData.this);
+        mProgressDialog.setMessage("Updating database....");
+        mProgressDialog.show();
+        //To avoid a conflict when 2 users are entering the same score.
+        //Without lock, inconsistency is seen: missing journal entry or points are not added.
+        SharedData.getInstance().acquireDBLock();
+        //Give some time for all other threads (firebase DB updates) to catch up.
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Log.v(TAG, "After DB lock wait...");
+                updateDB(gamePlayers);
+            }
+        }, 2000);
         return true;
     }
 
-    private void updateDB(final String winner1, final String winner2, final String loser1, final String loser2){
+    private void updateDB(final GamePlayers gPlayers){
+
+        if(!SharedData.getInstance().isDBLocked()) {
+            Toast.makeText(EnterData.this, "Another update is in progress, try again...", Toast.LENGTH_LONG).show();
+            if (null!=mProgressDialog && mProgressDialog.isShowing()) {
+                mProgressDialog.dismiss();
+                mProgressDialog = null;
+            }
+            return;
+        }
+        final String winner1 = gPlayers.winner1;
+        final String winner2 = gPlayers.winner2;
+        final String loser1 = gPlayers.loser1;
+        final String loser2 = gPlayers.loser2;
+
         if (winner1.isEmpty()) {
             Toast.makeText(EnterData.this, "winner name is empty!", Toast.LENGTH_LONG).show();
             killActivity();
         }
+
+        Snackbar.make(findViewById(R.id.enterdata_ll), gPlayers.winners + " won!", Snackbar.LENGTH_LONG)
+                .setAction("Action", null).show();
+
+        GameJournalDBEntry jEntry = new GameJournalDBEntry(mRoundName, mInnings, SharedData.getInstance().mUser);
+        jEntry.setResult(createNewRoundName(false), mGameType, winner1, winner2, loser1, loser2, gPlayers.winningScore, gPlayers.losingScore);
+        jEntry.setmGNo(mGameNum);
+        DatabaseReference jDBEntryRef = mDatabase.child(mClub).child(Constants.JOURNAL).child(mInnings).child(mRoundName).child(mGroup).push();
+        jDBEntryRef.setValue(jEntry);
+        Log.i(TAG, "WRITTEN jEntry: " + jEntry.toReadableString());
+        //updateDB(winner1, winner2, loser1, loser2);
+        mDatabase.child(mClub).child(Constants.INNINGS).child(SharedData.getInstance().mInningsDBKey.toString()).child("round").setValue(mRoundName);
+        SharedData.getInstance().mRoundName = mRoundName;
+        Log.d(TAG, "WRITTEN mRoundName: " + mRoundName + " data=" + SharedData.getInstance().toString());
+
         DatabaseReference mClubDBRef = mDatabase.child(mClub);
         DatabaseReference dbRef_winner1 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(winner1);
         dbRef_winner1.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, true, dbRef_winner1, false,true));
@@ -523,6 +566,30 @@ public class EnterData extends AppCompatActivity {
             dbRef_loser2.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, false, dbRef_loser2, false,false));
         }
         SharedData.getInstance().setDBUpdated(true);
+        SharedData.getInstance().releaseDBLock();
+        if (null!=mProgressDialog && mProgressDialog.isShowing()) {
+            mProgressDialog.dismiss();
+            mProgressDialog = null;
+        }
+    }
+
+    class GamePlayers {
+        private String winner1, winner2;
+        private String loser1, loser2;
+        private String winners;
+        private int winningScore, losingScore;
+
+        public GamePlayers(String winner1, String winner2, String loser1, String loser2, String winners, int winningScore, int losingScore) {
+            this.winner1 = winner1;
+            this.winner2 = winner2;
+            this.loser1 = loser1;
+            this.loser2 = loser2;
+            this.winners = winners;
+            this.winningScore = winningScore;
+            this.losingScore = losingScore;
+        }
     }
 
 }
+
+

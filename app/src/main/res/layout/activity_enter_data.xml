@@ -15,6 +15,7 @@
     android:background="@color/colorPrimary">
 
     <TextView
+        android:id="@+id/enterdata_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/colorPrimaryDark"

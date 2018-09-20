@@ -16,16 +16,19 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
@@ -36,7 +39,13 @@ public class SharedData {
     private static final String SHUFFLE_FAIL = "SH_F";
     private static final String NEWUSER_CREATED = "NEW_U";
     private static final String USER_DELETED = "USR_D";
-    private static SharedData sSoleInstance;
+    private static final String INNINGS_CREATED = "NEW_I";
+
+
+    //with volatile variable guarantees happens-before relationship,
+    // all the write will happen on volatile sSoleInstance before any read of sSoleInstance variable
+    private static volatile SharedData sSoleInstance;
+
     public int mNumOfGroups;
     public String mUser;
     public String mClub;
@@ -49,22 +58,41 @@ public class SharedData {
     public ArrayList<PlayerData> mGoldPlayers;
     public ArrayList<PlayerData> mSilverPlayers;
     public Integer mInningsDBKey;
+    public Integer mWinPercNum;
     private boolean mDBUpdated;
     private boolean mUserNotifyEnabled;
     private boolean mDBConnected;
+    private boolean mDBLock;
     private String mStoreHistory;
     private ValueEventListener mDBConnectListener;
+    public ArrayList<ActiveUserDBEntry> mActiveUsers;
 
     private SharedData() {
+
+        //Prevent form the reflection api.
+        if (sSoleInstance != null){
+            throw new RuntimeException("Use getInstance() method to get the single instance of this class.");
+        }
+
         mDBConnectListener = null;
         clear();
     }  //private constructor.
 
     public static SharedData getInstance() {
         if (sSoleInstance == null) { //if there is no instance available... create new one
-            sSoleInstance = new SharedData();
+            synchronized (SharedData.class) {
+                //Check for the second time and make it thread safe
+                //This wont be an issue actually in this app, as getInstance is called the first time for main:onCreate()
+                sSoleInstance = new SharedData();
+            }
         }
         return sSoleInstance;
+    }
+
+    //Make singleton from serialize and deserialize operation.
+    //Unused in this app.
+    protected SharedData readResolve() {
+        return getInstance();
     }
 
     public void clear() {
@@ -81,10 +109,13 @@ public class SharedData {
         mGoldPlayers = null;
         mSilverPlayers = null;
         mInningsDBKey = -1;
+        mWinPercNum = Constants.SHUFFLE_WINPERC_NUM_GAMES;
         mDBUpdated = false;
         mUserNotifyEnabled = true;
         mDBConnected = false;
+        mDBLock = false;
         mStoreHistory = "";
+        mActiveUsers = null;
     }
 
     public boolean isRoot() {
@@ -110,19 +141,17 @@ public class SharedData {
         setDBUpdated(true);
     }
 
-    private void addHistory(Context context, final String story) {
+    private void addHistory(final String story) {
+        if(story.isEmpty()) return;
         Date c = Calendar.getInstance().getTime();
         SimpleDateFormat df = new SimpleDateFormat(Constants.ROUND_DATEFORMAT, Locale.CANADA);
         String dateStr = df.format(c);
-        synchronized (context) {
-            //Better to be synchronized. These are called from different firebase-DB-update threads, in case of shuffling scenario.
             if (isUserNotifyEnabled()) {
                 //All the user delete/create log can be added as a single entry.
                 final DatabaseReference inningsDBRef = FirebaseDatabase.getInstance().getReference().child(SharedData.getInstance().mClub).child(Constants.INTERNALS).child(Constants.HISTORY);
                 DatabaseReference newHistory = inningsDBRef.push();
                 newHistory.setValue(dateStr + "#" + mUser + "#" + story);
             } else mStoreHistory += story + ",";
-        }
         Log.w(TAG, "History added: [" + dateStr + ":" + mUser + ":" + story + "]");
     }
 
@@ -144,46 +173,49 @@ public class SharedData {
             resultStr = tmpStr.replace(SHUFFLE_SUCCESS, "Shuffle Successful");
         else if (tmpStr.contains(SHUFFLE_FAIL))
             resultStr = tmpStr.replace(SHUFFLE_FAIL, "Shuffle Failed");
+        else if (tmpStr.contains(INNINGS_CREATED))
+            resultStr = tmpStr.replace(INNINGS_CREATED, "New Innings");
 
         return resultStr;
     }
 
-    public void addShuffleStart2History(Context context, final String newInningsName) {
-        addHistory(context, SHUFFLE_START + "=" + newInningsName);
+    public void addShuffleStart2History(final String newInningsName) {
+        addHistory(SHUFFLE_START + "=" + newInningsName);
     }
 
-    public void addShuffleSuccess2History(Context context, final String newInningsName) {
-        addHistory(context, SHUFFLE_SUCCESS + "=" + newInningsName);
+    public void addShuffleSuccess2History(final String newInningsName) {
+        addHistory(SHUFFLE_SUCCESS + "=" + newInningsName);
     }
 
-    public void addShuffleFailure2History(Context context, final String newInningsName) {
-        addHistory(context, SHUFFLE_FAIL + "=" + newInningsName);
+    public void addShuffleFailure2History(final String newInningsName) {
+        addHistory(SHUFFLE_FAIL + "=" + newInningsName);
     }
 
-    public void addNewUserCreation2History(Context context, final String newUserName) {
-        addHistory(context, NEWUSER_CREATED + "=" + newUserName);
+    public void addNewUserCreation2History(final String newUserName) {
+        addHistory(NEWUSER_CREATED + "=" + newUserName);
     }
 
-    public void addUserDeletion2History(Context context, final String userName) {
-        addHistory(context, USER_DELETED + "=" + userName);
+    public void addUserDeletion2History(final String userName) {
+        addHistory(USER_DELETED + "=" + userName);
+    }
+
+    public void addInningsCreation2History(final String innings) {
+        addHistory(INNINGS_CREATED + "=" + innings);
     }
 
     public void disableUserNotify(Context context) {
-        synchronized (context) {
+
             mUserNotifyEnabled = false;
             mStoreHistory = "";
-        }
     }
 
     public void enableUserNotify(Context context) {
-        synchronized (context) {
             mUserNotifyEnabled = true;
-            addHistory(context, mStoreHistory);
-        }
+            addHistory(mStoreHistory);
     }
 
     public boolean isUserNotifyEnabled() {
-        return mUserNotifyEnabled == true;
+        return mUserNotifyEnabled;
     }
 
     public void showToast(final Context c, final CharSequence s, final int d) {
@@ -214,6 +246,19 @@ public class SharedData {
     public SpannableStringBuilder getTitleStr(String title, Context context) {
         return getColorString(title,   //add some color to it. Use the color scheme color from color.xml
                 ResourcesCompat.getColor(context.getResources(), R.color.colorPrimaryDark, null));
+    }
+
+    public String getShortRoundName(String round) {
+        //show a more human readable round name (date format w/o HH:mm)
+        SimpleDateFormat sdf = new SimpleDateFormat(Constants.ROUND_DATEFORMAT, Locale.CANADA);
+        try {
+            Date d = sdf.parse(round);
+            sdf.applyPattern(Constants.ROUND_DATEFORMAT_SHORT);
+            round = sdf.format(d);
+        } catch (ParseException ex) {
+            Log.w(TAG, "setTitle ParseException:" + ex.getMessage());
+        }
+        return round;
     }
 
     public void sortPlayers(ArrayList<PlayerData> playersList, final int idx, final boolean descending, final Context context, final boolean showToasts) {
@@ -248,10 +293,10 @@ public class SharedData {
                                 infoLog[0] += p1.getName() + " & " + p2.getName();
                                 int rand = new Random().nextInt(10);
                                 if ((rand % 2) == 0) {
-                                    Log.w(TAG, "sortPlayers: Toss: " + p1.getName() + " smaller!");
+                                    //Log.w(TAG, "sortPlayers: Toss: " + p1.getName() + " smaller!");
                                     return 1;
                                 } else if ((rand % 2) == 1) {
-                                    Log.w(TAG, "sortPlayers: Toss: " + p2.getName() + " smaller!");
+                                    //Log.w(TAG, "sortPlayers: Toss: " + p2.getName() + " smaller!");
                                     return -1;
                                 }
                             } else return value4;
@@ -266,7 +311,7 @@ public class SharedData {
             Toast.makeText(context,
                     "Tossed a coin to sort: " + infoLog[0], Toast.LENGTH_SHORT).show();
         }
-        Log.d(TAG, "sortPlayers: Sorted playersList size: " + Integer.toString(playersList.size()));
+        //Log.d(TAG, "sortPlayers: Sorted playersList size: " + Integer.toString(playersList.size()));
     }
 
     public boolean isDBConnected() {
@@ -320,7 +365,59 @@ public class SharedData {
         09-17 21:19:05.118 27677-27677/com.sg0.baddytally W/SharedData: isDBConnected: not connected
          */
 
+        /* This routine was first implemented for the below DB node:
+        final DatabaseReference inningsDBRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.INTERNALS).child("awake");
 
+        But, then it was changed to read user-data:
+        Instead of simply doing a mock write to wakeup DB connection, lets keep tab of the last login from this user.
+        */
+        Date c = Calendar.getInstance().getTime();
+        SimpleDateFormat df = new SimpleDateFormat("MM-dd", Locale.CANADA);
+        final String login_day = df.format(c);
+
+
+        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.ACTIVE_USERS).child(mUser);
+        dbRef.runTransaction(new Transaction.Handler() {
+            @NonNull
+            @Override
+            public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
+                ActiveUserDBEntry userData = mutableData.getValue(ActiveUserDBEntry.class);
+                if (userData == null) return Transaction.success(mutableData);
+                else {
+                    Log.w(TAG, "wakeUpDBConnection: update DB for user:" + mUser);
+                    mutableData.setValue(new ActiveUserDBEntry(mRole, android.os.Build.MODEL, login_day));
+                    return Transaction.success(mutableData);
+                }
+            }
+
+            @Override
+            public void onComplete(@Nullable DatabaseError error, boolean committed, @Nullable DataSnapshot dataSnapshot) {
+                if (error != null || !committed || dataSnapshot == null) {
+                    if (null != error)
+                        Log.w(TAG, "wakeUpDBConnection: onComplete: Failed:", error.toException());
+                    else Log.w(TAG, "wakeUpDBConnection: onComplete: Failed");
+                } else {
+                    try {
+                        ActiveUserDBEntry userData = dataSnapshot.getValue(ActiveUserDBEntry.class);
+                        Log.w(TAG, "wakeUpDBConnection: onComplete: Success: " + userData.toString());
+                    } catch (NullPointerException e) {
+                        if(mClub.isEmpty()) return;
+                        //java.lang.NullPointerException: Attempt to invoke virtual method 'boolean java.lang.Boolean.booleanValue()' on a null object reference
+                        //SGO: If INTERNALS/locked node is not present in DB, dataSnapshot is not set to null, but a null pointer exception
+                        //     is thrown here. Just gonna catch it here to avoid crash.
+                        //This was seen in a case where innings was on going, and the app was upgraded. Newer version of app depended on INTERNALS/locked
+                        //but the older version never new about INTERNALS/locked. Workaround was to manually create INTERNALS/locked in the DB for that club.
+                        //This issue will not happen if the new app is used to create the innings (INTERNALS/locked node iwll be created in DB).
+                        Log.w(TAG, "wakeUpDBConnection: onComplete: Error:" + e.getMessage());
+                        dbRef.setValue(new ActiveUserDBEntry(mRole, android.os.Build.MODEL, login_day));
+                        Log.w(TAG, "New user created in DB:" + mUser);
+                    }
+
+                }
+            }
+        });
+
+/*
         final DatabaseReference inningsDBRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.INTERNALS).child("awake");
         inningsDBRef.runTransaction(new Transaction.Handler() {
             @NonNull
@@ -347,8 +444,175 @@ public class SharedData {
                 }
             }
         });
+        */
     }
 
+    /*
+    private void syncActiveUserinDB() {
+
+        //ActiveUSer DB has
+        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.ACTIVE_USERS).child(mUser);
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Log.w(TAG, "syncActiveUserinDB: onDataChange");
+                ActiveUserDBEntry userData = dataSnapshot.getValue(ActiveUserDBEntry.class);
+                Date c = Calendar.getInstance().getTime();
+                SimpleDateFormat df = new SimpleDateFormat("MM-dd", Locale.CANADA);
+                String login_day = df.format(c);
+                if(null==userData) {
+                    //not created yet, create one
+                    dbRef.setValue(new ActiveUserDBEntry(mUser, mRole, android.os.Build.MODEL, login_day));
+                    Log.w(TAG, "New user created in DB:" + mUser);
+                }
+                else {
+                    //check for last user login and role
+
+                    if(!login_day.equals(userData.getLl()) || !mRole.equals(userData.getR())) {
+                        Log.w(TAG, "update DB for DB:" + mUser);
+                        dbRef.setValue(new ActiveUserDBEntry(mUser, mRole, android.os.Build.MODEL, login_day));
+                    }
+                }
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w(TAG, "syncActiveUserinDB: onCancelled", databaseError.toException());
+                Toast.makeText(LoginActivity.this,
+                        "Active User DB error:" + databaseError.toString(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+    */
+
+    public boolean isDBLocked() {
+        return mDBLock;
+    }
+    //There is no need to synchronize this, as it is never called from different threads.
+    //Idea is to synchronize with others users operating on teh same DB.
+    private void changeDBLockState(final boolean target) {
+        // Why a lock?
+        //    -- main reason being Innings creation is done by only one root user.
+        //    -- added advantage is that a DB online check is done before the critical operation is performed
+        //    -- there are comments saying that performing a write makes sure that the DB is in sync.
+        //       (but that might be only for that particular DB tree, anyways!)
+        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.INTERNALS).child(Constants.LOCK);
+        dbRef.runTransaction(new Transaction.Handler() {
+            @NonNull
+            @Override
+            public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
+                Boolean locked = mutableData.getValue(Boolean.class);
+                if (locked == null) {
+                    //most of the time, this routine is invoked twice: once with null, and then with correct value.
+                    //return success first time w/o changing the value. Change the value in the second invocation below.
+                    return Transaction.success(mutableData);
+                    //Since null cant be handled here to create the very first locked attribute, it should be created elsewhere
+                    //once for a club.
+                }
+                else {
+                    if (locked == target) {
+                        Log.w(TAG, "changeDBLockState: Already set to " + target);
+                        return Transaction.abort();
+                    } else {
+                        Log.w(TAG, "changeDBLockState: lock changed to " + target);
+                        mutableData.setValue(target);
+                    }
+                    return Transaction.success(mutableData);
+                }
+
+            }
+
+            @Override
+            public void onComplete(@Nullable DatabaseError error, boolean committed, @Nullable DataSnapshot dataSnapshot) {
+                if (error != null || !committed || dataSnapshot == null) {
+                    if (null != error)
+                        Log.w(TAG, "changeDBLockState: onComplete: Failed:", error.toException());
+                    else Log.w(TAG, "changeDBLockState: onComplete: Failed");
+                    mDBLock = false;
+                } else {
+                    try {
+                        mDBLock = dataSnapshot.getValue(Boolean.class);
+                    } catch (NullPointerException e) {
+                        //java.lang.NullPointerException: Attempt to invoke virtual method 'boolean java.lang.Boolean.booleanValue()' on a null object reference
+                        //SGO: If INTERNALS/locked node is not present in DB, dataSnapshot is not set to null, but a null pointer exception
+                        //     is thrown here. Just gonna catch it here to avoid crash.
+                        //This was seen in a case where innings was on going, and the app was upgraded. Newer version of app depended on INTERNALS/locked
+                        //but the older version never new about INTERNALS/locked. Workaround was to manually create INTERNALS/locked in the DB for that club.
+                        //This issue will not happen if the new app is used to create the innings (INTERNALS/locked node iwll be created in DB).
+                        Log.w(TAG, "changeDBLockState: onComplete: Error:" + e.getMessage());
+                        mDBLock = false;
+                    }
+                    Log.w(TAG, "changeDBLockState: onComplete: Success");
+                }
+            }
+        });
+    }
+
+    public void acquireDBLock() {
+        mDBLock = false;
+        Log.i(TAG, "acquireDBLock: acquiring...");
+        changeDBLockState(true);
+    }
+
+    public void releaseDBLock() {
+        Log.i(TAG, "releaseDBLock: releasing...");
+        changeDBLockState(false);
+    }
+
+    public void createDBLock() {
+        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.INTERNALS);
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(dataSnapshot==null || !dataSnapshot.hasChild(Constants.LOCK)) {
+                    // internals attr not found, or locked child not found
+                    Log.i(TAG, "createDBLock: lock attr not found, creating...");
+                    dbRef.child(Constants.LOCK).setValue(false);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w(TAG, "createDBLock: databaseError=" + databaseError);
+            }
+        });
+    }
+
+    public void fetchProfile(final CallbackRoutine cb, final Context context, final String club) {
+        //club is passed in as SharedData will not be populated yet with club info when invoked from LoginActivity.
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(club).child(Constants.PROFILE);
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(null==dataSnapshot) return;
+                Log.w(TAG, "fetchProfile: onDataChange");
+                for (DataSnapshot child : dataSnapshot.getChildren()) {
+                    if(null==child) continue;
+                    switch (child.getKey()) {
+                        case "admincode":
+                            mAdminCode = child.getValue(String.class);
+                            break;
+                        case "memcode":
+                            mMemCode = child.getValue(String.class);
+                            break;
+                        case "rootcode":
+                            mRootCode = child.getValue(String.class);
+                            break;
+                    } //switch case
+                }
+                //Log.w(TAG, "fetchProfile: onDataChange:" + mAdminCode + "/" + mRootCode);
+                cb.profileFetched();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w(TAG, "fetchProfile: onCancelled", databaseError.toException());
+                Toast.makeText(context,
+                        "Login Profile DB error:" + databaseError.toString(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
 
     @Override
     public String toString() {

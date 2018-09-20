@@ -7,6 +7,8 @@ class Constants {
     public static final String GROUPS = "groups";
     public static final String INNINGS = "innings";
     public static final String INTERNALS = "tmp";
+    public static final String LOCK = "locked";
+    public static final String ACTIVE_USERS = "users";
     public static final String HISTORY = "story";
     public static final String SEASON = "season";
     public static final String PROFILE = "profile";
@@ -28,6 +30,7 @@ class Constants {
     public static final int SEASON_IDX = 0;
     public static final int INNINGS_IDX = 1;
     public static final String ROUND_DATEFORMAT = "yyyy-MM-dd'T'HH:mm";
+    public static final String ROUND_DATEFORMAT_SHORT = "yyyy-MM-dd";
     public static final int SHUFFLE_WINPERC_NUM_GAMES = 12;
     public static final int SETTINGS_ACTIVITY = 100;
     public static final int LOGIN_ACTIVITY = 101;

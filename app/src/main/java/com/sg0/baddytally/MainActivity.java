@@ -10,6 +10,7 @@ import android.content.pm.ActivityInfo;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
@@ -56,16 +57,10 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
     private String mRoundName;
     private boolean mInitialAttempt;
     private boolean mRefreshing;
-    private boolean mDBUpdated;
+    //private boolean mDBUpdated;
     private RecyclerViewAdapter mGoldAdapter;
     private RecyclerViewAdapter mSilverAdapter;
-
-    @Override
-    public void dbUpdated() {
-        //Callback routine from adapter to indicate that the DB is updated
-        mDBUpdated = true;
-        Log.d(TAG, "SGO: dbUpdated callback");
-    }
+    private Handler uiHandler;
 
     private void setTitle(String club) {
         if (!TextUtils.isEmpty(club)) {
@@ -84,6 +79,20 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
         }
     }
 
+    private void setFooter() {
+        uiHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                String footerStr = "Innings:" + mInnings;
+                if (mInnings.isEmpty()) footerStr = "Innings not started";
+                if (!mRoundName.isEmpty()) footerStr += "/" + SharedData.getInstance().getShortRoundName(mRoundName);
+                if (!SharedData.getInstance().mUser.isEmpty())
+                    footerStr += ",   logged in as " + SharedData.getInstance().mUser;
+                ((TextView) findViewById(R.id.footer)).setText(footerStr);
+            }
+        });
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -92,11 +101,13 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
         Log.d(TAG, "onCreate: starting");
         Toolbar myToolbar = findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
+        uiHandler = new Handler();
         mOptionsMenu = null;
         mClub = "";
+        mInnings = "";
+        mRoundName = "";
         mRefreshing = true;
         mGoldAdapter = null;
-        ;
         mSilverAdapter = null;
         SharedData.getInstance().mNumOfGroups = Constants.NUM_OF_GROUPS;
         //SGO: Test single user group
@@ -104,28 +115,28 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
 
         TextView mGoldHeader = findViewById(R.id.gold_group);
         TextView mSilverHeader = findViewById(R.id.silver_group);
-        mGoldHeader.setOnLongClickListener(new View.OnLongClickListener() {
+        mGoldHeader.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onLongClick(View view) {
+            public void onClick(View view) {
                 //show only Gold group, if done a 2nd time, go back to normal.
                 LinearLayout silverView = findViewById(R.id.silver_parentview);
                 if (silverView.getVisibility() == View.GONE)
                     silverView.setVisibility(View.VISIBLE);
                 else
                     silverView.setVisibility(View.GONE);
-                return false;
+                return;
             }
         });
-        mSilverHeader.setOnLongClickListener(new View.OnLongClickListener() {
+        mSilverHeader.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onLongClick(View view) {
+            public void onClick(View view) {
                 //show only Silver group, if done a 2nd time, go back to normal.
                 LinearLayout goldView = findViewById(R.id.gold_parentview);
                 if (goldView.getVisibility() == View.GONE)
                     goldView.setVisibility(View.VISIBLE);
                 else
                     goldView.setVisibility(View.GONE);
-                return false;
+                return;
             }
         });
 
@@ -134,7 +145,8 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
             public void onClick(View view) {
                 if (null != mGoldAdapter) {
                     mGoldAdapter.sortOnSeason();
-                    selectedEffect(R.id.gold_header_season, R.id.gold_header_innings);
+                    selectedEffect2(R.id.gold_header_season_ll, R.id.gold_header_innings_ll);
+                    //selectedEffect(R.id.gold_header_season, R.id.gold_header_innings);
                 }
             }
         });
@@ -144,7 +156,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
             public void onClick(View view) {
                 if (null != mGoldAdapter) {
                     mGoldAdapter.sortOnInnings();
-                    selectedEffect(R.id.gold_header_innings, R.id.gold_header_season);
+                    selectedEffect2(R.id.gold_header_innings_ll, R.id.gold_header_season_ll);
                 }
             }
         });
@@ -154,7 +166,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
             public void onClick(View view) {
                 if (null != mSilverAdapter) {
                     mSilverAdapter.sortOnSeason();
-                    selectedEffect(R.id.silver_header_season, R.id.silver_header_innings);
+                    selectedEffect2(R.id.silver_header_season_ll, R.id.silver_header_innings_ll);
                 }
             }
         });
@@ -164,26 +176,35 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
             public void onClick(View view) {
                 if (null != mSilverAdapter) {
                     mSilverAdapter.sortOnInnings();
-                    selectedEffect(R.id.silver_header_innings, R.id.silver_header_season);
+                    selectedEffect2(R.id.silver_header_innings_ll, R.id.silver_header_season_ll);
+                    //selectedEffect(R.id.silver_header_innings, R.id.silver_header_season);
                 }
             }
         });
 
         //Initial effect, players are sorted on innings by default.
-        selectedEffect(R.id.gold_header_innings, R.id.gold_header_season);
-        selectedEffect(R.id.silver_header_innings, R.id.silver_header_season);
+        selectedEffect2(R.id.gold_header_innings_ll, R.id.gold_header_season_ll);
+        selectedEffect2(R.id.silver_header_innings_ll, R.id.silver_header_season_ll);
+        //selectedEffect(R.id.silver_header_innings, R.id.silver_header_season);
 
+    }
+
+    private void selectedEffect2(final int selectedViewId, final int otherViewId) {
+        findViewById(selectedViewId).setBackgroundColor(getResources().getColor(R.color.colorWhite));
+        findViewById(otherViewId).setBackgroundColor(getResources().getColor(R.color.colorBlack));
     }
 
     private void selectedEffect(final int selectedViewId, final int otherViewId) {
         TextView tv = findViewById(selectedViewId);
-        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) tv.getLayoutParams();
-        params.setMargins(10, 1, 1, 10); //substitute parameters for left, top, right, bottom
-        tv.setLayoutParams(params);
-        tv = findViewById(otherViewId);
-        params = (LinearLayout.LayoutParams) tv.getLayoutParams();
-        params.setMargins(0, 0, 0, 0); //substitute parameters for left, top, right, bottom
-        tv.setLayoutParams(params);
+
+            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) tv.getLayoutParams();
+            params.setMargins(5, 1, 1, 5); //substitute parameters for left, top, right, bottom
+            tv.setLayoutParams(params);
+            tv = findViewById(otherViewId);
+            params = (LinearLayout.LayoutParams) tv.getLayoutParams();
+            params.setMargins(0, 0, 0, 0); //substitute parameters for left, top, right, bottom
+            tv.setLayoutParams(params);
+
     }
 
     @Override
@@ -192,6 +213,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
         //Maintain DB connection state
         SharedData.getInstance().setUpDBConnectionListener();
         mInitialAttempt = false;
+        setFooter();
         SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
         String club = prefs.getString(Constants.DATA_CLUB, "");
         if (club.isEmpty()) {
@@ -220,6 +242,8 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                     mEnterDataItem.setEnabled(false);
             }
         }
+
+
     }
 
     @Override
@@ -442,8 +466,8 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                         break;
                     }
                 }
-                //There is innings table, but may be none with "current"==true
-                Log.w(TAG, "fetchInnings: returning from runTransaction");
+
+                setFooter();
                 return Transaction.success(mutableData);
             }
 
@@ -453,37 +477,15 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
             }
         });
 
-        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.PROFILE);
-        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.v(TAG, "fetchProfile: onDataChange");
-                for (DataSnapshot child : dataSnapshot.getChildren()) {
-                    if (null == child) continue;
-                    switch (child.getKey()) {
-                        case "admincode":
-                            SharedData.getInstance().mAdminCode = child.getValue(String.class);
-                            break;
-                        case "memcode":
-                            SharedData.getInstance().mMemCode = child.getValue(String.class);
-                            break;
-                        case "rootcode":
-                            SharedData.getInstance().mRootCode = child.getValue(String.class);
-                            break;
-                    }
-                }
-                initAdapter();
-                mRefreshing = false;
-            }
+        SharedData.getInstance().fetchProfile(MainActivity.this, MainActivity.this, mClub);
+    }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                // Getting Post failed, log a message
-                Log.w(TAG, "fetchProfile: onCancelled", databaseError.toException());
-                Toast.makeText(MainActivity.this, "Profile DB error: " + databaseError.toString(),
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
+    //Callback after profile is fetched from DB. See SharedData impl of fetchProfile()
+    public void profileFetched() {
+        SharedData data = SharedData.getInstance();
+        Log.w(TAG, "profileFetched invoked ...." + data.toString());
+        initAdapter();
+        mRefreshing = false;
     }
 
     private void showRules() {
@@ -494,13 +496,13 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                 " Winner of Singles game is awarded 2 points. No points for a loss.\n\n" +
                 "4.  At the start of a new Innings, points accumulated over the last Innings are considered to shuffle" +
                 " the players. Shuffling rules:\n" +
-                "        (i)  Top 3 players of Silver move to Gold & Bottom 3 players of Gold move to Silver. If there is a tie, player selection is done on criteria in the order:" +
+                "        (i)  Top \'N\' players (3 by default) of Silver move to Gold & Bottom \'N\' players of Gold move to Silver. If there is a tie, player selection is done on criteria in the order:" +
                 " (i.1) higher win percentage, (i.2) most number of wins" +
                 " (i.3) most number of games played (i.4) toss\n" +
-                "        (ii)  Once the above rule is applied, the win % of the players are compared, for those who have at least played 12 games in that month." +
-                " If the player with the highest win % is in Silver Group, then he is shuffled with the player with the lowest win % from Gold group." +
+                "        (ii)  Once the above rule is applied, the win % of the players are compared, for those who have at least played \'X\' games (12 by default) in that month." +
+                " If the player with the highest win % is in Silver Group, then he/she is shuffled with the player with the lowest win % from Gold group." +
                 " Please note that it is quite possible that the player being moved from Gold group due to this could be a player who just moved to Gold due to rule 1" +
-                " or he could be a player who was already in Gold group before applying shuffling rule 1.\n\n" +
+                " or he/she could be a player who was already in Gold group before applying shuffling rule 1.\n\n" +
                 "5.  After warm-up, games are played among players of the same group, such that all" +
                 " possible combination of pairings are covered (at least once) for that day. \n\n" +
                 "6.  Any new member to club starts in the Silver group.\n\n" +

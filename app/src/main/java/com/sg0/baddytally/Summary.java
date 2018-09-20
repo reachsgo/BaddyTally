@@ -1,7 +1,5 @@
 package com.sg0.baddytally;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Typeface;
 import android.os.Build;
@@ -9,6 +7,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -19,8 +18,11 @@ import android.text.TextUtils;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,11 +33,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
 
 
 public class Summary extends AppCompatActivity {
@@ -45,6 +43,10 @@ public class Summary extends AppCompatActivity {
     private RecyclerView.Adapter mGoldAdapter;
     private RecyclerView mRecyclerSilverView;
     private RecyclerView.Adapter mSilverAdapter;
+    private DatabaseReference mDatabase;
+    private SharedData mData;
+    private ArrayList<String> mRounds;
+    private String mCurrentRound;
 
     private void killActivity(){
         /*
@@ -61,17 +63,11 @@ public class Summary extends AppCompatActivity {
 
     private void setTitle(String round) {
         if (!TextUtils.isEmpty(round)) {
-            //show a more human readable round name (date format w/o HH:mm)
-            SimpleDateFormat sdf = new SimpleDateFormat(Constants.ROUND_DATEFORMAT, Locale.CANADA);
-            try {
-                Date d = sdf.parse(round);
-                sdf.applyPattern("yyyy-MM-dd");
-                round = sdf.format(d);
-            } catch (ParseException ex) {
-                Log.w(TAG, "setTitle ParseException:" + ex.getMessage());
-            }
+            round = SharedData.getInstance().getShortRoundName(round);
             final String title = Constants.APPSHORT + "  Summary";
-            String tempString = title + "\nRound: " + round;
+            String tempString = title + "\n";
+            if(!SharedData.getInstance().mInnings.isEmpty()) tempString += SharedData.getInstance().mInnings;
+            tempString += "/" + round;
             SpannableString spanString = new SpannableString(tempString);
             spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, title.length(), 0);
             spanString.setSpan(new StyleSpan(Typeface.ITALIC), title.length(), tempString.length(), 0);
@@ -88,6 +84,9 @@ public class Summary extends AppCompatActivity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         Log.v(TAG, "onCreate :" + SharedData.getInstance().toString());
 
+        mDatabase = FirebaseDatabase.getInstance().getReference();
+        mData = SharedData.getInstance();
+
         FloatingActionButton fab = findViewById(R.id.fab_return);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -98,28 +97,40 @@ public class Summary extends AppCompatActivity {
 
         TextView mGoldHeader = findViewById(R.id.gold_group);
         TextView mSilverHeader = findViewById(R.id.silver_group);
-        mGoldHeader.setOnLongClickListener(new View.OnLongClickListener() {
+        mGoldHeader.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onLongClick(View view) {
+            public void onClick(View view) {
                 //show only Gold group, if done a 2nd time, go back to normal.
                 LinearLayout silverView = findViewById(R.id.silver_parentview);
                 if (silverView.getVisibility() == View.GONE)
                     silverView.setVisibility(View.VISIBLE);
                 else
                     silverView.setVisibility(View.GONE);
-                return false;
+                return;
             }
         });
-        mSilverHeader.setOnLongClickListener(new View.OnLongClickListener() {
+
+        mSilverHeader.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onLongClick(View view) {
+            public void onClick(View view) {
                 //show only Silver group, if done a 2nd time, go back to normal.
                 LinearLayout goldView = findViewById(R.id.gold_parentview);
                 if (goldView.getVisibility() == View.GONE)
                     goldView.setVisibility(View.VISIBLE);
                 else
                     goldView.setVisibility(View.GONE);
-                return false;
+                return;
+            }
+        });
+
+        TextView summaryHeader = findViewById(R.id.header);
+        summaryHeader.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                fetchAllRounds(view);
+                //TODO: show a drop down list with the round names
+                // when clicked, update the view for that round.
+                return true;
             }
         });
     }
@@ -127,10 +138,12 @@ public class Summary extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference();
-        SharedData data = SharedData.getInstance();
-        setTitle(SharedData.getInstance().mRoundName);
+        drawViews(SharedData.getInstance().mRoundName);
+    }
 
+     private void drawViews(final String round) {
+        mCurrentRound = round;
+        setTitle(round);
         mRecyclerGoldView = findViewById(R.id.gold_journal_view);
         // use this setting to improve performance if you know that changes
         // in content do not change the layout size of the RecyclerView
@@ -146,7 +159,7 @@ public class Summary extends AppCompatActivity {
 
         final ArrayList<GameJournalDBEntry> goldGameList = new ArrayList<>();
         final ArrayList<String> goldGameListKeys = new ArrayList<>();
-        DatabaseReference dbRef = mDatabase.child(data.mClub).child(Constants.JOURNAL).child(data.mInnings).child(data.mRoundName).child(Constants.GOLD);
+        DatabaseReference dbRef = mDatabase.child(mData.mClub).child(Constants.JOURNAL).child(mData.mInnings).child(round).child(Constants.GOLD);
         Query myQuery = dbRef.orderByKey();
         myQuery.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -185,7 +198,7 @@ public class Summary extends AppCompatActivity {
             mRecyclerSilverView.setLayoutManager(mSilverLayoutManager);
             final ArrayList<GameJournalDBEntry> silverGameList = new ArrayList<>();
             final ArrayList<String> silverGameListKeys = new ArrayList<>();
-            DatabaseReference dbRef2 = mDatabase.child(data.mClub).child(Constants.JOURNAL).child(data.mInnings).child(data.mRoundName).child(Constants.SILVER);
+            DatabaseReference dbRef2 = mDatabase.child(mData.mClub).child(Constants.JOURNAL).child(mData.mInnings).child(round).child(Constants.SILVER);
             Query myQuery2 = dbRef2.orderByKey();
             myQuery2.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
@@ -209,6 +222,56 @@ public class Summary extends AppCompatActivity {
             });
         }
     }
+
+    private void fetchAllRounds(final View view) {
+        mRounds = new ArrayList<>();
+        DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference();
+        DatabaseReference dbRef2 = mDatabase.child(mData.mClub).child(Constants.JOURNAL).child(mData.mInnings);
+        Query myQuery2 = dbRef2.orderByKey();
+        myQuery2.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for (DataSnapshot child : dataSnapshot.getChildren()) {
+                    if(null == child) return;
+                    mRounds.add(child.getKey());
+                    Log.w(TAG, "fetchAllRounds: added" + child.getKey());
+                }
+                if(mRounds.size()>1) showOptions(view);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w(TAG, "fetchAllRounds: dberror" + databaseError.getMessage());
+                Toast.makeText(Summary.this, "DB error while fetching innings" + databaseError.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void showOptions(final View view) {
+        final PopupMenu popup = new PopupMenu(Summary.this, view);
+        popup.getMenuInflater().inflate(R.menu.summary_popup_menu, popup.getMenu());
+        popup.getMenu().clear();
+        Menu pMenu = popup.getMenu();
+        for (String round: mRounds) {
+            pMenu.add(round);
+        }
+        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                String selectedRound = menuItem.getTitle().toString();
+                Log.v(TAG, "showOptions onMenuItemClick:" + selectedRound);
+                if(!selectedRound.equals(mCurrentRound)) {
+                    drawViews(selectedRound);
+                }
+                popup.dismiss();
+                return true;
+            }
+        });
+        popup.show();//showing popup menu
+        Snackbar.make(view, "Select the round you want to display", Snackbar.LENGTH_LONG)
+                .setAction("Action", null).show();
+    }
+
 
     @Override
     protected void onPause() {

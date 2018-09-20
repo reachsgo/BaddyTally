@@ -77,15 +77,23 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.layout_listitem, parent, false);
+        //Log.d(TAG, "onCreateViewHolder: ");
         return new ViewHolder(v);
     }
 
+    /*
+    Below error log is seen on API19 (Android 4.4.2), though the app logs I have added stop coming after this, app seems to be functional
+    09-18 10:47:33.091 12225-12225/com.sg0.baddytally D/ViewGroup: addInArray been called, this = android.support.v7.widget.RecyclerView{421f9bf8 VFED.V.. .F....ID 0,123-680,519 #7f080071 app:id/gold_view}call stack =
+    java.lang.Throwable: addInArray
+     */
 
     @Override
     public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
+        //Log.d(TAG, "onBindViewHolder: " + position);
         holder.player.setText(mPlayers.get(position).getName());
         holder.innings_score.setText(mPlayers.get(position).getPtsFormat_innings());
         holder.overall_score.setText(mPlayers.get(position).getPtsFormat_season());
+
         if ((position % 2) == 0) {
             holder.player.setBackgroundColor(0x00000000); //transparent background
             holder.innings_score.setBackgroundColor(0x00000000);

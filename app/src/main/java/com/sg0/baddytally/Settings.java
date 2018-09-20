@@ -42,9 +42,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
-import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Query;
-import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
@@ -90,8 +88,6 @@ public class Settings extends AppCompatActivity {
     private PlayerData hwPD;  //highest win% Player Data
     private PlayerData lwPD;  //lowest win% Player Data
     private String mWinPercInfo; //Info on Win % shuffling rule application
-    private boolean mDBConnected;
-    private boolean mDBLock;
 
     private void killActivity() {
         finish();
@@ -138,6 +134,8 @@ public class Settings extends AppCompatActivity {
             enableDisableView(ll, false);
             ll = findViewById(R.id.newinnings_ll);
             enableDisableView(ll, false);
+            Button btn = findViewById(R.id.users_btn);
+            enableDisableView(btn, false);
             Log.w(TAG, "onCreate : LL is disabled");
 
         } else {
@@ -181,6 +179,8 @@ public class Settings extends AppCompatActivity {
                     onClickCreateNewInnings();
                 } //onClick
             });
+
+            activateUserButton();
 
         } //root user else
 
@@ -244,6 +244,8 @@ public class Settings extends AppCompatActivity {
             } //onClick
         });
 
+
+
         Button createNewClub_btn = findViewById(R.id.createNewClub_btn);
         createNewClub_btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -269,6 +271,8 @@ public class Settings extends AppCompatActivity {
             createNewClub_btn.setVisibility(View.GONE);
         }
 
+        ((EditText) findViewById(R.id.winPercNum)).setText(""+Constants.SHUFFLE_WINPERC_NUM_GAMES);
+
         FloatingActionButton fab = findViewById(R.id.fab_return);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -277,11 +281,56 @@ public class Settings extends AppCompatActivity {
             }
         });
 
+        //hide keyboard
+        if (getCurrentFocus() != null) {
+            InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if (null != inputMethodManager)
+                inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+        }
+
     }
 
+    private void activateUserButton() {
+        Button users_btn = findViewById(R.id.users_btn);
+        users_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.ACTIVE_USERS);
+                dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        StringBuilder userList = new StringBuilder();
+
+                        for (DataSnapshot child : dataSnapshot.getChildren()) {
+                            if(child == null) continue;
+                            ActiveUserDBEntry userData = child.getValue(ActiveUserDBEntry.class);
+                            if (userData != null) {
+                                userList.append(String.format("%s, %s, %.10s, %s\n", child.getKey(), userData.getR(),userData.getD(), userData.getLl()));
+                            }
+                        }
+                        if(userList.length() == 0) return;
+                        AlertDialog.Builder builder = new AlertDialog.Builder(Settings.this);
+                        builder.setMessage(mCommon.getSizeString(userList.toString(), 0.8f))
+                                .setTitle(mCommon.getTitleStr("Users:", Settings.this))
+                                .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                        return;
+                                    }
+                                }).show();
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+            } //onClick
+        });
+    }
     private void sendEmail() {
         Intent email = new Intent(Intent.ACTION_SEND);
-        email.putExtra(Intent.EXTRA_EMAIL, new String[]{"reach.sgo@gmail.com"});
+        email.putExtra(Intent.EXTRA_EMAIL, new String[]{"scoretallyteam@gmail.com"});
         email.putExtra(Intent.EXTRA_SUBJECT, "ScoreTally: Request to create new club");
         email.putExtra(Intent.EXTRA_TEXT, "Please fill in the below template and send the email. ScoreTally team will get back to you after setting up your account.\n" +
                 "\nMy Contact Info:\n" +
@@ -368,7 +417,7 @@ public class Settings extends AppCompatActivity {
                                         "\" group of " + club,
                                 Toast.LENGTH_SHORT);
                     mCommon.setDBUpdated(true);
-                    mCommon.addNewUserCreation2History(Settings.this, group + "/" + name);
+                    mCommon.addNewUserCreation2History(group + "/" + name);
                     ((EditText) findViewById(R.id.newuser)).setText("");
                     ((EditText) findViewById(R.id.newuser)).setHint("new user name");
                 }
@@ -494,7 +543,7 @@ public class Settings extends AppCompatActivity {
                     if (null != mPlayerList) mPlayerList.remove(name);
                     if (null != mPlayerListAdapter) mPlayerListAdapter.notifyDataSetChanged();
                     mCommon.setDBUpdated(true);
-                    mCommon.addUserDeletion2History(Settings.this, group + "/" + name);
+                    mCommon.addUserDeletion2History(group + "/" + name);
                 }
             }
         });
@@ -519,8 +568,23 @@ public class Settings extends AppCompatActivity {
         }
         mNewInningsName = tmpName.toUpperCase().charAt(0) + tmpName.substring(1, tmpName.length());
 
-        if (mCommon.mInnings.isEmpty()) {
+        SharedData.getInstance().mWinPercNum = Constants.SHUFFLE_WINPERC_NUM_GAMES;
+        boolean dataError = false;
+        try {
+            Integer val =  Integer.valueOf(((EditText) findViewById(R.id.winPercNum)).getText().toString());
+            if(val>0 && val<100) SharedData.getInstance().mWinPercNum = val;
+            else dataError = true;
+        } catch (NumberFormatException e) {
+            dataError = true;
+        }
+        if(dataError) Toast.makeText(Settings.this, "Bad entry for win% qualification number! Will use default:" + Constants.SHUFFLE_WINPERC_NUM_GAMES, Toast.LENGTH_LONG).show();
 
+        Log.w(TAG, "onClickCreateNewInnings: mWinPercNum=" + SharedData.getInstance().mWinPercNum);
+
+        //If there is no lock parameter in DB, create it now.
+        mCommon.createDBLock();
+
+        if (mCommon.mInnings.isEmpty()) {
             if (!mCommon.isDBConnected()) {
                 mCommon.showToast(Settings.this, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
                 return;
@@ -529,67 +593,41 @@ public class Settings extends AppCompatActivity {
             // There are no innings created yet or there are no "current" innings. Just create the first innings with current=true.
             // No need of any shuffling. : createNewInnings
 
-            //SGO: Using runTransaction as addListenerForSingleValueEvent gets stale data from local cache,
-            //even without persistence enabled.
-            final DatabaseReference inningsDBRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.INNINGS);
-            inningsDBRef.runTransaction(new Transaction.Handler() {
-                @NonNull
+            final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.INNINGS);
+            dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
-                public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if (dataSnapshot == null) {
+                        Log.w(TAG, "onClickCreateNewInnings, dataSnapshot==null");
+                        return;
+                    }
                     GenericTypeIndicator<List<InningsDBEntry>> t = new GenericTypeIndicator<List<InningsDBEntry>>() {
                     };
-                    List<InningsDBEntry> innings = mutableData.getValue(t);
-
-                    //From firebase docs: Note: Because doTransaction() is called multiple times, it must be able to handle null data.
-                    //Even if there is existing data in your remote database, it may not be locally cached when the
-                    // transaction function is run, resulting in null for the initial value.
-                    if (null == innings) {
-                        //no innings in DB
-
-                        //java.lang.RuntimeException: Can't create handler inside thread that has not called Looper.prepare()
-                        //Toast.makeText(Settings.this, "Found no existing innings already in DB", Toast.LENGTH_SHORT).show();
-
-                        Log.w(TAG, "No existing innings in DB");
-                        innings = new ArrayList<>();
+                    List<InningsDBEntry> innings = dataSnapshot.getValue(t);
+                    if (innings == null) {
+                        //SGO: this is hit when there is no innings table in the DB.
+                        Log.w(TAG, "onClickCreateNewInnings, innings==null");
+                        innings = new ArrayList<>(1);
                         innings.add(new InningsDBEntry(mNewInningsName, true, ""));
-                        mutableData.setValue(innings);
-                        Log.i(TAG, "First innings created: " + mNewInningsName);
-                        return Transaction.success(mutableData);
+                        dbRef.setValue(innings);
+                    } else {
+                        Log.w(TAG, "There are NO current innings! innings.size=" + innings.size());
+                        innings.add(new InningsDBEntry(mNewInningsName, true, ""));
+                        dbRef.setValue(innings);
                     }
-
-                    /* This might get called twice! But, no harm done, as the New entry will get added only once in DB.
-                    09-16 21:44:28.897 12340-12453/com.sg0.baddytally W/Settings: No existing innings in DB
-                    09-16 21:44:28.900 12340-12453/com.sg0.baddytally I/Settings: First innings created: New2
-                    09-16 21:44:29.488 12340-12453/com.sg0.baddytally W/Settings: There are NO current innings! innings.size=1
-                    09-16 21:44:29.490 12340-12453/com.sg0.baddytally I/Settings: New innings added: New2
-                     */
-                    //There is innings table, but may be none with "current"==true
-                    Log.w(TAG, "There are NO current innings! innings.size=" + innings.size());
-                    innings.add(new InningsDBEntry(mNewInningsName, true, ""));
-                    mutableData.setValue(innings);
-                    //postInningsCreate(); canot be called from here. "java.lang.RuntimeException: Can't create handler inside thread that has not called Looper.prepare("
-                    Log.i(TAG, "New innings added: " + mNewInningsName);
-                    return Transaction.success(mutableData);
+                    mCommon.setDBUpdated(true); //notify Main to refresh view
+                    mCommon.addInningsCreation2History(mNewInningsName);
+                    Toast.makeText(Settings.this, "New Innings (" + mNewInningsName + ") created", Toast.LENGTH_LONG).show();
+                    killActivity();
+                    return;
                 }
 
                 @Override
-                public void onComplete(@Nullable DatabaseError error, boolean committed, @Nullable DataSnapshot dataSnapshot) {
-                    Log.i(TAG, "onClickCreateNewInnings, runTransaction, onComplete: " + mNewInningsName);
-                    if (error != null || !committed || dataSnapshot == null) {
-                        if (error != null)
-                            Log.w(TAG, "onClickCreateNewInnings: onComplete: Failed:", error.toException());
-                        else Log.w(TAG, "onClickCreateNewInnings: onComplete: Failed:");
-                        return;
-                    } else {
-                        Log.w(TAG, "onClickCreateNewInnings: onComplete: Success:");
-                        //handle data here
-                    }
-                    createUnlockedDBLock();
-                    mCommon.setDBUpdated(true); //notify Main to refresh view
-                    //postInningsCreate();   //SGO: You can create a new thread here, but not in doTransaction
-                    killActivity();
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+                    Log.w(TAG, "onClickCreateNewInnings: databaseError=" + databaseError);
                 }
             });
+
         } else {  //innings already exists
             Log.w(TAG, "innings exists:" + mCommon.mInnings);
             if (mNewInningsName.equals(mCommon.mInnings)) {
@@ -763,10 +801,8 @@ public class Settings extends AppCompatActivity {
                                 // So, DB state is checked first and a lock is acquired.
 
                                 TaskParams tp = new TaskParams(shufNumPlayers, goldOldPL, goldNewPL, silverOldPL, silverNewPL, fullPL);
-                                mDBConnected = false;
-                                mDBLock = false;
-                                mCommon.addShuffleStart2History(Settings.this, mNewInningsName);
-                                getDBLock();
+                                mCommon.addShuffleStart2History(mNewInningsName);
+                                mCommon.acquireDBLock();
                                 BackgroundTask task = new BackgroundTask(Settings.this, Settings.this);
                                 mCommon.disableUserNotify(Settings.this);
                                 task.execute(tp);
@@ -826,7 +862,7 @@ public class Settings extends AppCompatActivity {
         //trace += "\n" + groupName + ": add ";
         for (int idx = 1; idx <= shufNumPlayers; idx++) {
             if (dry_run) {
-                //No need to mark the source list (which will be the old list). Marking of target list is already done above.
+                //SGO: No need to mark the source list (which will be the old list). Marking of target list is already done above.
                 //trace += srcList.get(srcList.size() - idx).getName() + " (" + srcList.get(srcList.size() - idx).getPoints_innings() + ") ";
                 //if(Constants.SILVER.equals(groupName)) targetList.get(targetList.size() - idx).markToRelegate();
                 //else targetList.get(targetList.size() - idx).markToPromote();
@@ -880,7 +916,7 @@ public class Settings extends AppCompatActivity {
             Integer highestWinPerc = winPercArray[0];  //get first element; list is in descending order
             Log.w(TAG, " highestWinPerc=" + highestWinPerc);
             for (PlayerData pd : fullPL) {
-                if (Integer.valueOf(pd.getGamesPlayed_innings()) < Constants.SHUFFLE_WINPERC_NUM_GAMES) {
+                if (Integer.valueOf(pd.getGamesPlayed_innings()) < SharedData.getInstance().mWinPercNum) {
                     Log.w(funStr, "not considered (< min games):" + pd.getName());
                     continue;
                 }
@@ -1023,7 +1059,7 @@ public class Settings extends AppCompatActivity {
                 List<InningsDBEntry> innings = dataSnapshot.getValue(t);
                 if (null == innings) return;
                 Log.v(TAG, "createNewInnings: key:" + dataSnapshot.getKey());
-                if(-1 != mCommon.mInningsDBKey) innings.get(mCommon.mInningsDBKey).current = false;
+                if (-1 != mCommon.mInningsDBKey) innings.get(mCommon.mInningsDBKey).current = false;
                 innings.add(new InningsDBEntry(mNewInningsName, true, ""));
                 //now, write back the updated list with new innings.
                 inningsDBRef.setValue(innings);
@@ -1048,56 +1084,6 @@ public class Settings extends AppCompatActivity {
                         .setValue(new PointsDBEntry());
             }
         }
-    }
-
-    private void createUnlockedDBLock() {
-        final DatabaseReference inningsDBRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.INTERNALS).child("locked");
-        inningsDBRef.setValue(false);
-        Log.w(TAG, "createUnlockedDBLock: Lock created/unlocked");
-    }
-
-    private void getDBLock() {
-        // Why a lock?
-        //    -- main reason being Innings creation is done by only one root user.
-        //    -- added advantage is that a DB online check is done before the critical operation is performed
-        //    -- there are comments saying that performing a write makes sure that the DB is in sync.
-        //       (but that might be only for that particular DB tree, anyways!)
-
-        final DatabaseReference inningsDBRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.INTERNALS).child("locked");
-        inningsDBRef.runTransaction(new Transaction.Handler() {
-            @NonNull
-            @Override
-            public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
-                Boolean locked = mutableData.getValue(Boolean.class);
-                if (locked == null) return Transaction.success(mutableData);
-                else {
-                    if (locked) {
-                        Log.w(TAG, "getDBLock: Already locked");
-                        return Transaction.abort();
-                    } else {
-                        Log.w(TAG, "getDBLock: Lock available");
-                        mutableData.setValue(true);
-                    }
-                    return Transaction.success(mutableData);
-                }
-
-            }
-
-            @Override
-            public void onComplete(@Nullable DatabaseError error, boolean committed, @Nullable DataSnapshot dataSnapshot) {
-                if (error != null || !committed || dataSnapshot == null) {
-                    if (null != error)
-                        Log.w(TAG, "getDBLock: onComplete: Failed:", error.toException());
-                    else Log.w(TAG, "getDBLock: onComplete: Failed:");
-                    mDBLock = false;
-                } else {
-                    Log.w(TAG, "getDBLock: onComplete: Success:");
-                    Boolean locked = dataSnapshot.getValue(Boolean.class);
-                    mDBLock = locked;
-                    //handle data here
-                }
-            }
-        });
     }
 
 
@@ -1148,7 +1134,7 @@ public class Settings extends AppCompatActivity {
             if (result.isEmpty()) {
                 Toast.makeText(Settings.this, "New Innings created successfully!", Toast.LENGTH_SHORT)
                         .show();
-                mCommon.addShuffleSuccess2History(Settings.this, mNewInningsName);
+                mCommon.addShuffleSuccess2History(mNewInningsName);
             }
             if (dialog.isShowing()) {
                 dialog.dismiss();
@@ -1157,10 +1143,10 @@ public class Settings extends AppCompatActivity {
 
             if (result.isEmpty())
                 killActivity();   //new innings created, go back to main page.
-            else {
+            else { //error string in result
                 Toast.makeText(Settings.this, result, Toast.LENGTH_SHORT)
                         .show();
-                mCommon.addShuffleFailure2History(Settings.this, mNewInningsName);
+                mCommon.addShuffleFailure2History(mNewInningsName);
             }
         }
 
@@ -1175,7 +1161,7 @@ public class Settings extends AppCompatActivity {
                         return "DB is not connected, try again later...";
                     } else Log.w(TAG, "doInBackground: DB is connected");
 
-                    if (mDBLock) {
+                    if (mCommon.isDBLocked()) {
 
                         //Below routines, cant do toasts methods. Otherwise, the following error will happen:
                         //java.lang.RuntimeException: Can't create handler inside thread that has not called Looper.prepare()
@@ -1187,7 +1173,7 @@ public class Settings extends AppCompatActivity {
                         shufflePlayers(tp.shufNumPlayers, Constants.GOLD, tp.silverOldPL, tp.goldNewPL, false); //not a dry_run, real thing!
                         shuffleThePlayerWithHighestWinPercentage(tp.fullPL, false); //real thing!
                         createNewInnings();  //this is assumed to be the last operation always.
-                        createUnlockedDBLock();  //release the lock
+                        mCommon.releaseDBLock();  //release the lock
                         Log.w(TAG, "doInBackground: success!");
                         return "";
                     }
@@ -1195,11 +1181,11 @@ public class Settings extends AppCompatActivity {
 
             } catch (InterruptedException e) {
                 Log.w(TAG, "doInBackground: InterruptedException=" + e.getMessage());
-                createUnlockedDBLock();
+                mCommon.releaseDBLock();
             } catch (Exception e) {
                 Log.w(TAG, "doInBackground: Exception:" + e.getMessage());
                 e.printStackTrace();
-                createUnlockedDBLock();
+                mCommon.releaseDBLock();
             }
 
             Log.w(TAG, "doInBackground: failure! DB is not reachable, try again later...");

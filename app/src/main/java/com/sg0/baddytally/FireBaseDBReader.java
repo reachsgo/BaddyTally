@@ -79,6 +79,7 @@ class FireBaseDBReader {
                 }
                 if (mViewAdapter != null) {
                     mView.smoothScrollToPosition(mPlayers.size() - 1);  //scroll back to the top of the list to show highest point scorers
+                    mViewAdapter.setPlayers(mPlayers);
                     mViewAdapter.sortPlayers();
                     mViewAdapter.notifyDataSetChanged();
                 }
@@ -91,7 +92,7 @@ class FireBaseDBReader {
                         Toast.LENGTH_LONG).show();
             }
         });
-        mViewAdapter.setPlayers(mPlayers);
+
     }
 
 }

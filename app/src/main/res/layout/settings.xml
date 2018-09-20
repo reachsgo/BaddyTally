@@ -83,7 +83,7 @@
                 android:layout_gravity="center"
                 android:layout_marginEnd="5dp"
                 android:layout_weight="1"
-                android:background="@color/colorPrimaryDark"
+                android:background="@drawable/roundbtn"
                 android:text="@string/action_enter"
                 android:textColor="@android:color/black"
                 android:textStyle="bold" />
@@ -145,7 +145,7 @@
                 android:layout_gravity="center"
                 android:layout_marginEnd="5dp"
                 android:layout_weight="1"
-                android:background="@color/colorPrimaryDark"
+                android:background="@drawable/roundbtn"
                 android:text="delete"
                 android:textColor="@android:color/black"
                 android:textStyle="bold" />
@@ -182,13 +182,41 @@
                 android:layout_gravity="center"
                 android:layout_margin="5dp"
                 android:layout_weight="1"
-                android:background="@color/colorPrimaryDark"
+                android:background="@drawable/roundbtn"
                 android:text="Start New Innings"
                 android:textColor="@android:color/black"
                 android:textStyle="bold" />
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/winPercNum_ll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:background="@color/colorPrimary"
+            android:orientation="horizontal">
 
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:textSize="13sp"
+                android:textColor="@android:color/black"
+                android:textStyle="bold"
+                android:layout_marginStart="20dp"
+                android:text="Number of games to be played to qualify for\n\'win percentage\' shuffling"/>
+
+            <EditText
+                android:id="@+id/winPercNum"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="5dp"
+                android:textColor="@android:color/black"
+                android:textStyle="bold"
+                android:textSize="12sp"
+                android:text="3"/>
+
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/clearcache_ll"
@@ -211,6 +239,40 @@
         </LinearLayout>
 
 
+
+        <LinearLayout
+            android:id="@+id/history_ll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:background="@color/colorPrimary"
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/history_btn"
+                android:layout_width="match_parent"
+                android:layout_height="25dp"
+                android:layout_weight="1"
+                android:layout_gravity="center"
+                android:layout_margin="5dp"
+                android:background="@drawable/roundbtn"
+                android:text="History"
+                android:textSize="13sp"
+                android:textColor="@android:color/black"
+                android:textStyle="bold" />
+            <Button
+                android:id="@+id/users_btn"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_weight="1"
+                android:layout_gravity="center"
+                android:layout_margin="5dp"
+                android:background="@drawable/roundbtn"
+                android:text="Users"
+                android:textSize="13sp"
+                android:textColor="@android:color/black"
+                android:textStyle="bold" />
+        </LinearLayout>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -224,29 +286,8 @@
                 android:layout_height="25dp"
                 android:layout_gravity="center"
                 android:layout_margin="5dp"
-                android:background="@color/colorPrimaryDark"
+                android:background="@drawable/roundbtn"
                 android:text="Create New Club"
-                android:textColor="@android:color/black"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-
-        <LinearLayout
-            android:id="@+id/history_ll"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="5dp"
-            android:background="@color/colorPrimary"
-            android:orientation="horizontal">
-            <Button
-                android:id="@+id/history_btn"
-                style="?android:textAppearanceSmall"
-                android:layout_width="match_parent"
-                android:layout_height="25dp"
-                android:layout_gravity="center"
-                android:layout_margin="5dp"
-                android:background="@color/colorPrimaryDark"
-                android:text="History"
                 android:textColor="@android:color/black"
                 android:textStyle="bold" />
         </LinearLayout>
