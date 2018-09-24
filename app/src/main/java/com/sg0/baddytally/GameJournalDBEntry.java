@@ -2,6 +2,8 @@ package com.sg0.baddytally;
 
 import com.google.firebase.database.IgnoreExtraProperties;
 
+import java.util.Objects;
+
 @IgnoreExtraProperties
 class GameJournalDBEntry {
     //shorter names will save firebase DB space
@@ -117,6 +119,15 @@ class GameJournalDBEntry {
         this.mU = user;
     }
 
+    public GameJournalDBEntry(String p1, String p2, String p3, String p4) {
+        this.mGT = Constants.DOUBLES;
+        this.mW1 = p1;
+        this.mW2 = p2;
+        this.mL1 = p3;
+        this.mL2 = p4;
+        this.mGNo = 1;
+    }
+
     public void setResult(String datestr, String gameType, String winner1, String winner2, String loser1, String loser2, int win_score, int opp_score) {
         this.mDate = datestr;
         this.mGT = gameType;
@@ -129,12 +140,26 @@ class GameJournalDBEntry {
         this.mGNo = 1;
     }
 
-    public boolean playerInvolved(String player) {
+    public boolean playerInvolved(final String player) {
         return player.equalsIgnoreCase(mW1) || player.equalsIgnoreCase(mW2) || player.equalsIgnoreCase(mL1) || player.equalsIgnoreCase(mL2);
     }
 
+    public boolean playersInvolved4(final String player1, final String player2, final String player3, final String player4) {
+        return playerInvolved(player1) &&
+                playerInvolved(player2) &&
+                playerInvolved(player3) &&
+                playerInvolved(player4);
+    }
 
-    public boolean playedBefore(String player1, String player2, String player3, String player4) {
+    public boolean playersInvolved3(final String player1, final String player2, final String player3, final String player4) {
+        return ((playerInvolved(player1) && playerInvolved(player2) && playerInvolved(player3)) ||
+                (playerInvolved(player1) && playerInvolved(player2) && playerInvolved(player4)) ||
+                (playerInvolved(player1) && playerInvolved(player3) && playerInvolved(player4)) ||
+                (playerInvolved(player2) && playerInvolved(player3) && playerInvolved(player4)));
+    }
+
+    public boolean playedBefore(final String player1, final String player2, final String player3, final String player4) {
+        if(player1.isEmpty()) return false;
         switch (mGT){
             case Constants.SINGLES:
                 if ((player1.equalsIgnoreCase(mW1) && player3.equalsIgnoreCase(mL1)) ||
@@ -146,6 +171,7 @@ class GameJournalDBEntry {
                 //Have the doubles partners played as a team before?
                 if ( getPlayerPartner(player1).equalsIgnoreCase(player2) )
                     return true;
+                if (player3.isEmpty() || player4.isEmpty()) return false;
                 if ( getPlayerPartner(player3).equalsIgnoreCase(player4) )
                     return true;
                 break;
@@ -153,7 +179,7 @@ class GameJournalDBEntry {
         return false;
     }
 
-    public String getPlayerPartner(String player) {
+    public String getPlayerPartner(final String player) {
         if (Constants.SINGLES.equals(mGT)) {
             return "";
         }
@@ -167,6 +193,28 @@ class GameJournalDBEntry {
             return mL1;
         }
         return "";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GameJournalDBEntry that = (GameJournalDBEntry) o;
+
+        //returns true if all the teams are the same. Winner/Loser/Score is not considered.
+        String p2 = getPlayerPartner(that.getmW1());  //get that.W1's partner
+        String op2 = getPlayerPartner(that.getmL1());  //get opposite team's partner
+        if(p2.isEmpty() || op2.isEmpty()) return false; //if they are not found, this game involves different players
+        if(p2.equals(that.getmW2()) && op2.equals(that.getmL2())) {
+            return true;
+        }
+        return false;
+        //return playersInvolved4(that.getmW1(), that.getmW2(), that.getmL1(), that.getmL2());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getmW1(), getmW2(), getmL1(), getmL2());
     }
 
     public String getWinnersString() {
@@ -196,6 +244,17 @@ class GameJournalDBEntry {
 
         return  winner + " vs " +
                 loser + "\n" + mWS + "-" + mLS;
+    }
+
+    public String toPlayersString() {
+        String winner = mW1;
+        String loser = mL1;
+        if (Constants.DOUBLES.equals(mGT)) {
+            winner += "/" + mW2;
+            loser += "/" + mL2;
+        }
+
+        return  winner + "  vs  " + loser + "\n";
     }
 
 }

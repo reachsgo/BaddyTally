@@ -52,6 +52,10 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         sortPlayers();
     }
 
+    public ArrayList<PlayerData> getPlayers() {
+        return this.mPlayers;
+    }
+
     public void setBgColor(String color) {
         mBgColor = color;
     }

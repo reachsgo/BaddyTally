@@ -8,6 +8,7 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
+import android.text.style.StrikethroughSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
 import android.widget.Toast;
@@ -31,6 +32,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
+import java.util.Set;
 
 public class SharedData {
     private static final String TAG = "SharedData";
@@ -66,6 +68,8 @@ public class SharedData {
     private String mStoreHistory;
     private ValueEventListener mDBConnectListener;
     public ArrayList<ActiveUserDBEntry> mActiveUsers;
+    public Set<String> mGoldPresentPlayerNames;
+    public Set<String> mSilverPresentPlayerNames;
 
     private SharedData() {
 
@@ -116,6 +120,8 @@ public class SharedData {
         mDBLock = false;
         mStoreHistory = "";
         mActiveUsers = null;
+        mGoldPresentPlayerNames = null;
+        mSilverPresentPlayerNames = null;
     }
 
     public boolean isRoot() {
@@ -240,6 +246,12 @@ public class SharedData {
         //style=Typeface.ITALIC
         SpannableStringBuilder ssBuilder = new SpannableStringBuilder(text);
         ssBuilder.setSpan(new RelativeSizeSpan(proportion), 0, text.length(), 0);
+        return ssBuilder;
+    }
+
+    public SpannableStringBuilder getStrikethroughString(CharSequence text) {
+        SpannableStringBuilder ssBuilder = new SpannableStringBuilder(text);
+        ssBuilder.setSpan(new StrikethroughSpan(), 0, text.length(), 0);
         return ssBuilder;
     }
 

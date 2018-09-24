@@ -4,7 +4,7 @@ android {
     compileSdkVersion 27
     defaultConfig {
         applicationId "com.sg0.baddytally"
-        minSdkVersion 17
+        minSdkVersion 19
         targetSdkVersion 26
         versionCode 13
         versionName "1.3"

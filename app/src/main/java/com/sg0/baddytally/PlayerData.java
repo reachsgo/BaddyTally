@@ -220,10 +220,13 @@ class PlayerData {
 
     @Override
     public String toString() {
+        return toStringShort();
+        /*
         String shuFlag = isMarkedToPromote() ? "P" : (isMarkedToRelegate() ? "R" : "U");
         return "PlayerData{" + group + "/" + name + ": flag=" + shuFlag + " season=" +
                 points.get(Constants.SEASON_IDX).toString() + " innings=" +
                 points.get(Constants.INNINGS_IDX).toString() + "}";
+                */
     }
 
     public String toStringShort() {

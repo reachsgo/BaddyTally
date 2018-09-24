@@ -4,15 +4,19 @@ import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -20,6 +24,8 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
@@ -29,7 +35,9 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,11 +47,14 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.MutableData;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 public class MainActivity extends AppCompatActivity implements CallbackRoutine {
@@ -61,6 +72,12 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
     private RecyclerViewAdapter mGoldAdapter;
     private RecyclerViewAdapter mSilverAdapter;
     private Handler uiHandler;
+
+    //private boolean[] mGoldCheckedItems = null;
+    //private boolean[] mSilverCheckedItems = null;
+    //private boolean[] mCheckedItems = null;
+    private ArrayList<GameJournalDBEntry> mGoldPlayedGames = new ArrayList<>();
+    private ArrayList<GameJournalDBEntry> mSilverPlayedGames = new ArrayList<>();
 
     private void setTitle(String club) {
         if (!TextUtils.isEmpty(club)) {
@@ -186,6 +203,28 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
         selectedEffect2(R.id.gold_header_innings_ll, R.id.gold_header_season_ll);
         selectedEffect2(R.id.silver_header_innings_ll, R.id.silver_header_season_ll);
         //selectedEffect(R.id.silver_header_innings, R.id.silver_header_season);
+
+        ImageButton suggestion_btn = findViewById(R.id.suggestions);
+        suggestion_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                if(SharedData.getInstance().mGoldPresentPlayerNames!=null) {
+                    showGroupPopup();
+                } else {
+                    //Probably the first time, user might not be aware of the button functionality, help him!
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder.setMessage("To get game-suggestions, select group and the players present today for the games.")
+                            .setTitle(SharedData.getInstance().getTitleStr("Info!", MainActivity.this))
+                            .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    showGroupPopup();
+                                }
+                            }).show();
+                }
+            }
+        });
 
     }
 
@@ -466,7 +505,8 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                         break;
                     }
                 }
-
+                fetchGames(Constants.GOLD, mGoldPlayedGames);
+                fetchGames(Constants.SILVER, mSilverPlayedGames);
                 setFooter();
                 return Transaction.success(mutableData);
             }
@@ -514,5 +554,305 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                 .setTitle(SharedData.getInstance().getTitleStr("Rules", MainActivity.this))
                 .setNeutralButton("Ok", null)
                 .show();
+    }
+
+    private void showGroupPopup() {
+        final ImageButton view = findViewById(R.id.suggestions);
+        final PopupMenu popup = new PopupMenu(MainActivity.this, view);
+        popup.getMenuInflater().inflate(R.menu.summary_popup_menu, popup.getMenu());
+        popup.getMenu().clear();
+        Menu pMenu = popup.getMenu();
+        pMenu.add(Constants.GOLD);
+        pMenu.add(Constants.SILVER);
+        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                String group = menuItem.getTitle().toString();
+                Log.v(TAG, "showOptions showGroupPopup:" + group);
+                popup.dismiss();
+                showPlayersPopup(group);
+                return true;
+            }
+        });
+        popup.show();//showing popup menu
+    }
+
+    private void showPlayersPopup(final String group) {
+        final SharedData data = SharedData.getInstance();
+        RecyclerViewAdapter adapter = null;
+
+        //Players present on this game day
+        Set<String> presetPlayerNames = null;
+        if(data.mGoldPresentPlayerNames==null) data.mGoldPresentPlayerNames = new HashSet<>();  //initialize for the first time.
+        if(data.mSilverPresentPlayerNames==null) data.mSilverPresentPlayerNames = new HashSet<>(); //initialize for the first time.
+
+        switch (group) {
+            case Constants.GOLD:
+                adapter = mGoldAdapter;
+                presetPlayerNames = data.mGoldPresentPlayerNames;
+                break;
+            case Constants.SILVER:
+                adapter = mSilverAdapter;
+                presetPlayerNames = data.mSilverPresentPlayerNames;
+                break;
+            default:
+                break;
+        }
+        if(adapter==null) return;
+        if(null==presetPlayerNames) {
+            Log.v(TAG, "showPlayersPopup onClick: null presetPlayerNames");
+            return;
+        }
+        //if(presetPlayerNames==null) presetPlayerNames = new HashSet<>();  //cant do it this way, as the class member variables like mGoldPresentPlayerNames wont be initialized
+
+        final ArrayList<PlayerData> players = new ArrayList<>(adapter.getPlayers());  //in ascending order
+
+        //create checked items, Remember last checked items
+        boolean[] checkedItems = new boolean[players.size()];
+        for (int i = 0; i < players.size(); i++) {
+                if(presetPlayerNames.contains(players.get(i).getName())) checkedItems[i] = true;
+                else checkedItems[i] = false;
+        }
+
+        final CharSequence[] playerNames = new CharSequence[players.size()];
+        for (int i = 0; i < players.size(); i++) {
+            playerNames[i] = players.get(i).getName();  //all the payer names to be shown to the user to select the players present on that day
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        builder.setTitle("Select the players present today");
+        builder.setMultiChoiceItems(playerNames, checkedItems, new DialogInterface.OnMultiChoiceClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i, boolean b) {
+                Log.v(TAG, "showPlayersPopup onClick:" + i + " :" + b);
+                Set<String> presetPlayerNames = null;  //Players present on this game day
+                switch (group) {
+                    case Constants.GOLD:
+                        presetPlayerNames = data.mGoldPresentPlayerNames;
+                        break;
+                    case Constants.SILVER:
+                        presetPlayerNames = data.mSilverPresentPlayerNames;
+                        break;
+                    default:
+                        break;
+                }
+
+                if(b) presetPlayerNames.add((String) playerNames[i]);   //Duplicates wont be added for Set data structure.
+                else presetPlayerNames.remove(playerNames[i]);
+                //if(mCheckedItems[i] != b) mCheckedItems[i] = b;
+                Log.v(TAG, "showPlayersPopup onClick: presetPlayerNames=" + presetPlayerNames.toString());
+            }
+        });
+
+        builder.setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                //Log.v(TAG, "showPlayersPopup OK onClick:" + players.toString());
+                ArrayList<PlayerData> presentPlayers = new ArrayList<>(players.size());
+                Set<String> presetPlayerNames = null;  //Players present on this game day
+                ArrayList<GameJournalDBEntry> playedGames = null;
+                //fetchGames(group, playedGames);
+                switch (group) {
+                    case Constants.GOLD:
+                        presetPlayerNames = data.mGoldPresentPlayerNames;
+                        playedGames = mGoldPlayedGames;
+                        break;
+                    case Constants.SILVER:
+                        presetPlayerNames = data.mSilverPresentPlayerNames;
+                        playedGames = mSilverPlayedGames;
+                        break;
+                    default:
+                        break;
+                }
+
+                if(null==presetPlayerNames) {
+                    Log.v(TAG, "showPlayersPopup OK onClick, NULL presetPlayerNames");
+                    return;
+                } else {
+                    for (PlayerData p : players) {
+                        if (presetPlayerNames.contains(p.getName())) presentPlayers.add(p);
+                    }
+                }
+
+                Log.v(TAG, "showPlayersPopup OK onClick, presentPlayers:" + presentPlayers.toString());
+
+                if (presentPlayers.size()<4) {
+                    Toast.makeText(MainActivity.this, "Minimum of 4 players should be present for suggestions of doubles games!",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
+                ArrayList<PlayerData> presentPlayersReverse = new ArrayList<>(presentPlayers);
+                SharedData.getInstance().sortPlayers(presentPlayersReverse, Constants.INNINGS_IDX, true, MainActivity.this, false);
+                Log.v(TAG, "showPlayersPopup OK onClick, presentPlayersReverse:" + presentPlayersReverse.toString());
+                ArrayList<GameJournalDBEntry> games = new ArrayList<>(playedGames);   //recommended games for the day
+                SpannableStringBuilder possibleGames = new SpannableStringBuilder();  //recommended games for the day, as string to print in dialog
+                SpannableStringBuilder extraGames = new SpannableStringBuilder(); //recommended extra games for the day, as string to print in dialog
+
+                for(GameJournalDBEntry game: games) {
+                    possibleGames.append(SharedData.getInstance().getColorString(
+                            SharedData.getInstance().getStrikethroughString(game.toPlayersString()), Color.GRAY));
+                }
+
+                // +++ Start with recommendation logic +++
+
+                //Add 2 equally balanced games first:
+                // (a) first 4
+                // (b) last 4
+                if (presentPlayers.size()>4) {
+                    GameJournalDBEntry game = new GameJournalDBEntry(presentPlayers.get(0).getName(),
+                            presentPlayers.get(3).getName(),
+                            presentPlayers.get(1).getName(),
+                            presentPlayers.get(2).getName());
+                    Log.v(TAG, "showPlayersPopup Adding Game1:" + game.toPlayersString());
+                    games.add(game);
+                    possibleGames.append(game.toPlayersString());
+                    /*
+                    if (playedGames.contains(game)) {
+                        possibleGames.append(SharedData.getInstance().getStrikethroughString(game.toPlayersString()));
+                        //possibleGames = (Spanned) TextUtils.concat( possibleGames, SharedData.getInstance().getStrikethroughString(game.toPlayersString());
+                        //games.add(game);
+                    } else {
+                        possibleGames.append(game.toPlayersString());
+                    }
+
+                    Log.v(TAG, "showPlayersPopup(" + 0 + "): " + presentPlayers.get(0).getName() + "/" +
+                            presentPlayers.get(3).getName() + " v/s " +
+                            presentPlayers.get(1).getName() + "/" +
+                            presentPlayers.get(2).getName()); */
+                    int lastidx = presentPlayers.size()-1;
+                    game = new GameJournalDBEntry(presentPlayers.get(lastidx).getName(),
+                            presentPlayers.get(lastidx-3).getName(),
+                            presentPlayers.get(lastidx-1).getName(),
+                            presentPlayers.get(lastidx-2).getName());
+                    Log.v(TAG, "showPlayersPopup Adding Game2:" + game.toPlayersString());
+                    games.add(game);
+                    possibleGames.append(game.toPlayersString());
+                    /*
+                    if (playedGames.contains(game)) {
+                        possibleGames.append(SharedData.getInstance().getStrikethroughString(game.toPlayersString()));
+                        //possibleGames = (Spanned) TextUtils.concat( possibleGames, SharedData.getInstance().getStrikethroughString(game.toPlayersString());
+                        //games.add(game);
+                    } else {
+                        possibleGames.append(game.toPlayersString());
+                    }
+                    Log.v(TAG, "showPlayersPopup(" + 1 + "): " + presentPlayers.get(lastidx).getName() + "/" +
+                            presentPlayers.get(lastidx-3).getName() + " v/s " +
+                            presentPlayers.get(lastidx-1).getName() + "/" +
+                            presentPlayers.get(lastidx-2).getName()); */
+                }
+
+                // Now, scatter top player, then bottom player
+                //      then top-2 player (top-1 player is skipped as top-2 will be the main opponent in the top player games)
+                //      then bottom-2 player, etc.
+                int lowestIdx = 0;
+                for (int idx = presentPlayers.size()-1; idx >= lowestIdx; idx-=2) {  //top player first; ascending order
+                    scatterPlayers(presentPlayers.get(idx), presentPlayers, games, playedGames, possibleGames, extraGames);
+                    //scatterPlayers.add(presentPlayers.get(idx));
+                    if(idx>lowestIdx) scatterPlayers(presentPlayers.get(lowestIdx), presentPlayersReverse, games, playedGames, possibleGames, extraGames);
+                    // /scatterPlayers.add(presentPlayers.get(lowestIdx));
+                    lowestIdx += 2;
+                }
+                if(extraGames.length()>0) {
+                    possibleGames.append("\nOther Possible Games:\n");
+                    possibleGames.append(extraGames);
+                }
+
+                //Log.v(TAG, "showPlayersPopup OK onClick, games:" + possibleGames.toString());
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("Game Suggestions")
+                        .setMessage(possibleGames)
+                        .setNeutralButton("Ok", null).show();
+            }
+        });
+        AlertDialog diag = builder.show();
+    }
+
+    //For the input player, find a partner from the other end of the list (partner is bottom player, if the i/p player is top player).
+    //Then, find opponents for this team (again one from either ends)
+    private void scatterPlayers(final PlayerData tp1, final ArrayList<PlayerData> presentPlayers, final ArrayList<GameJournalDBEntry> games,
+                                ArrayList<GameJournalDBEntry> playedGames, SpannableStringBuilder possibleGames, SpannableStringBuilder extraGames) {
+        int count = 1;
+        ArrayList<PlayerData> teamPlayers2 = new ArrayList<>(presentPlayers);
+        teamPlayers2.remove(tp1);
+        boolean found = false;
+        //Find a team-mate for tp1
+        for (int idx2 = 0 ; idx2 <= teamPlayers2.size()-1; idx2++) {  //bottom player as partner
+            PlayerData tp2 = teamPlayers2.get(idx2);
+            if(tp2==tp1) continue;
+            if(playedToday(tp1, tp2, games)) continue;
+
+            ArrayList<PlayerData> oppPlayers = new ArrayList<>(teamPlayers2);
+            oppPlayers.remove(tp2);
+            for (int idxo = oppPlayers.size() - 1; idxo >= 0; idxo--) {  //top player first of the remaining list
+                PlayerData op1 = oppPlayers.get(idxo);
+                ArrayList<PlayerData> oppPlayers2 = new ArrayList<>(oppPlayers);
+                oppPlayers2.remove(op1);
+                for(PlayerData op2: oppPlayers2) {
+                    if (op2 == op1) continue;
+                    if (playedToday(op1, op2, games)) continue;
+                    if (notBalanced(tp1, tp2, op1, op2)) {
+                        Log.v(TAG, "UNBALANCED showPlayersPopup: " + tp1.getName() + "/" + tp2.getName() + " v/s " + op1.getName() + "/" + op2.getName());
+                        continue;
+                    }
+                    Log.v(TAG, "showPlayersPopup(" + count + "): " + tp1.getName() + "/" + tp2.getName() + " v/s " + op1.getName() + "/" + op2.getName());
+                    count++;
+                    GameJournalDBEntry game = new GameJournalDBEntry(tp1.getName(),tp2.getName(),op1.getName(),op2.getName());
+                    games.add(game);
+                    possibleGames.append(game.toPlayersString());
+                    Log.v(TAG, "scatterPlayers Adding Game:" + game.toPlayersString());
+                    /*
+                    if (playedGames.contains(game)) {
+                        possibleGames.append(SharedData.getInstance().getStrikethroughString(game.toPlayersString()));
+                    } else {
+                        possibleGames.append(game.toPlayersString());
+                    } */
+                    found = true; // once the opponents are found for a team, break out of the loop. We don't want to repeat the same team.
+                    break;
+                }  //opposite team inner loop
+                if(found) break;
+            }  //opposite team outer loop
+        } //team-mate loop
+    }
+
+    private boolean playedToday(final PlayerData p1, final PlayerData p2, final ArrayList<GameJournalDBEntry> games) {
+        for (GameJournalDBEntry game : games) {
+            if (game.playedBefore(p1.getName(), p2.getName(), "", "")) return true;
+        }
+        return false;
+    }
+
+    private boolean notBalanced(final PlayerData p1, final PlayerData p2, final PlayerData p3, final PlayerData p4) {
+        int t1_total = p1.getPointsInt_innings()+p2.getPointsInt_innings();
+        int t2_total = p3.getPointsInt_innings()+p4.getPointsInt_innings();
+        if(t1_total+t2_total < 10) return false;
+
+        if((t1_total <= (t2_total/2)) || (t2_total <= (t1_total/2))) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private void fetchGames(final String group, final ArrayList<GameJournalDBEntry> gameList){
+        Log.d(TAG, "======== fetchGames ========");
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.JOURNAL).child(mInnings).child(mRoundName).child(group);
+        Query myQuery = dbRef.orderByKey();
+        myQuery.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for (DataSnapshot child : dataSnapshot.getChildren()) {
+                    GameJournalDBEntry jEntry = child.getValue(GameJournalDBEntry.class);
+                    if(null==jEntry) continue;
+                    gameList.add(jEntry);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Toast.makeText(MainActivity.this, "DB error while fetching games: " + databaseError.toString(),
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+        });
     }
 }
