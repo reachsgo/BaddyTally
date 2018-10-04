@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 
 public class EnterData extends AppCompatActivity {
@@ -177,10 +178,13 @@ public class EnterData extends AppCompatActivity {
         }
 
         ArrayList<PlayerData> players;
+        Set<String> presentPlayerNames;
         if (Constants.GOLD.equals(mGroup)) {
-            players = SharedData.getInstance().mGoldPlayers;
+            players = new ArrayList<>(SharedData.getInstance().mGoldPlayers);
+            presentPlayerNames = SharedData.getInstance().mGoldPresentPlayerNames;
         } else {
-            players = SharedData.getInstance().mSilverPlayers;
+            players = new ArrayList<>(SharedData.getInstance().mSilverPlayers);
+            presentPlayerNames = SharedData.getInstance().mSilverPresentPlayerNames;
         }
 
         if(mSingles && players.size()<2){
@@ -203,6 +207,14 @@ public class EnterData extends AppCompatActivity {
         enterButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if(mSpinner_P1_selection.isEmpty() || mSpinner_P3_selection.isEmpty()) {
+                    Toast.makeText(EnterData.this, "Enter both players...", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if(!mSingles && (mSpinner_P2_selection.isEmpty() || mSpinner_P4_selection.isEmpty())) {
+                    Toast.makeText(EnterData.this, "Enter all 4 players...", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 if(!SharedData.getInstance().isDBConnected()) {
                     Toast.makeText(EnterData.this, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
                     return;
@@ -220,10 +232,23 @@ public class EnterData extends AppCompatActivity {
         });
 
         final List<String> playerList = new ArrayList<>();
+        //Order the players such that players present on that game day are added first.
         for (int i = 0; i < players.size(); i++) {
-            playerList.add(players.get(i).getName());
-            Log.w(TAG, "players[" + Integer.toString(i) + "] getName=[" + players.get(i).getName() + "]");
+            if (null!=presentPlayerNames && presentPlayerNames.contains(players.get(i).getName())) {
+                //add the players present today first. This helps the user to make enter score quickly.
+                playerList.add(players.get(i).getName());
+                players.get(i).markToRelegate();  //reusing relegate flag here
+                //Log.w(TAG, "SGO PRESENT players[" + Integer.toString(i) + "] getName=[" + players.get(i).getName() + "]");
+            }
         }
+        for (int i = 0; i < players.size(); i++) {
+            if (! players.get(i).isMarkedToRelegate()) { //if not added in the loop before, then add now
+                playerList.add(players.get(i).getName());
+                //Log.w(TAG, "SGO NOT PRESENT players[" + Integer.toString(i) + "] getName=[" + players.get(i).getName() + "]");
+            }
+        }
+        playerList.add("");  //blank as the last name (default)
+        Log.w(TAG, "players:" + playerList.toString());
 
         List<String> p1List = new ArrayList<>(playerList);
         ArrayAdapter<String> dataAdapterP1 = new ArrayAdapter<>(this,
@@ -317,27 +342,25 @@ public class EnterData extends AppCompatActivity {
     private void rearrangeDropdownList(Spinner spinner, ArrayAdapter<String> adapter, List<String> players) {
         Log.v(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
         adapter.clear();
-        Collections.sort(players);
+        //Collections.sort(players);  //sorted already so that players present on the court comes first.
         adapter.addAll(players);
         if (spinner == mSpinner_P2) {
             //if spinner for player 2, remove player 1 selection & set first in the list
-            adapter.remove(mSpinner_P1_selection);
-            spinner.setSelection(0);
+            if(!mSpinner_P1_selection.isEmpty()) adapter.remove(mSpinner_P1_selection);
+            spinner.setSelection(adapter.getCount()-1);
             mSpinner_P2_selection = spinner.getItemAtPosition(0).toString();
-        }
-        if (spinner == mSpinner_P3) {
+        } else if (spinner == mSpinner_P3) {
             //if spinner for player 3, remove player 1 & 2 selections & set first in the list
-            adapter.remove(mSpinner_P1_selection);
-            adapter.remove(mSpinner_P2_selection);
-            spinner.setSelection(0);
+            if(!mSpinner_P1_selection.isEmpty()) adapter.remove(mSpinner_P1_selection);
+            if(!mSpinner_P2_selection.isEmpty()) adapter.remove(mSpinner_P2_selection);
+            spinner.setSelection(adapter.getCount()-1);
             mSpinner_P3_selection = spinner.getItemAtPosition(0).toString();
-        }
-        if (spinner == mSpinner_P4) {
+        } else if (spinner == mSpinner_P4) {
             //if spinner for player 3, remove player 1 & 2 selections & set first in the list
-            adapter.remove(mSpinner_P1_selection);
-            adapter.remove(mSpinner_P2_selection);
-            adapter.remove(mSpinner_P3_selection);
-            spinner.setSelection(0);
+            if(!mSpinner_P1_selection.isEmpty()) adapter.remove(mSpinner_P1_selection);
+            if(!mSpinner_P2_selection.isEmpty()) adapter.remove(mSpinner_P2_selection);
+            if(!mSpinner_P3_selection.isEmpty()) adapter.remove(mSpinner_P3_selection);
+            spinner.setSelection(adapter.getCount()-1);
             mSpinner_P4_selection = spinner.getItemAtPosition(0).toString();
         }
         Log.i(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);

@@ -39,6 +39,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     private ArrayList<PlayerData> mPlayers;
     private String mBgColor;
     private boolean descending;
+    private ArrayList<PlayerData> mFullListOfPlayers;
 
     public RecyclerViewAdapter(Context context, String group, ArrayList<PlayerData> players) {
         mContext = context;
@@ -47,9 +48,25 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         descending = false;
     }
 
-    public void setPlayers(ArrayList<PlayerData> players) {
+    public void setPlayers(final ArrayList<PlayerData> players) {
         this.mPlayers = players;
         sortPlayers();
+    }
+
+    //Support a temporary read-only (only for viewing, no editing for root also) view
+    //to show all the players in a single window. Useful towards the end of the season to
+    //see the complete list with points.
+    //mFullListOfPlayers will hold the fill list of players only for the time period
+    //that supports this temporary read-only full view.
+    public void setFullListOfPlayers(final ArrayList<PlayerData> otherGroupPlayers) {
+        if(null==otherGroupPlayers) {
+            mFullListOfPlayers = null;
+            return;
+        }
+        if(null==mFullListOfPlayers) {
+            mFullListOfPlayers = new ArrayList<>(mPlayers);
+            mFullListOfPlayers.addAll(otherGroupPlayers);
+        }
     }
 
     public ArrayList<PlayerData> getPlayers() {
@@ -61,19 +78,30 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     }
 
     public void sortPlayers() {
+        mFullListOfPlayers = null;
         SharedData.getInstance().sortPlayers(mPlayers, Constants.INNINGS_IDX, false, mContext, false);
     }
 
     public void sortOnSeason(){
+        mFullListOfPlayers = null;
         descending = ! descending;  //change the sort order
         SharedData.getInstance().sortPlayers(mPlayers, Constants.SEASON_IDX, descending, mContext, false);
         notifyDataSetChanged();
     }
 
     public void sortOnInnings(){
+        mFullListOfPlayers = null;
         descending = ! descending;  //change the sort order
         SharedData.getInstance().sortPlayers(mPlayers, Constants.INNINGS_IDX, descending, mContext, false);
         notifyDataSetChanged();
+    }
+
+    public void sortAllOnSeason(){
+        if(null==mFullListOfPlayers) return;
+        descending = ! descending;  //change the sort order
+        SharedData.getInstance().sortPlayers(mFullListOfPlayers, Constants.SEASON_IDX, descending, mContext, false);
+        notifyDataSetChanged();
+        Log.i(TAG, "SGO: sortAllOnSeason....");
     }
 
     @NonNull
@@ -94,9 +122,13 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     @Override
     public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
         //Log.d(TAG, "onBindViewHolder: " + position);
-        holder.player.setText(mPlayers.get(position).getName());
-        holder.innings_score.setText(mPlayers.get(position).getPtsFormat_innings());
-        holder.overall_score.setText(mPlayers.get(position).getPtsFormat_season());
+
+        ArrayList<PlayerData> playerList = mPlayers;
+        if (null!=mFullListOfPlayers) playerList = mFullListOfPlayers;
+
+        holder.player.setText(playerList.get(position).getName());
+        holder.innings_score.setText(playerList.get(position).getPtsFormat_innings());
+        holder.overall_score.setText(playerList.get(position).getPtsFormat_season());
 
         if ((position % 2) == 0) {
             holder.player.setBackgroundColor(0x00000000); //transparent background
@@ -124,11 +156,14 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     @Override
     public int getItemCount() {
-        //Log.d(TAG, "getItemCount: "+Integer.toString(mPlayers.size()));
-        return mPlayers.size();
+        ArrayList<PlayerData> playerList = mPlayers;
+        if (null!=mFullListOfPlayers) playerList = mFullListOfPlayers;
+        //Log.d(TAG, "getItemCount: "+Integer.toString(playerList.size()));
+        return playerList.size();
     }
 
     private void showAlert(final View view, final ViewHolder holder) {
+        if (null!=mFullListOfPlayers) return;  //nothing to be done if the view (supposed to be readonly transient view) is for the full set of players.
         int position = holder.getAdapterPosition();
         if (null == mPlayers.get(position)) return;
         AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
@@ -151,6 +186,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     }
 
     private void showOptions(final View view, final ViewHolder holder) {
+        if (null!=mFullListOfPlayers) return;  //nothing to be done if the view (supposed to be readonly transient view) is for the full set of players.
         PopupMenu popup = new PopupMenu(mContext, view);
         popup.getMenuInflater().inflate(R.menu.main_popup_menu, popup.getMenu());
         if (Build.VERSION.SDK_INT >= 23) {

@@ -9,13 +9,15 @@ public class ActiveUserDBEntry {
     private String r;  //role
     private String d;  //device name
     private String ll;  //last login
+    private String v;  //version num
 
     public ActiveUserDBEntry() {}
 
-    public ActiveUserDBEntry(final String role, final String device, final String last_login) {
+    public ActiveUserDBEntry(final String role, final String device, final String last_login, final String ver) {
         this.r = role;
         this.d = device;
         this.ll = last_login;
+        this.v = ver;
     }
 
     public String getR() {
@@ -28,6 +30,10 @@ public class ActiveUserDBEntry {
 
     public String getLl() {
         return ll;
+    }
+
+    public String getV() {
+        return v;
     }
 
     /* SGO: Adding the below adds a new attribute "Role" in firebase DB
@@ -83,7 +89,7 @@ public class ActiveUserDBEntry {
     @Override
     public String toString() {
         return "ActiveUserDBEntry{" +
-                //"usr='" + u + '\'' +
+                "ver='" + v + '\'' +
                 ", role='" + r + '\'' +
                 ", device='" + d + '\'' +
                 ", last_login='" + ll + '\'' +

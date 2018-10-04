@@ -29,6 +29,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
@@ -120,8 +121,8 @@ public class SharedData {
         mDBLock = false;
         mStoreHistory = "";
         mActiveUsers = null;
-        mGoldPresentPlayerNames = null;
-        mSilverPresentPlayerNames = null;
+        mGoldPresentPlayerNames = new HashSet<>();  //initialize for the first time.
+        mSilverPresentPlayerNames = new HashSet<>();  //initialize for the first time.
     }
 
     public boolean isRoot() {
@@ -273,7 +274,8 @@ public class SharedData {
         return round;
     }
 
-    public void sortPlayers(ArrayList<PlayerData> playersList, final int idx, final boolean descending, final Context context, final boolean showToasts) {
+    public void sortPlayers(ArrayList<PlayerData> playersList, final int idx, //innings or season
+                            final boolean descending, final Context context, final boolean showToasts) {
         //playersList is obj reference of the actual list being passed in.
         //Any updates to the contents will be visible to the caller.
         //But, you cannot change the obj reference itself (ex: playersList = another_list;).
@@ -397,7 +399,7 @@ public class SharedData {
                 if (userData == null) return Transaction.success(mutableData);
                 else {
                     Log.w(TAG, "wakeUpDBConnection: update DB for user:" + mUser);
-                    mutableData.setValue(new ActiveUserDBEntry(mRole, android.os.Build.MODEL, login_day));
+                    mutableData.setValue(new ActiveUserDBEntry(mRole, android.os.Build.MODEL, login_day, BuildConfig.VERSION_NAME));
                     return Transaction.success(mutableData);
                 }
             }
@@ -421,86 +423,19 @@ public class SharedData {
                         //but the older version never new about INTERNALS/locked. Workaround was to manually create INTERNALS/locked in the DB for that club.
                         //This issue will not happen if the new app is used to create the innings (INTERNALS/locked node iwll be created in DB).
                         Log.w(TAG, "wakeUpDBConnection: onComplete: Error:" + e.getMessage());
-                        dbRef.setValue(new ActiveUserDBEntry(mRole, android.os.Build.MODEL, login_day));
+                        dbRef.setValue(new ActiveUserDBEntry(mRole, android.os.Build.MODEL, login_day, BuildConfig.VERSION_NAME));
                         Log.w(TAG, "New user created in DB:" + mUser);
                     }
 
                 }
             }
         });
-
-/*
-        final DatabaseReference inningsDBRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.INTERNALS).child("awake");
-        inningsDBRef.runTransaction(new Transaction.Handler() {
-            @NonNull
-            @Override
-            public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
-                Boolean awake = mutableData.getValue(Boolean.class);
-                if (awake == null) return Transaction.success(mutableData);
-                else {
-                    //This is never hit, as the "awake" child is never created in DB
-                    mutableData.setValue(!awake);
-                    Log.w(TAG, "wakeUpDBConnection: awake set to " + awake);
-                    return Transaction.success(mutableData);
-                }
-            }
-
-            @Override
-            public void onComplete(@Nullable DatabaseError error, boolean committed, @Nullable DataSnapshot dataSnapshot) {
-                if (error != null || !committed || dataSnapshot == null) {
-                    if (null != error)
-                        Log.w(TAG, "wakeUpDBConnection: onComplete: Failed:", error.toException());
-                    else Log.w(TAG, "wakeUpDBConnection: onComplete: Failed");
-                } else {
-                    Log.w(TAG, "wakeUpDBConnection: onComplete: Success");
-                }
-            }
-        });
-        */
     }
-
-    /*
-    private void syncActiveUserinDB() {
-
-        //ActiveUSer DB has
-        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.ACTIVE_USERS).child(mUser);
-        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.w(TAG, "syncActiveUserinDB: onDataChange");
-                ActiveUserDBEntry userData = dataSnapshot.getValue(ActiveUserDBEntry.class);
-                Date c = Calendar.getInstance().getTime();
-                SimpleDateFormat df = new SimpleDateFormat("MM-dd", Locale.CANADA);
-                String login_day = df.format(c);
-                if(null==userData) {
-                    //not created yet, create one
-                    dbRef.setValue(new ActiveUserDBEntry(mUser, mRole, android.os.Build.MODEL, login_day));
-                    Log.w(TAG, "New user created in DB:" + mUser);
-                }
-                else {
-                    //check for last user login and role
-
-                    if(!login_day.equals(userData.getLl()) || !mRole.equals(userData.getR())) {
-                        Log.w(TAG, "update DB for DB:" + mUser);
-                        dbRef.setValue(new ActiveUserDBEntry(mUser, mRole, android.os.Build.MODEL, login_day));
-                    }
-                }
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                Log.w(TAG, "syncActiveUserinDB: onCancelled", databaseError.toException());
-                Toast.makeText(LoginActivity.this,
-                        "Active User DB error:" + databaseError.toString(), Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-    */
 
     public boolean isDBLocked() {
         return mDBLock;
     }
+
     //There is no need to synchronize this, as it is never called from different threads.
     //Idea is to synchronize with others users operating on teh same DB.
     private void changeDBLockState(final boolean target) {

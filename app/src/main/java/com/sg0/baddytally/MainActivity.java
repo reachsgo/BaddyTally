@@ -141,7 +141,6 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                     silverView.setVisibility(View.VISIBLE);
                 else
                     silverView.setVisibility(View.GONE);
-                return;
             }
         });
         mSilverHeader.setOnClickListener(new View.OnClickListener() {
@@ -153,11 +152,11 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                     goldView.setVisibility(View.VISIBLE);
                 else
                     goldView.setVisibility(View.GONE);
-                return;
             }
         });
 
-        findViewById(R.id.gold_header_season).setOnClickListener(new View.OnClickListener() {
+        TextView gold_header_season = findViewById(R.id.gold_header_season);
+        gold_header_season.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (null != mGoldAdapter) {
@@ -165,6 +164,16 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                     selectedEffect2(R.id.gold_header_season_ll, R.id.gold_header_innings_ll);
                     //selectedEffect(R.id.gold_header_season, R.id.gold_header_innings);
                 }
+            }
+        });
+        gold_header_season.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                if (null == mGoldAdapter || null == mSilverAdapter) return false;
+                mGoldAdapter.setFullListOfPlayers(mSilverAdapter.getPlayers());
+                mGoldAdapter.sortAllOnSeason();
+                selectedEffect2(R.id.gold_header_season_ll, R.id.gold_header_innings_ll);
+                return true;
             }
         });
 
@@ -178,13 +187,24 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
             }
         });
 
-        findViewById(R.id.silver_header_season).setOnClickListener(new View.OnClickListener() {
+        TextView silver_header_season = findViewById(R.id.silver_header_season);
+        silver_header_season.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (null != mSilverAdapter) {
                     mSilverAdapter.sortOnSeason();
                     selectedEffect2(R.id.silver_header_season_ll, R.id.silver_header_innings_ll);
                 }
+            }
+        });
+        silver_header_season.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                if (null == mGoldAdapter || null == mSilverAdapter) return false;
+                mSilverAdapter.setFullListOfPlayers(mGoldAdapter.getPlayers());
+                mSilverAdapter.sortAllOnSeason();
+                selectedEffect2(R.id.silver_header_season_ll, R.id.silver_header_innings_ll);
+                return true;
             }
         });
 
@@ -505,8 +525,8 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                         break;
                     }
                 }
-                fetchGames(Constants.GOLD, mGoldPlayedGames);
-                fetchGames(Constants.SILVER, mSilverPlayedGames);
+                fetchGames(Constants.GOLD, mGoldPlayedGames, SharedData.getInstance().mGoldPresentPlayerNames);
+                fetchGames(Constants.SILVER, mSilverPlayedGames, SharedData.getInstance().mSilverPresentPlayerNames);
                 setFooter();
                 return Transaction.success(mutableData);
             }
@@ -583,8 +603,6 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
 
         //Players present on this game day
         Set<String> presetPlayerNames = null;
-        if(data.mGoldPresentPlayerNames==null) data.mGoldPresentPlayerNames = new HashSet<>();  //initialize for the first time.
-        if(data.mSilverPresentPlayerNames==null) data.mSilverPresentPlayerNames = new HashSet<>(); //initialize for the first time.
 
         switch (group) {
             case Constants.GOLD:
@@ -651,7 +669,6 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                 ArrayList<PlayerData> presentPlayers = new ArrayList<>(players.size());
                 Set<String> presetPlayerNames = null;  //Players present on this game day
                 ArrayList<GameJournalDBEntry> playedGames = null;
-                //fetchGames(group, playedGames);
                 switch (group) {
                     case Constants.GOLD:
                         presetPlayerNames = data.mGoldPresentPlayerNames;
@@ -699,47 +716,29 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                 // (a) first 4
                 // (b) last 4
                 if (presentPlayers.size()>4) {
-                    GameJournalDBEntry game = new GameJournalDBEntry(presentPlayers.get(0).getName(),
-                            presentPlayers.get(3).getName(),
-                            presentPlayers.get(1).getName(),
-                            presentPlayers.get(2).getName());
-                    Log.v(TAG, "showPlayersPopup Adding Game1:" + game.toPlayersString());
-                    games.add(game);
-                    possibleGames.append(game.toPlayersString());
-                    /*
-                    if (playedGames.contains(game)) {
-                        possibleGames.append(SharedData.getInstance().getStrikethroughString(game.toPlayersString()));
-                        //possibleGames = (Spanned) TextUtils.concat( possibleGames, SharedData.getInstance().getStrikethroughString(game.toPlayersString());
-                        //games.add(game);
-                    } else {
+                    if(!playedToday(presentPlayers.get(0), presentPlayers.get(3), games) &&
+                            !playedToday(presentPlayers.get(1), presentPlayers.get(2), games)) {
+                        GameJournalDBEntry game = new GameJournalDBEntry(presentPlayers.get(0).getName(),
+                                presentPlayers.get(3).getName(),
+                                presentPlayers.get(1).getName(),
+                                presentPlayers.get(2).getName());
+                        Log.v(TAG, "showPlayersPopup Adding Game1:" + game.toPlayersString());
+                        games.add(game);
                         possibleGames.append(game.toPlayersString());
                     }
 
-                    Log.v(TAG, "showPlayersPopup(" + 0 + "): " + presentPlayers.get(0).getName() + "/" +
-                            presentPlayers.get(3).getName() + " v/s " +
-                            presentPlayers.get(1).getName() + "/" +
-                            presentPlayers.get(2).getName()); */
                     int lastidx = presentPlayers.size()-1;
-                    game = new GameJournalDBEntry(presentPlayers.get(lastidx).getName(),
-                            presentPlayers.get(lastidx-3).getName(),
-                            presentPlayers.get(lastidx-1).getName(),
-                            presentPlayers.get(lastidx-2).getName());
-                    Log.v(TAG, "showPlayersPopup Adding Game2:" + game.toPlayersString());
-                    games.add(game);
-                    possibleGames.append(game.toPlayersString());
-                    /*
-                    if (playedGames.contains(game)) {
-                        possibleGames.append(SharedData.getInstance().getStrikethroughString(game.toPlayersString()));
-                        //possibleGames = (Spanned) TextUtils.concat( possibleGames, SharedData.getInstance().getStrikethroughString(game.toPlayersString());
-                        //games.add(game);
-                    } else {
+                    if(!playedToday(presentPlayers.get(lastidx), presentPlayers.get(lastidx-3), games) &&
+                            !playedToday(presentPlayers.get(lastidx-1), presentPlayers.get(lastidx-2), games)) {
+                        GameJournalDBEntry game = new GameJournalDBEntry(presentPlayers.get(lastidx).getName(),
+                                presentPlayers.get(lastidx-3).getName(),
+                                presentPlayers.get(lastidx-1).getName(),
+                                presentPlayers.get(lastidx-2).getName());
+                        Log.v(TAG, "showPlayersPopup Adding Game2:" + game.toPlayersString());
+                        games.add(game);
                         possibleGames.append(game.toPlayersString());
                     }
-                    Log.v(TAG, "showPlayersPopup(" + 1 + "): " + presentPlayers.get(lastidx).getName() + "/" +
-                            presentPlayers.get(lastidx-3).getName() + " v/s " +
-                            presentPlayers.get(lastidx-1).getName() + "/" +
-                            presentPlayers.get(lastidx-2).getName()); */
-                }
+                } //more than 4 players
 
                 // Now, scatter top player, then bottom player
                 //      then top-2 player (top-1 player is skipped as top-2 will be the main opponent in the top player games)
@@ -764,13 +763,14 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                         .setNeutralButton("Ok", null).show();
             }
         });
-        AlertDialog diag = builder.show();
+        builder.show();
     }
 
     //For the input player, find a partner from the other end of the list (partner is bottom player, if the i/p player is top player).
     //Then, find opponents for this team (again one from either ends)
     private void scatterPlayers(final PlayerData tp1, final ArrayList<PlayerData> presentPlayers, final ArrayList<GameJournalDBEntry> games,
                                 ArrayList<GameJournalDBEntry> playedGames, SpannableStringBuilder possibleGames, SpannableStringBuilder extraGames) {
+        Log.v(TAG, "scatterPlayers scattering:" + tp1.getName());
         int count = 1;
         ArrayList<PlayerData> teamPlayers2 = new ArrayList<>(presentPlayers);
         teamPlayers2.remove(tp1);
@@ -794,18 +794,11 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                         Log.v(TAG, "UNBALANCED showPlayersPopup: " + tp1.getName() + "/" + tp2.getName() + " v/s " + op1.getName() + "/" + op2.getName());
                         continue;
                     }
-                    Log.v(TAG, "showPlayersPopup(" + count + "): " + tp1.getName() + "/" + tp2.getName() + " v/s " + op1.getName() + "/" + op2.getName());
                     count++;
                     GameJournalDBEntry game = new GameJournalDBEntry(tp1.getName(),tp2.getName(),op1.getName(),op2.getName());
                     games.add(game);
                     possibleGames.append(game.toPlayersString());
                     Log.v(TAG, "scatterPlayers Adding Game:" + game.toPlayersString());
-                    /*
-                    if (playedGames.contains(game)) {
-                        possibleGames.append(SharedData.getInstance().getStrikethroughString(game.toPlayersString()));
-                    } else {
-                        possibleGames.append(game.toPlayersString());
-                    } */
                     found = true; // once the opponents are found for a team, break out of the loop. We don't want to repeat the same team.
                     break;
                 }  //opposite team inner loop
@@ -833,7 +826,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
         return false;
     }
 
-    private void fetchGames(final String group, final ArrayList<GameJournalDBEntry> gameList){
+    private void fetchGames(final String group, final ArrayList<GameJournalDBEntry> gameList, final Set<String> presentPlayerNames){
         Log.d(TAG, "======== fetchGames ========");
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.JOURNAL).child(mInnings).child(mRoundName).child(group);
         Query myQuery = dbRef.orderByKey();
@@ -844,6 +837,13 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                     GameJournalDBEntry jEntry = child.getValue(GameJournalDBEntry.class);
                     if(null==jEntry) continue;
                     gameList.add(jEntry);
+
+                    //Save the present Players for later. Useful to sort names when entering data
+                    //and to tick boxes (for present players) while suggesting games
+                    if(!jEntry.getmW1().isEmpty()) presentPlayerNames.add(jEntry.getmW1());
+                    if(!jEntry.getmW2().isEmpty()) presentPlayerNames.add(jEntry.getmW2());
+                    if(!jEntry.getmL1().isEmpty()) presentPlayerNames.add(jEntry.getmL1());
+                    if(!jEntry.getmL2().isEmpty()) presentPlayerNames.add(jEntry.getmL2());
                 }
             }
 

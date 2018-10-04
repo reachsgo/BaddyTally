@@ -146,6 +146,10 @@ class PlayerData {
         return Integer.toString(points.get(Constants.INNINGS_IDX).getWinPercentage());
     }
 
+    public void setShuffleFlag(ShuffleFlag shuffleFlag) {
+        this.shuffleFlag = shuffleFlag;
+    }
+
     public int wonMatch(boolean singles){
         points.get(Constants.SEASON_IDX).wonMatch(singles);
         return points.get(Constants.INNINGS_IDX).wonMatch(singles);

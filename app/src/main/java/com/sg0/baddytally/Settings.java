@@ -305,7 +305,8 @@ public class Settings extends AppCompatActivity {
                             if(child == null) continue;
                             ActiveUserDBEntry userData = child.getValue(ActiveUserDBEntry.class);
                             if (userData != null) {
-                                userList.append(String.format("%s, %s, %.10s, %s\n", child.getKey(), userData.getR(),userData.getD(), userData.getLl()));
+                                userList.append(String.format("%s, %s, %.10s, %s, %s\n",
+                                        child.getKey(), userData.getR(),userData.getD(), userData.getLl(), userData.getV()));
                             }
                         }
                         if(userList.length() == 0) return;
