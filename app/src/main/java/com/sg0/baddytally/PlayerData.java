@@ -49,6 +49,11 @@ class PlayerData {
         this.shuffleFlag = pd.shuffleFlag;
     }
 
+    public void resetGamesPlayed_innings() {
+        //reset Games Played
+        points.get(Constants.INNINGS_IDX).setP(0);
+    }
+
     public String getName() {
         return name;
     }
@@ -62,6 +67,9 @@ class PlayerData {
         return Integer.toString(points.get(Constants.INNINGS_IDX).getPts());
     }
 
+    public int getPointsInt_innings() {
+        return points.get(Constants.INNINGS_IDX).getPts();
+    }
 
     public String getPoints(final int idx) {
         return Integer.toString(points.get(idx).getPts());
@@ -71,9 +79,10 @@ class PlayerData {
         return Integer.toString(points.get(Constants.SEASON_IDX).getPts());
     }
 
-    public int getPointsInt_innings() {
-        return points.get(Constants.INNINGS_IDX).getPts();
+    public int getPointsInt_season() {
+        return points.get(Constants.SEASON_IDX).getPts();
     }
+
 
     public void setPts_innings(Integer innings_score) {
         points.get(Constants.INNINGS_IDX).setPts(innings_score);
@@ -134,6 +143,10 @@ class PlayerData {
         return Integer.toString(points.get(Constants.INNINGS_IDX).getP());
     }
 
+    public int getGamesPlayed_innings_int() {
+        return points.get(Constants.INNINGS_IDX).getP();
+    }
+
     public String getWinPercentage (final int idx) {
         return Integer.toString(points.get(idx).getWinPercentage());
     }
@@ -148,6 +161,10 @@ class PlayerData {
 
     public void setShuffleFlag(ShuffleFlag shuffleFlag) {
         this.shuffleFlag = shuffleFlag;
+    }
+
+    public int incrGamesPlayed_innings() {
+        return points.get(Constants.INNINGS_IDX).incrGamesPlayed();
     }
 
     public int wonMatch(boolean singles){

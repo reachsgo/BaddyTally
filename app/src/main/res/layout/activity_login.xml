@@ -175,13 +175,16 @@
             </RadioGroup>
         </LinearLayout>
 
-            <CheckBox
-                android:id="@+id/check_newround"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="30dp"
-                android:background="@color/colorPrimary"
-                android:text="@string/check_new_round" />
+            <Button
+                android:id="@+id/new_round_btn"
+                style="?android:textAppearanceSmall"
+                android:layout_width="match_parent"
+                android:layout_height="20dp"
+                android:layout_marginTop="16dp"
+                android:text="Create new round"
+                android:background="@color/colorPrimaryDark"
+                android:textColor="#fff"
+                android:textStyle="bold" />
             <TextView
                 android:id="@+id/current_round"
                 android:layout_width="wrap_content"

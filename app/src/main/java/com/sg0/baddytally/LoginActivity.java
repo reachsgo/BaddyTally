@@ -11,9 +11,8 @@ import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
@@ -24,27 +23,17 @@ import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.GenericTypeIndicator;
-import com.google.firebase.database.MutableData;
-import com.google.firebase.database.Transaction;
-import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 
 public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
@@ -67,7 +56,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     private String mUser;
     private String mRole;
     private boolean mInitialAttempt;
-    private CheckBox mCheckNewRound;
+    private boolean mNewRoundFlag;
 
 
     private void killActivity(){
@@ -86,7 +75,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         mPasswordView =  findViewById(R.id.password);
         mGameTypeRadioGroup = findViewById(R.id.gametype_radiogroup);
         mGroupRadioGroup = findViewById(R.id.gamegroup_radiogroup);
-        mCheckNewRound = findViewById(R.id.check_newround);
+        mNewRoundFlag = false;
 
         //checked attribute in XML doesnt seem to work in the new API version.
         //so, setting the defaults in code here.
@@ -124,7 +113,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
             mInitialAttempt = true;
             mGameTypeRadioGroup.setVisibility(View.GONE);
             mGroupRadioGroup.setVisibility(View.GONE);
-            mCheckNewRound.setVisibility(View.GONE);
+            findViewById(R.id.new_round_btn).setVisibility(View.GONE);
             findViewById(R.id.current_round).setVisibility(View.GONE);
             findViewById(R.id.time_now).setVisibility(View.GONE);
         }else {
@@ -135,14 +124,9 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
             else roundStr += SharedData.getInstance().getShortRoundName(data.mRoundName);
             ((TextView)findViewById(R.id.current_round)).setText(roundStr);
             ((TextView)findViewById(R.id.time_now)).setText(("Today's date: " + df.format(c)));
-        }
-
-        if(!mInitialAttempt) {
-            //If this a new date, then check new round flag.
-            if(data.mRoundName.contains(todaysDate))
-                mCheckNewRound.setChecked(false);
-            else
-                mCheckNewRound.setChecked(true);
+            if (!data.mRoundName.contains(todaysDate)) {
+                findViewById(R.id.new_round_btn).setBackgroundColor(getResources().getColor(R.color.colorRed));
+            }
         }
 
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -167,6 +151,14 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+
+        findViewById(R.id.new_round_btn).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mNewRoundFlag = true;
+                prepareForLogin(club, secpd);
+            }
+        });
 
         FloatingActionButton fab = findViewById(R.id.fab_return);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -294,7 +286,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         mGroupRadioButton = findViewById(selectedId);
         Log.v(TAG, "successfulLogin:" + mGameTypeRadioButton.getText() + ":" + mGroupRadioButton.getText());
 
-        if(mCheckNewRound.isChecked()) {
+        if (mNewRoundFlag) {
             //Are you sure you want to create a new round of games?
             DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
                 @Override
@@ -302,7 +294,16 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
                     switch (which) {
                         case DialogInterface.BUTTON_POSITIVE:
                             //Yes button clicked
-                            createEnterDataActivity();
+                            String roundName = SharedData.getInstance().createNewRoundName(true, LoginActivity.this);
+                            FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.INNINGS)
+                                    .child(SharedData.getInstance().mInningsDBKey.toString()).child("round").setValue(roundName);
+                            Toast.makeText(LoginActivity.this,
+                                    "Round " + roundName + " created!", Toast.LENGTH_SHORT).show();
+                            SharedData.getInstance().mRoundName = roundName;
+                            SharedData.getInstance().mGoldPresentPlayerNames.clear();
+                            SharedData.getInstance().mSilverPresentPlayerNames.clear();
+                            Log.d(TAG, "WRITTEN mRoundName: " + roundName + " data=" + SharedData.getInstance().toString());
+                            killActivity();
                             break;
 
                         case DialogInterface.BUTTON_NEGATIVE:
@@ -324,7 +325,6 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
 
     private void createEnterDataActivity()     {
         String newRoundFlag = "False";
-        if(mCheckNewRound.isChecked()) newRoundFlag = Constants.NEWROUND;
         Log.i(TAG, "successfulLogin, new round flag:" + newRoundFlag);
         Intent myIntent = new Intent(LoginActivity.this, EnterData.class);
         myIntent.putExtra("gametype", mGameTypeRadioButton.getText());

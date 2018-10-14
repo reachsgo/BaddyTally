@@ -100,19 +100,7 @@ public class EnterData extends AppCompatActivity {
     private DatabaseReference mDatabase;
     private ProgressDialog mProgressDialog;
 
-    private String createNewRoundName(boolean commit) {
-        Date c = Calendar.getInstance().getTime();
-        SimpleDateFormat df = new SimpleDateFormat(Constants.ROUND_DATEFORMAT, Locale.CANADA);
-        String rndName = df.format(c);
-        if (commit) {
-            Log.w(TAG, "createNewRoundName: committing:" + rndName);
-            SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putString(Constants.NEWROUND, rndName);
-            editor.apply();
-        }
-        return rndName;
-    }
+
 
     private void killActivity(){
         setResult(RESULT_OK);
@@ -148,7 +136,7 @@ public class EnterData extends AppCompatActivity {
             mRoundName = SharedData.getInstance().mRoundName;  //use the value read from DB
         }
         if(mRoundName.isEmpty()) {
-            mRoundName = createNewRoundName(true);
+            mRoundName = SharedData.getInstance().createNewRoundName(true, EnterData.this);
         }
         Log.w(TAG, "mRoundName=" + mRoundName);
 
@@ -567,15 +555,16 @@ public class EnterData extends AppCompatActivity {
                 .setAction("Action", null).show();
 
         GameJournalDBEntry jEntry = new GameJournalDBEntry(mRoundName, mInnings, SharedData.getInstance().mUser);
-        jEntry.setResult(createNewRoundName(false), mGameType, winner1, winner2, loser1, loser2, gPlayers.winningScore, gPlayers.losingScore);
+        jEntry.setResult(SharedData.getInstance().createNewRoundName(false, EnterData.this),
+                mGameType, winner1, winner2, loser1, loser2, gPlayers.winningScore, gPlayers.losingScore);
         jEntry.setmGNo(mGameNum);
         DatabaseReference jDBEntryRef = mDatabase.child(mClub).child(Constants.JOURNAL).child(mInnings).child(mRoundName).child(mGroup).push();
         jDBEntryRef.setValue(jEntry);
         Log.i(TAG, "WRITTEN jEntry: " + jEntry.toReadableString());
         //updateDB(winner1, winner2, loser1, loser2);
-        mDatabase.child(mClub).child(Constants.INNINGS).child(SharedData.getInstance().mInningsDBKey.toString()).child("round").setValue(mRoundName);
-        SharedData.getInstance().mRoundName = mRoundName;
-        Log.d(TAG, "WRITTEN mRoundName: " + mRoundName + " data=" + SharedData.getInstance().toString());
+        //mDatabase.child(mClub).child(Constants.INNINGS).child(SharedData.getInstance().mInningsDBKey.toString()).child("round").setValue(mRoundName);
+        //SharedData.getInstance().mRoundName = mRoundName;
+        //Log.d(TAG, "WRITTEN mRoundName: " + mRoundName + " data=" + SharedData.getInstance().toString());
 
         DatabaseReference mClubDBRef = mDatabase.child(mClub);
         DatabaseReference dbRef_winner1 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(winner1);

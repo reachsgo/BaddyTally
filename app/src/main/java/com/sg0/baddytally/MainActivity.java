@@ -3,13 +3,16 @@ package com.sg0.baddytally;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,11 +20,14 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.telephony.PhoneNumberUtils;
+import android.telephony.SmsManager;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -35,6 +41,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
@@ -51,8 +58,13 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 
+import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -223,6 +235,102 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
         selectedEffect2(R.id.gold_header_innings_ll, R.id.gold_header_season_ll);
         selectedEffect2(R.id.silver_header_innings_ll, R.id.silver_header_season_ll);
         //selectedEffect(R.id.silver_header_innings, R.id.silver_header_season);
+
+        ImageButton send_msg = findViewById(R.id.send_msg);
+        send_msg.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                ArrayList<PlayerData> mGoldPlayers = mGoldDB.getPlayers();
+                ArrayList<PlayerData> mSilverPlayers = mSilverDB.getPlayers();
+                String gold_msg = SharedData.getInstance().getShortRoundName(mRoundName) + " Gold>>\n";
+                int len = gold_msg.length();
+                for (PlayerData p : mGoldPlayers) {
+                    if (len != gold_msg.length()) gold_msg += "\n";
+                    gold_msg += p.getName() + ": " + p.getPoints_innings() + " (" + p.getWinPercentage_innings() + "%)";
+                }
+                String silver_msg = SharedData.getInstance().getShortRoundName(mRoundName) + " Silver>>\n";
+                len = silver_msg.length();
+                for (PlayerData p : mSilverPlayers) {
+                    if (len != silver_msg.length()) silver_msg += "\n";
+                    silver_msg += p.getName() + ": " + p.getPoints_innings() + " (" + p.getWinPercentage_innings() + "%)";
+                }
+                final String gold_message = gold_msg;
+                final String silver_message = silver_msg;
+
+                /* SGO: attempt to send whatsapp message. But, it is not yet supported.
+                Uri uri = Uri.parse("https://chat.whatsapp.com/GA5MrdrfxPxBCMIeTq2yj6");
+                Intent sendIntent = new Intent(Intent.ACTION_VIEW, uri);
+                //sendIntent.setType("text/plain");
+                //sendIntent.setComponent(new ComponentName("com.whatsapp","com.whatsapp.Conversation"));
+                //sendIntent.putExtra("jid", PhoneNumberUtils.stripSeparators("6133153331")+"@s.whatsapp.net");//phone number without "+" prefix
+                //sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Subject");
+                sendIntent.putExtra(Intent.EXTRA_TEXT, "hello");
+                startActivity(Intent.createChooser(sendIntent, "title"));*/
+
+                AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
+                final EditText edittext = new EditText(MainActivity.this);
+                //alert.setMessage("Enter Phone numbers (use comma as separator)");
+                alert.setTitle("Send SMS with summary of Innings points");
+                //alert.setMessage("Send SMS with Innings points summary");
+                SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+                final String phnums = prefs.getString(Constants.DATA_PHNUMS, "");
+                edittext.setHint("613613xxx,613613xxy,613613xxz");
+                if (!phnums.isEmpty()) edittext.setText(phnums);
+                alert.setView(edittext);
+
+                alert.setPositiveButton("Send", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        //What ever you want to do with the value
+                        String phone_numbers = edittext.getText().toString();
+                        Log.d(TAG, "send msg : phone numbers:" + phone_numbers);
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                            Log.d(TAG, "send msg : VERSION_CODES.M");
+                            if (ContextCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.SEND_SMS)
+                                    != PackageManager.PERMISSION_GRANTED) {
+                                // Permission is not granted
+                                // Ask for permision
+                                ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.SEND_SMS}, 1);
+                                Log.d(TAG, "send msg : VERSION_CODES.M -- asking permission");
+                                return;  //first time dont continue. User will have to press "Send" once more.
+                                //if you continue, app will crash as the requestPermission is asynchronous.
+                            }
+                        }
+                        List<String> phNumList = Arrays.asList(phone_numbers.split(","));
+                        String tmpPhNums = "";
+                        for (String phNum : phNumList) {
+                            Log.d(TAG, "send msg : phone num:" + phNum);
+                            if (!PhoneNumberUtils.isGlobalPhoneNumber(phNum)) continue;
+                            Log.d(TAG, "sending to " + phNum);
+                            SmsManager sms = SmsManager.getDefault();
+                            ArrayList<String> parts = sms.divideMessage(gold_message);
+                            sms.sendMultipartTextMessage(phNum, null, parts, null, null);
+                            parts = sms.divideMessage(silver_message);
+                            sms.sendMultipartTextMessage(phNum, null, parts, null, null);
+
+                            tmpPhNums += phNum + ",";
+                        }
+                        Toast.makeText(MainActivity.this, "SMS sent to " + tmpPhNums, Toast.LENGTH_SHORT).show();
+
+                        if (!tmpPhNums.equals(phnums)) {
+                            Log.d(TAG, "New set of phone nums: " + tmpPhNums);
+                            SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+                            SharedPreferences.Editor editor = prefs.edit();
+                            editor.putString(Constants.DATA_PHNUMS, tmpPhNums);
+                            editor.apply();
+                        }
+                    }
+                });
+
+                alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        // what ever you want to do with No option.
+                    }
+                });
+
+                alert.show();
+            }
+        });
 
         ImageButton suggestion_btn = findViewById(R.id.suggestions);
         suggestion_btn.setOnClickListener(new View.OnClickListener() {
@@ -550,26 +658,25 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
 
     private void showRules() {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setMessage("\n1.  Players of the club are divided into 2 groups: Gold (top rank) & Silver\n\n" +
+        builder.setMessage("\n1.  Players of the club are divided into 2 pools: Gold (top rank) & Silver\n\n" +
                 "2.  Season is divided into several \"Innings\" (say 1 per month)\n\n" +
-                "3.  Players are ranked by points. Players of a winning Doubles team are awarded 1 point each." +
-                " Winner of Singles game is awarded 2 points. No points for a loss.\n\n" +
+                "3.  Players are ranked by points. Winner(s) of a game is awarded 1 point. No points for a loss.\n\n" +
                 "4.  At the start of a new Innings, points accumulated over the last Innings are considered to shuffle" +
                 " the players. Shuffling rules:\n" +
                 "        (i)  Top \'N\' players (3 by default) of Silver move to Gold & Bottom \'N\' players of Gold move to Silver. If there is a tie, player selection is done on criteria in the order:" +
                 " (i.1) higher win percentage, (i.2) most number of wins" +
                 " (i.3) most number of games played (i.4) toss\n" +
                 "        (ii)  Once the above rule is applied, the win % of the players are compared, for those who have at least played \'X\' games (12 by default) in that month." +
-                " If the player with the highest win % is in Silver Group, then he/she is shuffled with the player with the lowest win % from Gold group." +
-                " Please note that it is quite possible that the player being moved from Gold group due to this could be a player who just moved to Gold due to rule 1" +
-                " or he/she could be a player who was already in Gold group before applying shuffling rule 1.\n\n" +
-                "5.  After warm-up, games are played among players of the same group, such that all" +
+                " If the player with the highest win % is in Silver pool, then he/she is shuffled with the player with the lowest win % from Gold pool." +
+                " Please note that it is quite possible that the player being moved from Gold pool due to this could be a player who just moved to Gold due to rule 1" +
+                " or he/she could be a player who was already in Gold pool before applying shuffling rule 1.\n\n" +
+                "5.  After warm-up, games are played among players of the same pool, such that all" +
                 " possible combination of pairings are covered (at least once) for that day. \n\n" +
-                "6.  Any new member to club starts in the Silver group.\n\n" +
+                "6.  Any new member to club starts in the Silver pool.\n\n" +
                 "7.  If guests are playing, points are not counted for that game.\n\n" +
-                "8.  If there are less than 4 players from a group on any game day, you should play at least 1 singles per player in attendance." +
-                " Ideally, singles between all possible combinations of that group on that day should be played.\n\n" +
-                "9. If there are not enough players on a day, mix and match (after the singles). Points are still counted.\n\n" +
+                "8.  If there are less than 4 players from a pool on any game day, you could start with Singles." +
+                " If Singles are not desired, then mix the pools and play random teams (points are not counted).\n\n" +
+                "9. If there are not enough players on a day, mix and match (after the singles). Points are not counted in that case.\n\n" +
                 "10. Scores and results can be entered into ScoreTally after each game.\n\n")
                 .setTitle(SharedData.getInstance().getTitleStr("Rules", MainActivity.this))
                 .setNeutralButton("Ok", null)
@@ -624,6 +731,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
         //if(presetPlayerNames==null) presetPlayerNames = new HashSet<>();  //cant do it this way, as the class member variables like mGoldPresentPlayerNames wont be initialized
 
         final ArrayList<PlayerData> players = new ArrayList<>(adapter.getPlayers());  //in ascending order
+
 
         //create checked items, Remember last checked items
         boolean[] checkedItems = new boolean[players.size()];
@@ -687,10 +795,16 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                     return;
                 } else {
                     for (PlayerData p : players) {
-                        if (presetPlayerNames.contains(p.getName())) presentPlayers.add(p);
+                        if (presetPlayerNames.contains(p.getName())) {
+                            p.resetGamesPlayed_innings();
+                            presentPlayers.add(p);
+                            Log.v(TAG, "SGO Players:" + p.toString());
+                        }
                     }
                 }
 
+                //We want to do the game suggestions as per season points.
+                SharedData.getInstance().sortPlayers(presentPlayers, Constants.SEASON_IDX, false, MainActivity.this, false); //in ascending order
                 Log.v(TAG, "showPlayersPopup OK onClick, presentPlayers:" + presentPlayers.toString());
 
                 if (presentPlayers.size()<4) {
@@ -698,9 +812,8 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                             Toast.LENGTH_LONG).show();
                     return;
                 }
-                ArrayList<PlayerData> presentPlayersReverse = new ArrayList<>(presentPlayers);
-                SharedData.getInstance().sortPlayers(presentPlayersReverse, Constants.INNINGS_IDX, true, MainActivity.this, false);
-                Log.v(TAG, "showPlayersPopup OK onClick, presentPlayersReverse:" + presentPlayersReverse.toString());
+
+
                 ArrayList<GameJournalDBEntry> games = new ArrayList<>(playedGames);   //recommended games for the day
                 SpannableStringBuilder possibleGames = new SpannableStringBuilder();  //recommended games for the day, as string to print in dialog
                 SpannableStringBuilder extraGames = new SpannableStringBuilder(); //recommended extra games for the day, as string to print in dialog
@@ -708,49 +821,85 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                 for(GameJournalDBEntry game: games) {
                     possibleGames.append(SharedData.getInstance().getColorString(
                             SharedData.getInstance().getStrikethroughString(game.toPlayersString()), Color.GRAY));
+                    for (PlayerData p : presentPlayers) {
+                        // GamesPlayed_innings is used to count the number of games suggested for each player.
+                        // This is not used in current code to balance the suggested games, but might be useful in the future.
+                        if (game.playerInvolved(p.getName())) p.incrGamesPlayed_innings();
+                    }
                 }
 
-                // +++ Start with recommendation logic +++
+                // +++ Start with game suggestion logic +++
+                // Its impossible to automatically generate all balanced games, with equal number of games for all players
+                // and with balanced skill levels, but at the same time provide a chance for good competitive games.
+                // Thus, it is decided to "suggest" only few balanced/competitive games depending on season points
+                // (which will be more consistent over time compared to innings points) and let them rest of the games
+                // be decided by the players.
 
-                //Add 2 equally balanced games first:
-                // (a) first 4
-                // (b) last 4
-                if (presentPlayers.size()>4) {
-                    if(!playedToday(presentPlayers.get(0), presentPlayers.get(3), games) &&
-                            !playedToday(presentPlayers.get(1), presentPlayers.get(2), games)) {
-                        GameJournalDBEntry game = new GameJournalDBEntry(presentPlayers.get(0).getName(),
-                                presentPlayers.get(3).getName(),
-                                presentPlayers.get(1).getName(),
-                                presentPlayers.get(2).getName());
-                        Log.v(TAG, "showPlayersPopup Adding Game1:" + game.toPlayersString());
+                // Start with skillfully competitive games. Increments of 2, to restrict the number of games for the players in the middle.
+                // If the set of 4 is a sliding window moving down by 1, then the players in the middle will have the bulk of the games,
+                // while players at either ends will be deprived of games.
+
+                for (int idx = presentPlayers.size() - 1; idx >= 3; idx -= 2) {  //starting from top player, pick 4 each
+                    if (!playedToday(presentPlayers.get(idx), presentPlayers.get(idx - 3), games) &&
+                            !playedToday(presentPlayers.get(idx - 1), presentPlayers.get(idx - 2), games)) {
+                        GameJournalDBEntry game = new GameJournalDBEntry(presentPlayers.get(idx).getName(),
+                                presentPlayers.get(idx - 3).getName(),
+                                presentPlayers.get(idx - 1).getName(),
+                                presentPlayers.get(idx - 2).getName());
+                        Log.v(TAG, "showPlayersPopup Adding Game of 4:" + game.toPlayersString());
                         games.add(game);
                         possibleGames.append(game.toPlayersString());
+                        presentPlayers.get(idx).incrGamesPlayed_innings();
+                        presentPlayers.get(idx - 3).incrGamesPlayed_innings();
+                        presentPlayers.get(idx - 1).incrGamesPlayed_innings();
+                        presentPlayers.get(idx - 2).incrGamesPlayed_innings();
                     }
-
-                    int lastidx = presentPlayers.size()-1;
-                    if(!playedToday(presentPlayers.get(lastidx), presentPlayers.get(lastidx-3), games) &&
-                            !playedToday(presentPlayers.get(lastidx-1), presentPlayers.get(lastidx-2), games)) {
-                        GameJournalDBEntry game = new GameJournalDBEntry(presentPlayers.get(lastidx).getName(),
-                                presentPlayers.get(lastidx-3).getName(),
-                                presentPlayers.get(lastidx-1).getName(),
-                                presentPlayers.get(lastidx-2).getName());
-                        Log.v(TAG, "showPlayersPopup Adding Game2:" + game.toPlayersString());
-                        games.add(game);
-                        possibleGames.append(game.toPlayersString());
-                    }
-                } //more than 4 players
-
-                // Now, scatter top player, then bottom player
-                //      then top-2 player (top-1 player is skipped as top-2 will be the main opponent in the top player games)
-                //      then bottom-2 player, etc.
-                int lowestIdx = 0;
-                for (int idx = presentPlayers.size()-1; idx >= lowestIdx; idx-=2) {  //top player first; ascending order
-                    scatterPlayers(presentPlayers.get(idx), presentPlayers, games, playedGames, possibleGames, extraGames);
-                    //scatterPlayers.add(presentPlayers.get(idx));
-                    if(idx>lowestIdx) scatterPlayers(presentPlayers.get(lowestIdx), presentPlayersReverse, games, playedGames, possibleGames, extraGames);
-                    // /scatterPlayers.add(presentPlayers.get(lowestIdx));
-                    lowestIdx += 2;
                 }
+
+                // Play few balanced games from players selected from either ends to form a team.
+                for (int x = 0; x < presentPlayers.size() / 2; x += 2) {
+                    ArrayList<PlayerData> playerDataArrayList1 = new ArrayList<>(presentPlayers);
+                    SharedData.getInstance().sortPlayers(playerDataArrayList1, Constants.SEASON_IDX, true, MainActivity.this, false);
+                    scatterPlayers(playerDataArrayList1.get(x), presentPlayers, games, playerDataArrayList1, possibleGames);
+                }
+
+                // Add few more skillfully competitive games, select the players from bottom this time.
+                // This will also help if there are odd number of players present on a game day.
+                for (int idx = 0; idx <= presentPlayers.size() - 4; idx += 2) {  //starting from bottom player, pick 4 each
+                    if (!playedToday(presentPlayers.get(idx), presentPlayers.get(idx + 3), games) &&
+                            !playedToday(presentPlayers.get(idx + 1), presentPlayers.get(idx + 2), games)) {
+                        PlayerData tp1 = presentPlayers.get(idx);
+                        PlayerData tp2 = presentPlayers.get(idx + 3);
+                        PlayerData op1 = presentPlayers.get(idx + 1);
+                        PlayerData op2 = presentPlayers.get(idx + 2);
+
+                        if (playedToday(op1, op2, games)) {
+                            Log.v(TAG, "playedToday showPlayersPopup rev: " + tp1.getName() + "/" + tp2.getName() + " v/s " + op1.getName() + "/" + op2.getName());
+                            continue;
+                        }
+                        if (notBalanced(tp1, tp2, op1, op2)) {
+                            Log.v(TAG, "UNBALANCED showPlayersPopup rev: " + tp1.getName() + "/" + tp2.getName() + " v/s " + op1.getName() + "/" + op2.getName());
+                            continue;
+                        }
+
+                        GameJournalDBEntry game = new GameJournalDBEntry(presentPlayers.get(idx).getName(),
+                                presentPlayers.get(idx + 3).getName(),
+                                presentPlayers.get(idx + 1).getName(),
+                                presentPlayers.get(idx + 2).getName());
+                        Log.v(TAG, "showPlayersPopup Adding Game of 4 rev:" + game.toPlayersString());
+                        games.add(game);
+                        possibleGames.append(game.toPlayersString());
+                        presentPlayers.get(idx).incrGamesPlayed_innings();
+                        presentPlayers.get(idx + 3).incrGamesPlayed_innings();
+                        presentPlayers.get(idx + 1).incrGamesPlayed_innings();
+                        presentPlayers.get(idx + 2).incrGamesPlayed_innings();
+                    }
+                }
+
+                // After these, if there are few players with very few games. Let them play.
+                pickLeastPlayedFour(presentPlayers, games, possibleGames);
+
+
                 if(extraGames.length()>0) {
                     possibleGames.append("\nOther Possible Games:\n");
                     possibleGames.append(extraGames);
@@ -766,44 +915,96 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
         builder.show();
     }
 
+
+    private void pickLeastPlayedFour(final ArrayList<PlayerData> presentPlayers, final ArrayList<GameJournalDBEntry> games,
+                                     SpannableStringBuilder possibleGames) {
+        ArrayList<PlayerData> pList = new ArrayList<>(presentPlayers);
+        sortByGamesPlayed(pList);  //ascending order
+        //Log.v(TAG, "pickLeastPlayedFour presentPlayers=" + pList.toString());
+        if (pList.size() < 4) return;
+        int gamesCap = pList.get(3).getGamesPlayed_innings_int();
+        for (int x = pList.size() - 1; x > 3; x--) {
+            if (pList.get(x).getGamesPlayed_innings_int() > gamesCap) pList.remove(x);
+            else break;
+        }
+        //Log.v(TAG, "pickLeastPlayedFour pList=" + pList.toString());
+        SharedData.getInstance().sortPlayers(pList, Constants.SEASON_IDX, true, MainActivity.this, false);
+        Log.v(TAG, "pickLeastPlayedFour pList descending=" + pList.toString());
+        PlayerData tp1 = pList.get(0);
+        scatterPlayers(tp1, presentPlayers, games, pList, possibleGames);
+    }
+
+
     //For the input player, find a partner from the other end of the list (partner is bottom player, if the i/p player is top player).
     //Then, find opponents for this team (again one from either ends)
     private void scatterPlayers(final PlayerData tp1, final ArrayList<PlayerData> presentPlayers, final ArrayList<GameJournalDBEntry> games,
-                                ArrayList<GameJournalDBEntry> playedGames, SpannableStringBuilder possibleGames, SpannableStringBuilder extraGames) {
-        Log.v(TAG, "scatterPlayers scattering:" + tp1.getName());
+                                final ArrayList<PlayerData> playerDataArrayList, SpannableStringBuilder possibleGames) {
+        Log.v(TAG, "scatterPlayers scattering:" + tp1.getName() + " playerDataArrayList=" + playerDataArrayList.toString());
         int count = 1;
-        ArrayList<PlayerData> teamPlayers2 = new ArrayList<>(presentPlayers);
+        ArrayList<PlayerData> teamPlayers2 = new ArrayList<>(playerDataArrayList);
         teamPlayers2.remove(tp1);
         boolean found = false;
+
         //Find a team-mate for tp1
-        for (int idx2 = 0 ; idx2 <= teamPlayers2.size()-1; idx2++) {  //bottom player as partner
+        for (int idx2 = teamPlayers2.size() - 1; idx2 >= 0; idx2--) {  //partner from the other end
             PlayerData tp2 = teamPlayers2.get(idx2);
             if(tp2==tp1) continue;
             if(playedToday(tp1, tp2, games)) continue;
 
             ArrayList<PlayerData> oppPlayers = new ArrayList<>(teamPlayers2);
             oppPlayers.remove(tp2);
-            for (int idxo = oppPlayers.size() - 1; idxo >= 0; idxo--) {  //top player first of the remaining list
+            for (int idxo = 0; idxo <= oppPlayers.size() - 1; idxo++) {  //opponent players: again from either ends
                 PlayerData op1 = oppPlayers.get(idxo);
                 ArrayList<PlayerData> oppPlayers2 = new ArrayList<>(oppPlayers);
                 oppPlayers2.remove(op1);
-                for(PlayerData op2: oppPlayers2) {
+                for (int idxo2 = oppPlayers2.size() - 1; idxo2 >= 0; idxo2--) {
+                    PlayerData op2 = oppPlayers2.get(idxo2);
                     if (op2 == op1) continue;
-                    if (playedToday(op1, op2, games)) continue;
+                    count++;
+
+                    if (playedToday(op1, op2, games)) {
+                        Log.v(TAG, "playedToday showPlayersPopup: " + tp1.getName() + "/" + tp2.getName() + " v/s " + op1.getName() + "/" + op2.getName());
+                        continue;
+                    }
                     if (notBalanced(tp1, tp2, op1, op2)) {
                         Log.v(TAG, "UNBALANCED showPlayersPopup: " + tp1.getName() + "/" + tp2.getName() + " v/s " + op1.getName() + "/" + op2.getName());
                         continue;
                     }
-                    count++;
+                    if (presentPlayers.size() > 6 && playedTodayAs4(tp1, tp2, op1, op2, games)) {
+                        Log.v(TAG, "PLAYEDasFOUR showPlayersPopup: " + tp1.getName() + "/" + tp2.getName() + " v/s " + op1.getName() + "/" + op2.getName());
+                        continue;
+                    }
+
                     GameJournalDBEntry game = new GameJournalDBEntry(tp1.getName(),tp2.getName(),op1.getName(),op2.getName());
                     games.add(game);
                     possibleGames.append(game.toPlayersString());
+
+                    // increment the number of games for the players involved. GamesPlayed_innings is used to count the number of games suggested for each player
+                    for (PlayerData p : presentPlayers) {
+                        if (tp1.getName().equals(p.getName())) {
+                            p.incrGamesPlayed_innings();
+                            continue;
+                        }
+                        if (tp2.getName().equals(p.getName())) {
+                            p.incrGamesPlayed_innings();
+                            continue;
+                        }
+                        if (op1.getName().equals(p.getName())) {
+                            p.incrGamesPlayed_innings();
+                            continue;
+                        }
+                        if (op2.getName().equals(p.getName())) {
+                            p.incrGamesPlayed_innings();
+                            continue;
+                        }
+                    }
                     Log.v(TAG, "scatterPlayers Adding Game:" + game.toPlayersString());
                     found = true; // once the opponents are found for a team, break out of the loop. We don't want to repeat the same team.
                     break;
                 }  //opposite team inner loop
                 if(found) break;
             }  //opposite team outer loop
+            if (found) break;  //do only one set of games per player.
         } //team-mate loop
     }
 
@@ -814,9 +1015,18 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
         return false;
     }
 
+    private boolean playedTodayAs4(final PlayerData p1, final PlayerData p2, final PlayerData p3, final PlayerData p4,
+                                   final ArrayList<GameJournalDBEntry> games) {
+        for (GameJournalDBEntry game : games) {
+            if (game.playersInvolved4(p1.getName(), p2.getName(), p3.getName(), p4.getName()))
+                return true;
+        }
+        return false;
+    }
+
     private boolean notBalanced(final PlayerData p1, final PlayerData p2, final PlayerData p3, final PlayerData p4) {
-        int t1_total = p1.getPointsInt_innings()+p2.getPointsInt_innings();
-        int t2_total = p3.getPointsInt_innings()+p4.getPointsInt_innings();
+        int t1_total = p1.getPointsInt_season() + p2.getPointsInt_season();
+        int t2_total = p3.getPointsInt_season() + p4.getPointsInt_season();
         if(t1_total+t2_total < 10) return false;
 
         if((t1_total <= (t2_total/2)) || (t2_total <= (t1_total/2))) {
@@ -824,6 +1034,71 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
         }
 
         return false;
+    }
+
+    // These were used to balance out the number of games suggested for each player. But that becomes very complicated and not accurate at all.
+    // Keeping it here, if needed in future.
+    private boolean equalChance(final PlayerData p1, final PlayerData p2, final PlayerData p3, final PlayerData p4, final ArrayList<PlayerData> presentPlayers, int deltaNumOfGames) {
+        if (deltaNumOfGames <= 0) return true;
+        int minNumOfGames = 9999;
+        int maxNumOfGames = 0;
+        PlayerData minP, maxP;
+        for (PlayerData p : presentPlayers) {
+            if (p.getGamesPlayed_innings_int() > maxNumOfGames) {
+                maxNumOfGames = p.getGamesPlayed_innings_int();
+                maxP = p;
+            } else if (p.getGamesPlayed_innings_int() < minNumOfGames) {
+                minNumOfGames = p.getGamesPlayed_innings_int();
+                minP = p;
+            }
+        }
+        String msg = TAG + " " + minNumOfGames + "/" + maxNumOfGames + ":";
+        if (p1.getGamesPlayed_innings_int() > (minNumOfGames + deltaNumOfGames)) {
+            Log.v(TAG, msg + "players NOT equalChance:" + p1.toStringShort());
+            return false;
+        }
+        if (p2.getGamesPlayed_innings_int() > (minNumOfGames + deltaNumOfGames)) {
+            Log.v(TAG, msg + "players NOT equalChance:" + p2.toStringShort());
+            return false;
+        }
+        if (p3.getGamesPlayed_innings_int() > (minNumOfGames + deltaNumOfGames)) {
+            Log.v(TAG, msg + "players NOT equalChance:" + p3.toStringShort());
+            return false;
+        }
+        if (p4.getGamesPlayed_innings_int() > (minNumOfGames + deltaNumOfGames)) {
+            Log.v(TAG, msg + "players NOT equalChance:" + p4.toStringShort());
+            return false;
+        }
+        return true;
+    }
+
+    private boolean enoughChances(final ArrayList<PlayerData> presentPlayers) {
+        int minNumOfGames = 9999;
+        int maxNumOfGames = 0;
+        PlayerData minP, maxP;
+        for (PlayerData p : presentPlayers) {
+            if (p.getGamesPlayed_innings_int() > maxNumOfGames) {
+                maxNumOfGames = p.getGamesPlayed_innings_int();
+                maxP = p;
+            } else if (p.getGamesPlayed_innings_int() < minNumOfGames) {
+                minNumOfGames = p.getGamesPlayed_innings_int();
+                minP = p;
+            }
+        }
+        String msg = TAG + " " + minNumOfGames + "/" + maxNumOfGames + ":";
+        Log.v(TAG, msg + " enoughChances");
+        if (maxNumOfGames - minNumOfGames > 1) return false;
+        return true;
+    }
+
+    private void sortByGamesPlayed(ArrayList<PlayerData> playersList) {
+        Collections.sort(playersList, new Comparator<PlayerData>() {
+            @Override
+            public int compare(PlayerData p1, PlayerData p2) {
+                //return (Integer.valueOf(p1.getGamesPlayed_innings_int()).compareTo(p2.getGamesPlayed_innings_int()));
+                return Integer.compare(p1.getGamesPlayed_innings_int(), p2.getGamesPlayed_innings_int());
+            }
+        });
     }
 
     private void fetchGames(final String group, final ArrayList<GameJournalDBEntry> gameList, final Set<String> presentPlayerNames){

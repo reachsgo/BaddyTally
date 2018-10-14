@@ -204,7 +204,15 @@
             android:layout_height="wrap_content"
             android:background="@android:color/holo_orange_light"
             android:orientation="horizontal">
-        <TextView
+
+            <ImageButton
+                android:id="@+id/send_msg"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:background="@drawable/roundbtn"
+                android:src="@drawable/sms_btn" />
+
+            <TextView
             android:id="@+id/footer"
             android:layout_width="wrap_content"
             android:layout_height="20dp"

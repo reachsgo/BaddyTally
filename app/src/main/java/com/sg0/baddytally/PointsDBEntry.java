@@ -61,9 +61,13 @@ public class PointsDBEntry {
         else return 0;
     }
 
+    public int incrGamesPlayed() {
+        return ++P;
+    }
+
     public int wonMatch(boolean singles){
         this.pts++;
-        if(singles) this.pts++;
+        //if(singles) this.pts++; //singles will also have ony 1 point.
         this.P++;
         this.W++;
         return this.pts;
@@ -77,7 +81,7 @@ public class PointsDBEntry {
         if(winner) {
             //for the winner, reduce points
             this.pts--; //points
-            if(singles) this.pts--;
+            //if(singles) this.pts--;   //singles will also have ony 1 point.
             if(this.pts<0) this.pts=0;
             //and the number of wins
             this.W--;  //number of wins

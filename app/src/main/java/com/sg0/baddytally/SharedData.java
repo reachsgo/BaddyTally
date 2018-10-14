@@ -1,6 +1,7 @@
 package com.sg0.baddytally;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.res.ResourcesCompat;
@@ -34,6 +35,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
+
+import static android.content.Context.MODE_PRIVATE;
 
 public class SharedData {
     private static final String TAG = "SharedData";
@@ -559,6 +562,20 @@ public class SharedData {
                         "Login Profile DB error:" + databaseError.toString(), Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    public String createNewRoundName(boolean commit, Context context) {
+        Date c = Calendar.getInstance().getTime();
+        SimpleDateFormat df = new SimpleDateFormat(Constants.ROUND_DATEFORMAT, Locale.CANADA);
+        String rndName = df.format(c);
+        if (commit) {
+            Log.w(TAG, "createNewRoundName: committing:" + rndName);
+            SharedPreferences prefs = context.getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putString(Constants.NEWROUND, rndName);
+            editor.apply();
+        }
+        return rndName;
     }
 
     @Override
