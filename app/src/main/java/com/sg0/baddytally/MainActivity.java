@@ -237,122 +237,10 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
         //selectedEffect(R.id.silver_header_innings, R.id.silver_header_season);
 
         ImageButton send_msg = findViewById(R.id.send_msg);
-        send_msg.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                ArrayList<PlayerData> mGoldPlayers = mGoldDB.getPlayers();
-                ArrayList<PlayerData> mSilverPlayers = mSilverDB.getPlayers();
-                String gold_msg = SharedData.getInstance().getShortRoundName(mRoundName) + " Gold>>\n";
-                int len = gold_msg.length();
-                for (PlayerData p : mGoldPlayers) {
-                    if (len != gold_msg.length()) gold_msg += "\n";
-                    gold_msg += p.getName() + ": " + p.getPoints_innings() + " (" + p.getWinPercentage_innings() + "%)";
-                }
-                String silver_msg = SharedData.getInstance().getShortRoundName(mRoundName) + " Silver>>\n";
-                len = silver_msg.length();
-                for (PlayerData p : mSilverPlayers) {
-                    if (len != silver_msg.length()) silver_msg += "\n";
-                    silver_msg += p.getName() + ": " + p.getPoints_innings() + " (" + p.getWinPercentage_innings() + "%)";
-                }
-                final String gold_message = gold_msg;
-                final String silver_message = silver_msg;
-
-                /* SGO: attempt to send whatsapp message. But, it is not yet supported.
-                Uri uri = Uri.parse("https://chat.whatsapp.com/GA5MrdrfxPxBCMIeTq2yj6");
-                Intent sendIntent = new Intent(Intent.ACTION_VIEW, uri);
-                //sendIntent.setType("text/plain");
-                //sendIntent.setComponent(new ComponentName("com.whatsapp","com.whatsapp.Conversation"));
-                //sendIntent.putExtra("jid", PhoneNumberUtils.stripSeparators("6133153331")+"@s.whatsapp.net");//phone number without "+" prefix
-                //sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Subject");
-                sendIntent.putExtra(Intent.EXTRA_TEXT, "hello");
-                startActivity(Intent.createChooser(sendIntent, "title"));*/
-
-                AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
-                final EditText edittext = new EditText(MainActivity.this);
-                //alert.setMessage("Enter Phone numbers (use comma as separator)");
-                alert.setTitle("Send SMS with summary of Innings points");
-                //alert.setMessage("Send SMS with Innings points summary");
-                SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
-                final String phnums = prefs.getString(Constants.DATA_PHNUMS, "");
-                edittext.setHint("613613xxx,613613xxy,613613xxz");
-                if (!phnums.isEmpty()) edittext.setText(phnums);
-                alert.setView(edittext);
-
-                alert.setPositiveButton("Send", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        //What ever you want to do with the value
-                        String phone_numbers = edittext.getText().toString();
-                        Log.d(TAG, "send msg : phone numbers:" + phone_numbers);
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                            Log.d(TAG, "send msg : VERSION_CODES.M");
-                            if (ContextCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.SEND_SMS)
-                                    != PackageManager.PERMISSION_GRANTED) {
-                                // Permission is not granted
-                                // Ask for permision
-                                ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.SEND_SMS}, 1);
-                                Log.d(TAG, "send msg : VERSION_CODES.M -- asking permission");
-                                return;  //first time dont continue. User will have to press "Send" once more.
-                                //if you continue, app will crash as the requestPermission is asynchronous.
-                            }
-                        }
-                        List<String> phNumList = Arrays.asList(phone_numbers.split(","));
-                        String tmpPhNums = "";
-                        for (String phNum : phNumList) {
-                            Log.d(TAG, "send msg : phone num:" + phNum);
-                            if (!PhoneNumberUtils.isGlobalPhoneNumber(phNum)) continue;
-                            Log.d(TAG, "sending to " + phNum);
-                            SmsManager sms = SmsManager.getDefault();
-                            ArrayList<String> parts = sms.divideMessage(gold_message);
-                            sms.sendMultipartTextMessage(phNum, null, parts, null, null);
-                            parts = sms.divideMessage(silver_message);
-                            sms.sendMultipartTextMessage(phNum, null, parts, null, null);
-
-                            tmpPhNums += phNum + ",";
-                        }
-                        Toast.makeText(MainActivity.this, "SMS sent to " + tmpPhNums, Toast.LENGTH_SHORT).show();
-
-                        if (!tmpPhNums.equals(phnums)) {
-                            Log.d(TAG, "New set of phone nums: " + tmpPhNums);
-                            SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
-                            SharedPreferences.Editor editor = prefs.edit();
-                            editor.putString(Constants.DATA_PHNUMS, tmpPhNums);
-                            editor.apply();
-                        }
-                    }
-                });
-
-                alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        // what ever you want to do with No option.
-                    }
-                });
-
-                alert.show();
-            }
-        });
+        send_msg.setOnClickListener(sendSMSOnClickListener);
 
         ImageButton suggestion_btn = findViewById(R.id.suggestions);
-        suggestion_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                if(SharedData.getInstance().mGoldPresentPlayerNames!=null) {
-                    showGroupPopup();
-                } else {
-                    //Probably the first time, user might not be aware of the button functionality, help him!
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    builder.setMessage("To get game-suggestions, select group and the players present today for the games.")
-                            .setTitle(SharedData.getInstance().getTitleStr("Info!", MainActivity.this))
-                            .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    showGroupPopup();
-                                }
-                            }).show();
-                }
-            }
-        });
+        suggestion_btn.setOnClickListener(suggestionsOnClickListener);
 
     }
 
@@ -663,9 +551,10 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                 "3.  Players are ranked by points. Winner(s) of a game is awarded 1 point. No points for a loss.\n\n" +
                 "4.  At the start of a new Innings, points accumulated over the last Innings are considered to shuffle" +
                 " the players. Shuffling rules:\n" +
-                "        (i)  Top \'N\' players (3 by default) of Silver move to Gold & Bottom \'N\' players of Gold move to Silver. If there is a tie, player selection is done on criteria in the order:" +
-                " (i.1) higher win percentage, (i.2) most number of wins" +
-                " (i.3) most number of games played (i.4) toss\n" +
+                "        (i)  Top \'N\' players (3 by default) of Silver move to Gold & Bottom \'N\' players of Gold move to Silver. If there is a tie, player selection is done on criteria in the order:\n" +
+                " (i.1) Higher points, win%, number of wins and number of games played (in that order) in current innings\n" +
+                " (i.2) Higher points, win%, number of wins and number of games played (in that order) in the whole season\n" +
+                " (i.3) Random pick (toss)\n" +
                 "        (ii)  Once the above rule is applied, the win % of the players are compared, for those who have at least played \'X\' games (12 by default) in that month." +
                 " If the player with the highest win % is in Silver pool, then he/she is shuffled with the player with the lowest win % from Gold pool." +
                 " Please note that it is quite possible that the player being moved from Gold pool due to this could be a player who just moved to Gold due to rule 1" +
@@ -682,6 +571,27 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                 .setNeutralButton("Ok", null)
                 .show();
     }
+
+    //show game suggestions for the players present on that day.
+    private View.OnClickListener suggestionsOnClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            if (SharedData.getInstance().mGoldPresentPlayerNames != null) {
+                showGroupPopup();
+            } else {
+                //Probably the first time, user might not be aware of the button functionality, help him!
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setMessage("To get game-suggestions, select group and the players present today for the games.")
+                        .setTitle(SharedData.getInstance().getTitleStr("Info!", MainActivity.this))
+                        .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                showGroupPopup();
+                            }
+                        }).show();
+            }
+        }
+    };
 
     private void showGroupPopup() {
         final ImageButton view = findViewById(R.id.suggestions);
@@ -1130,4 +1040,100 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
             }
         });
     }
+
+    //send SMS to iPhone users (who don't have access to Android app)
+    private View.OnClickListener sendSMSOnClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+
+            ArrayList<PlayerData> mGoldPlayers = mGoldDB.getPlayers();
+            ArrayList<PlayerData> mSilverPlayers = mSilverDB.getPlayers();
+            String gold_msg = SharedData.getInstance().getShortRoundName(mRoundName) + "ST Gold>>\n";
+            int len = gold_msg.length();
+            for (PlayerData p : mGoldPlayers) {
+                if (len != gold_msg.length()) gold_msg += "\n";
+                gold_msg += p.getName() + ": " + p.getPoints_innings() + " (" + p.getWinPercentage_innings() + "%)";
+            }
+            String silver_msg = SharedData.getInstance().getShortRoundName(mRoundName) + "ST Silver>>\n";
+            len = silver_msg.length();
+            for (PlayerData p : mSilverPlayers) {
+                if (len != silver_msg.length()) silver_msg += "\n";
+                silver_msg += p.getName() + ": " + p.getPoints_innings() + " (" + p.getWinPercentage_innings() + "%)";
+            }
+            final String gold_message = gold_msg;
+            final String silver_message = silver_msg;
+
+                /* SGO: attempt to send whatsapp message. But, it is not yet supported.
+                Uri uri = Uri.parse("https://chat.whatsapp.com/GA5MrdrfxPxBCMIeTq2yj6");
+                Intent sendIntent = new Intent(Intent.ACTION_VIEW, uri);
+                //sendIntent.setType("text/plain");
+                //sendIntent.setComponent(new ComponentName("com.whatsapp","com.whatsapp.Conversation"));
+                //sendIntent.putExtra("jid", PhoneNumberUtils.stripSeparators("6133153331")+"@s.whatsapp.net");//phone number without "+" prefix
+                //sendIntent.putExtra(Intent.EXTRA_SUBJECT, "Subject");
+                sendIntent.putExtra(Intent.EXTRA_TEXT, "hello");
+                startActivity(Intent.createChooser(sendIntent, "title"));*/
+
+            AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
+            final EditText edittext = new EditText(MainActivity.this);
+            //alert.setMessage("Enter Phone numbers (use comma as separator)");
+            alert.setTitle("Send SMS with summary of Innings points");
+            //alert.setMessage("Send SMS with Innings points summary");
+            SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+            final String phnums = prefs.getString(Constants.DATA_PHNUMS, "");
+            edittext.setHint("613613xxx,613613xxy,613613xxz");
+            if (!phnums.isEmpty()) edittext.setText(phnums);
+            alert.setView(edittext);
+
+            alert.setPositiveButton("Send", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    //What ever you want to do with the value
+                    String phone_numbers = edittext.getText().toString();
+                    Log.d(TAG, "send msg : phone numbers:" + phone_numbers);
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                        Log.d(TAG, "send msg : VERSION_CODES.M");
+                        if (ContextCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.SEND_SMS)
+                                != PackageManager.PERMISSION_GRANTED) {
+                            // Permission is not granted
+                            // Ask for permision
+                            ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.SEND_SMS}, 1);
+                            Log.d(TAG, "send msg : VERSION_CODES.M -- asking permission");
+                            return;  //first time dont continue. User will have to press "Send" once more.
+                            //if you continue, app will crash as the requestPermission is asynchronous.
+                        }
+                    }
+                    List<String> phNumList = Arrays.asList(phone_numbers.split(","));
+                    String tmpPhNums = "";
+                    for (String phNum : phNumList) {
+                        Log.d(TAG, "send msg : phone num:" + phNum);
+                        if (!PhoneNumberUtils.isGlobalPhoneNumber(phNum)) continue;
+                        Log.d(TAG, "sending to " + phNum);
+                        SmsManager sms = SmsManager.getDefault();
+                        ArrayList<String> parts = sms.divideMessage(gold_message);
+                        sms.sendMultipartTextMessage(phNum, null, parts, null, null);
+                        parts = sms.divideMessage(silver_message);
+                        sms.sendMultipartTextMessage(phNum, null, parts, null, null);
+
+                        tmpPhNums += phNum + ",";
+                    }
+                    Toast.makeText(MainActivity.this, "SMS sent to " + tmpPhNums, Toast.LENGTH_SHORT).show();
+
+                    if (!tmpPhNums.equals(phnums)) {
+                        Log.d(TAG, "New set of phone nums: " + tmpPhNums);
+                        SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+                        SharedPreferences.Editor editor = prefs.edit();
+                        editor.putString(Constants.DATA_PHNUMS, tmpPhNums);
+                        editor.apply();
+                    }
+                }
+            });
+
+            alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    // what ever you want to do with No option.
+                }
+            });
+
+            alert.show();
+        }
+    };
 }

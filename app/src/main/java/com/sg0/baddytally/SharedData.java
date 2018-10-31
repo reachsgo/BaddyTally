@@ -286,6 +286,8 @@ public class SharedData {
         Collections.sort(playersList, new Comparator<PlayerData>() {
             @Override
             public int compare(PlayerData p1, PlayerData p2) {
+                return compare2Players(p1, p2, idx);
+                /*
                 //Integer.valueOf(p1.getPointsInt_innings()).compareTo(p2.getPointsInt_innings()); //ascending order
                 int value1 = Integer.valueOf(p2.getPoints(idx)).compareTo(Integer.valueOf(p1.getPoints(idx)));  //descending order
                 if (value1 == 0) {
@@ -303,24 +305,74 @@ public class SharedData {
                         if (value3 == 0) {
                             int value4 = Integer.valueOf(p2.getGamesPlayed(idx)).compareTo(Integer.valueOf(p1.getGamesPlayed(idx)));
                             if (value4 == 0) {
+                                //win%, Games Won & gamesPlayed are all equal for 2 players. If the sorting is on innings, then
+                                //sort on season points.
+                                if(idx == Constants.INNINGS_IDX) {
+
+                                }
                                 //Toss: Return a random value +1 or -1
                                 //Log.v(TAG, "sortPlayers: Tossing to sort " + p1.getName() + " and " + p2.getName());
                                 //Log.v(TAG, "sortPlayers: p1=" + p1.toString() + " and p2=" + p2.toString());
                                 if (!infoLog[0].isEmpty()) infoLog[0] += ", ";
                                 infoLog[0] += p1.getName() + " & " + p2.getName();
-                                int rand = new Random().nextInt(10);
-                                if ((rand % 2) == 0) {
-                                    //Log.w(TAG, "sortPlayers: Toss: " + p1.getName() + " smaller!");
-                                    return 1;
-                                } else if ((rand % 2) == 1) {
-                                    //Log.w(TAG, "sortPlayers: Toss: " + p2.getName() + " smaller!");
-                                    return -1;
-                                }
+                                return randomPick();
                             } else return value4;
                         } else return value3;
                     } else return value2;
                 }
                 return value1;
+                */
+            }
+
+            private int compare2Players(final PlayerData p1, final PlayerData p2, final int idx) {
+                //Integer.valueOf(p1.getPointsInt_innings()).compareTo(p2.getPointsInt_innings()); //ascending order
+                int value1 = Integer.valueOf(p2.getPoints(idx)).compareTo(Integer.valueOf(p1.getPoints(idx)));  //descending order
+                if (value1 == 0) {
+                    // Sorting order criteria:
+                    //If there is a tie, player selection is done on the below criteria in that order:
+                    //    0. Points
+                    //    1. higher win % (number_of_wins / number_of_games_played x 100).
+                    //    2. most number of wins
+                    //    3. most number of games played
+                    //    4. toss
+
+                    int value2 = Integer.valueOf(p2.getWinPercentage(idx)).compareTo(Integer.valueOf(p1.getWinPercentage(idx)));
+                    if (value2 == 0) {
+                        int value3 = Integer.valueOf(p2.getGamesWon(idx)).compareTo(Integer.valueOf(p1.getGamesWon(idx)));
+                        if (value3 == 0) {
+                            int value4 = Integer.valueOf(p2.getGamesPlayed(idx)).compareTo(Integer.valueOf(p1.getGamesPlayed(idx)));
+                            if (value4 == 0) {
+                                //win%, Games Won & gamesPlayed are all equal for 2 players.
+                                if (idx == Constants.INNINGS_IDX) {
+                                    //If the sorting is on innings, then sort on season points.
+                                    Log.v(TAG, "sortPlayers: ALL equal for INNINGS, now on SEASON for " + p1.getName() + " and " + p2.getName());
+                                    return compare2Players(p1, p2, Constants.SEASON_IDX);
+                                } else {
+                                    //If the sorting is on season points, then toss (pick a random winner among the 2 players being compared).
+                                    //Toss: Return a random value +1 or -1
+                                    //Log.v(TAG, "sortPlayers: Tossing to sort " + p1.getName() + " and " + p2.getName());
+                                    //Log.v(TAG, "sortPlayers: p1=" + p1.toString() + " and p2=" + p2.toString());
+                                    if (!infoLog[0].isEmpty()) infoLog[0] += ", ";
+                                    infoLog[0] += p1.getName() + " & " + p2.getName();
+                                    return randomPick();
+                                }
+
+                            } else return value4;
+                        } else return value3;
+                    } else return value2;
+                }
+                return value1;
+            }
+
+            private int randomPick() {
+                int rand = new Random().nextInt(10);
+                if ((rand % 2) == 0) {
+                    Log.w(TAG, "sortPlayers: Toss: randomPick returning +1");
+                    return 1;
+                }
+
+                Log.w(TAG, "sortPlayers: Toss: randomPick returning -1");
+                return -1;
             }
         });
         if (!descending) Collections.reverse(playersList);
