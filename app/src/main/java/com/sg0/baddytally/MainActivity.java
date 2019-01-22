@@ -1089,6 +1089,12 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                     //What ever you want to do with the value
                     String phone_numbers = edittext.getText().toString();
                     Log.d(TAG, "send msg : phone numbers:" + phone_numbers);
+
+                    //As of November 1, 2018, Google Play will require updates to existing apps to target
+                    // API level 26 (Android 8.0) or higher
+                    //Only an app that has been selected as a user's default app for making calls or text messages
+                    //will be able to access call logs and SMS, respectively.
+                    /*
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                         Log.d(TAG, "send msg : VERSION_CODES.M");
                         if (ContextCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.SEND_SMS)
@@ -1101,8 +1107,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                             //if you continue, app will crash as the requestPermission is asynchronous.
                         }
                     }
-                    List<String> phNumList = Arrays.asList(phone_numbers.split(","));
-                    String tmpPhNums = "";
+
                     for (String phNum : phNumList) {
                         Log.d(TAG, "send msg : phone num:" + phNum);
                         if (!PhoneNumberUtils.isGlobalPhoneNumber(phNum)) continue;
@@ -1115,13 +1120,66 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
 
                         tmpPhNums += phNum + ",";
                     }
-                    Toast.makeText(MainActivity.this, "SMS sent to " + tmpPhNums, Toast.LENGTH_SHORT).show();
+                    */
 
-                    if (!tmpPhNums.equals(phnums)) {
-                        Log.d(TAG, "New set of phone nums: " + tmpPhNums);
+                    List<String> phNumList = Arrays.asList(phone_numbers.split(","));
+                    String tmpPhNums = "";
+                    String persistPhNums = "";
+
+                    String separator = ";";
+                    if (android.os.Build.MANUFACTURER.equalsIgnoreCase("samsung")) {
+                        //In SAMSUNG devices You have to separate the phone numbers with ','
+                        //while other devices are accept the ';'.
+                        separator = ",";
+                    }
+                    for (String phNum : phNumList) {
+                        if (!PhoneNumberUtils.isGlobalPhoneNumber(phNum)) continue;
+                        if (!persistPhNums.isEmpty()) {
+                            persistPhNums += ",";
+                            tmpPhNums += separator;
+                        }
+                        tmpPhNums += phNum;
+                        persistPhNums += phNum;
+
+                        //Somehow sending to multiple recipients using ";" or "," delimiters is not working consistently.
+                        //so, send one by one for now.
+                        Intent intent = new Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + phNum));
+                        intent.putExtra("sms_body", gold_message + "\n" + silver_message);
+                        if (intent.resolveActivity(getPackageManager()) != null) {
+                            Log.d(TAG, "sending msg to:" + phNum);
+                            startActivity(intent);
+                            //Toast.makeText(MainActivity.this, "SMS sent to " + tmpPhNums, Toast.LENGTH_SHORT).show();
+                        } else {
+                            Log.d(TAG, "ACTION_SEND.resolveActivity NULL");
+                            Toast.makeText(MainActivity.this, "SMS not sent!", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                    Log.d(TAG, "send msg : tmpPhNums:" + tmpPhNums);
+
+                    /*
+                    TODO: Make SMS to multiple recipients working
+                    //Intent intent = new Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + tmpPhNums));
+                    //intent.setData(Uri.parse("smsto:" + tmpPhNums));  // This ensures only SMS apps respond
+                    Intent intent = new Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:3438835349;6133153331"));
+                    //intent.setData(Uri.parse("smsto:6133153331;3456"));  // This ensures only SMS apps respond
+                    intent.putExtra("sms_body", gold_message);
+                    //intent.putExtra(Intent.EXTRA_STREAM, attachment);
+                    if (intent.resolveActivity(getPackageManager()) != null) {
+                        Log.d(TAG, "ACTION_SEND.resolveActivity not null");
+                        startActivity(intent);
+                        Toast.makeText(MainActivity.this, "SMS sent to " + tmpPhNums, Toast.LENGTH_SHORT).show();
+                    } else {
+                        Log.d(TAG, "ACTION_SEND.resolveActivity NULL");
+                        Toast.makeText(MainActivity.this, "SMS not sent!", Toast.LENGTH_SHORT).show();
+                    }
+                    */
+
+
+                    if (!persistPhNums.equals(phnums)) {
+                        Log.d(TAG, "New set of phone nums: " + persistPhNums);
                         SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
                         SharedPreferences.Editor editor = prefs.edit();
-                        editor.putString(Constants.DATA_PHNUMS, tmpPhNums);
+                        editor.putString(Constants.DATA_PHNUMS, persistPhNums);
                         editor.apply();
                     }
                 }

@@ -15,6 +15,7 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
@@ -37,6 +38,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     private static final String TAG = "RecyclerViewAdapter";
     private Context mContext;
     private ArrayList<PlayerData> mPlayers;
+    private String mGroup;
     private String mBgColor;
     private boolean descending;
     private ArrayList<PlayerData> mFullListOfPlayers;
@@ -44,7 +46,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     public RecyclerViewAdapter(Context context, String group, ArrayList<PlayerData> players) {
         mContext = context;
         this.mPlayers = players;
-        String mGroup = group;
+        mGroup = group;
         descending = false;
     }
 
@@ -202,6 +204,10 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
                     case R.id.update_season:
                         showEditText(holder, Constants.SEASON_IDX);
                         break;
+                    case R.id.move_to_other_pool:
+                        movePlayer(holder);
+                        break;
+
                 }
                 return true;
             }
@@ -299,6 +305,65 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
                 Toast.makeText(mContext, "DB error while fetching innings score, Try refreshing...", Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void movePlayer(final ViewHolder holder) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+        final int position = holder.getAdapterPosition();
+        if (null == mPlayers.get(position)) return;
+        String targetGroup = Constants.GOLD;
+        if (mGroup.equals(Constants.GOLD)) targetGroup = Constants.SILVER;
+        builder.setTitle(SharedData.getInstance().getTitleStr("Move " + mPlayers.get(position).getName() + " to " + targetGroup + "?", mContext));
+        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                Toast.makeText(mContext, "Moving " + mPlayers.get(position).getName(), Toast.LENGTH_SHORT).show();
+                moveUser(mPlayers.get(position));
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+
+            }
+        });
+        builder.show();
+    }
+
+    private void moveUser(final PlayerData p) {
+        final SharedData mCommon = SharedData.getInstance();
+        if (!mCommon.isDBConnected()) {
+            mCommon.showToast(mContext, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
+            return;
+        }
+        String tg = Constants.GOLD;
+        if (mGroup.equals(Constants.GOLD)) tg = Constants.SILVER;
+        final String targetGroup = tg;
+
+        final DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference();
+        final String club = mCommon.mClub;
+
+        DatabaseReference dbRef = mDatabase.child(club).child(Constants.GROUPS).child(targetGroup).child(p.getName());
+        final List<PointsDBEntry> points = new ArrayList<>();
+        points.add(Constants.SEASON_IDX, new PointsDBEntry(p.getPointsDBEntry_season()));
+        points.add(Constants.INNINGS_IDX, new PointsDBEntry(p.getPointsDBEntry_innings()));
+
+        dbRef.setValue(points, new DatabaseReference.CompletionListener() {
+            @Override
+            public void onComplete(DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
+                if (databaseError != null) {
+                    mCommon.showToast(mContext, "New user data (GROUPS/group) could not be saved:" + databaseError.getMessage(),
+                            Toast.LENGTH_LONG);
+                } else {
+                    //new user added to other group, not delete from this group.
+                    mDatabase.child(club).child(Constants.GROUPS).child(mGroup).child(p.getName()).removeValue();
+                    mCommon.showToast(mContext, "User " + p.getName() + " moved to " + targetGroup + ". Refresh your view.",
+                            Toast.LENGTH_LONG);
+                    mCommon.setDBUpdated(true);
+                    mCommon.addUserMove2History(targetGroup + "/" + p.getName());
+                }
             }
         });
     }

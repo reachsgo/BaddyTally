@@ -146,16 +146,30 @@ public class Settings extends AppCompatActivity {
             newuserAddBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    if (mCommon.mClub.isEmpty()) {
+                        return;
+                    }  //not yet ready
                     onClickNewUser();
                 } //onClick
             });
-            ((RadioButton) findViewById(R.id.nu_gamegroup_silver)).setChecked(true);
+            if (mCommon.mNumOfGroups == Constants.NUM_OF_GROUPS) { //if 2
+                ((RadioButton) findViewById(R.id.nu_gamegroup_silver)).setChecked(true);
+            } else { //if 1
+                ((RadioButton) findViewById(R.id.nu_gamegroup_gold)).setChecked(true);
+                ((RadioButton) findViewById(R.id.nu_gamegroup_silver)).setEnabled(false);  //only gold group
+                ((RadioButton) findViewById(R.id.del_gamegroup_gold)).setChecked(true);
+                ((RadioButton) findViewById(R.id.del_gamegroup_silver)).setEnabled(false);  //only gold group
+            }
 
             mDelSpinner = findViewById(R.id.del_spinner);
             RadioGroup mDelRadioGroup = findViewById(R.id.del_gamegroup_radiogroup);
+
             mDelRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(RadioGroup group, int checkedId) {
+                    if (mCommon.mClub.isEmpty()) {
+                        return;
+                    }  //not yet ready
                     if (!mCommon.isDBConnected()) {
                         mCommon.showToast(Settings.this, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
                         return;
@@ -168,6 +182,9 @@ public class Settings extends AppCompatActivity {
             deleteBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    if (mCommon.mClub.isEmpty()) {
+                        return;
+                    }  //not yet ready
                     onClickDelete();
                 } //onClick
             });
@@ -176,6 +193,9 @@ public class Settings extends AppCompatActivity {
             createNewInningsBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    if (mCommon.mClub.isEmpty()) {
+                        return;
+                    }  //not yet ready
                     onClickCreateNewInnings();
                 } //onClick
             });
@@ -213,6 +233,9 @@ public class Settings extends AppCompatActivity {
         history_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (mCommon.mClub.isEmpty()) {
+                    return;
+                }  //not yet ready
                 DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.INTERNALS).child(Constants.HISTORY);
                 dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
@@ -338,6 +361,7 @@ public class Settings extends AppCompatActivity {
                 "        <name>\n        <phone>\n" +
                 "\n\nNew Club Info:\n" +
                 "        name : <name>\n" +
+                "        number of groups : <1 or 2>\n" +
                 "        max players : <N>\n" +
                 "        frequency of game days : <times per week/month>\n" +
                 "\n\nNotes: <any queries/comments/suggestions>\n" +
@@ -656,7 +680,11 @@ public class Settings extends AppCompatActivity {
                 switch (which) {
                     case DialogInterface.BUTTON_POSITIVE:
                         //Yes button clicked
-                        getNumOfPlayersToShuffle();
+                        if (mCommon.mNumOfGroups == Constants.NUM_OF_GROUPS) { //if 2
+                            getNumOfPlayersToShuffle();
+                        } else {  //only 1 group, no shuffling
+                            identifyPlayersToShuffle(0); //mAllPlayers has to be filled before invoking createNewInningsWithoutShuffling
+                        }
                         break;
 
                     case DialogInterface.BUTTON_NEGATIVE:
@@ -667,9 +695,16 @@ public class Settings extends AppCompatActivity {
         };
 
         AlertDialog.Builder builder = new AlertDialog.Builder(Settings.this);
-        builder.setMessage("You are about to create a new Innings.\n" +
-                "Gold & Silver player lists will be updated as needed.\n\n" +
-                "Are you sure?")
+        String msg;
+        if (mCommon.mNumOfGroups == Constants.NUM_OF_GROUPS) { //if 2
+            msg = "You are about to create a new Innings.\n" +
+                    "Gold & Silver player lists will be updated as needed.\n\n" +
+                    "Are you sure?";
+        } else {
+            msg = "You are about to create a new Innings.\n\n" +
+                    "Are you sure?";
+        }
+        builder.setMessage(msg)
                 .setTitle(mCommon.getColorString("Warning", Color.RED))
                 .setPositiveButton("Yes", dialogClickListener)
                 .setNegativeButton("No", dialogClickListener).show();
@@ -706,7 +741,7 @@ public class Settings extends AppCompatActivity {
                     //if no shuffling to be done, just create the new innings.
                     Toast.makeText(Settings.this, "Created new innings, no shuffling to be performed!", Toast.LENGTH_SHORT)
                             .show();
-                    createNewInnings();
+                    identifyPlayersToShuffle(0); //mAllPlayers has to be filled before invoking createNewInningsWithoutShuffling
                     return;
                 }
                 identifyPlayersToShuffle(shufNumPlayers);
@@ -751,6 +786,11 @@ public class Settings extends AppCompatActivity {
                         mCommon.sortPlayers(pList, Constants.INNINGS_IDX, true, Settings.this, true);  //sort descending for gold (last 3 to be shuffled)
                     Log.w(TAG, logStr + " pList =" + pList.toString());
                     mAllPlayers.put(group, pList);
+                }
+
+                if (shufNumPlayers == 0) {
+                    createNewInningsWithoutShuffling();
+                    return;
                 }
 
 
@@ -1075,6 +1115,21 @@ public class Settings extends AppCompatActivity {
         });
     }
 
+    private void createNewInningsWithoutShuffling() {
+
+        // This is the CRITICAL SECTION of this operation. All the DB operations involved to
+        // create a new innings are done together here. But, still the n/w connectivity could
+        // go down amidst the operations. That would leave the DB in a bad state!
+        // So, DB state is checked first and a lock is acquired.
+        TaskParams tp = new TaskParams(0, null, null, null, null, null);
+        mCommon.acquireDBLock();
+        mCommon.addInningsCreation2History(mNewInningsName);
+        BackgroundTask task = new BackgroundTask(Settings.this, Settings.this);
+        mCommon.disableUserNotify(Settings.this);
+        task.execute(tp);
+    }
+
+
     //reset the innings data of all players
     private void resetInningsData() {
         DatabaseReference mClubDBRef = mDatabase.child(mCommon.mClub);
@@ -1110,7 +1165,11 @@ public class Settings extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            dialog.setMessage("Shuffling in progress....");
+            if (mCommon.mNumOfGroups == Constants.NUM_OF_GROUPS) { //if 2
+                dialog.setMessage("Shuffling in progress....");
+            } else {
+                dialog.setMessage("Creating new innings....");
+            }
             dialog.show();
         }
 
@@ -1168,11 +1227,14 @@ public class Settings extends AppCompatActivity {
                         //java.lang.RuntimeException: Can't create handler inside thread that has not called Looper.prepare()
 
                         resetInningsData();  //do first before mAllPlayers list becomes stale. Thus, avoiding another DB read.
-                        //Remove last 3 from silver, list is in ascending order. Player with most points at the end;
-                        //Add last 3 from gold, Gold list is in descending order. Player with least points at the end;
-                        shufflePlayers(tp.shufNumPlayers, Constants.SILVER, tp.goldOldPL, tp.silverNewPL, false); //not a dry_run, real thing!
-                        shufflePlayers(tp.shufNumPlayers, Constants.GOLD, tp.silverOldPL, tp.goldNewPL, false); //not a dry_run, real thing!
-                        shuffleThePlayerWithHighestWinPercentage(tp.fullPL, false); //real thing!
+
+                        if (mCommon.mNumOfGroups == Constants.NUM_OF_GROUPS) { //if 2 groups in the club, do shuffling
+                            //Remove last 3 from silver, list is in ascending order. Player with most points at the end;
+                            //Add last 3 from gold, Gold list is in descending order. Player with least points at the end;
+                            shufflePlayers(tp.shufNumPlayers, Constants.SILVER, tp.goldOldPL, tp.silverNewPL, false); //not a dry_run, real thing!
+                            shufflePlayers(tp.shufNumPlayers, Constants.GOLD, tp.silverOldPL, tp.goldNewPL, false); //not a dry_run, real thing!
+                            shuffleThePlayerWithHighestWinPercentage(tp.fullPL, false); //real thing!
+                        }
                         createNewInnings();  //this is assumed to be the last operation always.
                         mCommon.releaseDBLock();  //release the lock
                         Log.w(TAG, "doInBackground: success!");

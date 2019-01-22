@@ -136,7 +136,10 @@ public class EnterData extends AppCompatActivity {
             mRoundName = SharedData.getInstance().mRoundName;  //use the value read from DB
         }
         if(mRoundName.isEmpty()) {
-            mRoundName = SharedData.getInstance().createNewRoundName(true, EnterData.this);
+            //mRoundName = SharedData.getInstance().createNewRoundName(true, EnterData.this);
+            Toast.makeText(EnterData.this, "Create a new round first!",
+                    Toast.LENGTH_LONG).show();
+            finish();
         }
         Log.w(TAG, "mRoundName=" + mRoundName);
 
@@ -392,9 +395,18 @@ public class EnterData extends AppCompatActivity {
         String p2 = "";
         String p4 = "";
 
+        if (p1.isEmpty() || p3.isEmpty()) {
+            Toast.makeText(EnterData.this, "Bad data!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         if (!mSingles) {
             p2 = mSpinner_P2.getSelectedItem().toString();
             p4 = mSpinner_P4.getSelectedItem().toString();
+            if (p2.isEmpty() || p4.isEmpty()) {
+                Toast.makeText(EnterData.this, "Bad data!", Toast.LENGTH_SHORT).show();
+                return;
+            }
         }
         int numOfSingles = 0;
         int numOfDoubles = 0;
@@ -466,6 +478,7 @@ public class EnterData extends AppCompatActivity {
         String p3 = mSpinner_P3.getSelectedItem().toString();
         String p2 = "";
         String p4 = "";
+
 
         if (!mSingles) {
             p2 = mSpinner_P2.getSelectedItem().toString();

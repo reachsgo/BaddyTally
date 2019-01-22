@@ -6,4 +6,7 @@
     <item
         android:id="@+id/update_season"
         android:title="Update season?" />
+    <item
+        android:id="@+id/move_to_other_pool"
+        android:title="Move?" />
 </menu>

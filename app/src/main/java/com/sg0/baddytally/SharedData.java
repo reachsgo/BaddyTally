@@ -44,6 +44,7 @@ public class SharedData {
     private static final String SHUFFLE_SUCCESS = "SH_E";
     private static final String SHUFFLE_FAIL = "SH_F";
     private static final String NEWUSER_CREATED = "NEW_U";
+    private static final String USER_MOVED = "USR_M";
     private static final String USER_DELETED = "USR_D";
     private static final String INNINGS_CREATED = "NEW_I";
 
@@ -52,7 +53,7 @@ public class SharedData {
     // all the write will happen on volatile sSoleInstance before any read of sSoleInstance variable
     private static volatile SharedData sSoleInstance;
 
-    public int mNumOfGroups;
+    public Integer mNumOfGroups;
     public String mUser;
     public String mClub;
     public String mRole;
@@ -179,6 +180,7 @@ public class SharedData {
         if (tmpStr.contains(NEWUSER_CREATED))
             resultStr = tmpStr.replace(NEWUSER_CREATED, "Created");
         else if (tmpStr.contains(USER_DELETED)) resultStr = tmpStr.replace(USER_DELETED, "Deleted");
+        else if (tmpStr.contains(USER_MOVED)) resultStr = tmpStr.replace(USER_MOVED, "Moved");
         else if (tmpStr.contains(SHUFFLE_SUCCESS))
             resultStr = tmpStr.replace(SHUFFLE_SUCCESS, "Shuffle Successful");
         else if (tmpStr.contains(SHUFFLE_FAIL))
@@ -203,6 +205,10 @@ public class SharedData {
 
     public void addNewUserCreation2History(final String newUserName) {
         addHistory(NEWUSER_CREATED + "=" + newUserName);
+    }
+
+    public void addUserMove2History(final String userName) {
+        addHistory(USER_MOVED + "=" + userName);
     }
 
     public void addUserDeletion2History(final String userName) {
@@ -600,6 +606,9 @@ public class SharedData {
                             break;
                         case "rootcode":
                             mRootCode = child.getValue(String.class);
+                            break;
+                        case "numgroups":
+                            mNumOfGroups = child.getValue(Integer.class);
                             break;
                     } //switch case
                 }
