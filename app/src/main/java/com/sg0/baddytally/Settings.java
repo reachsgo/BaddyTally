@@ -152,14 +152,16 @@ public class Settings extends AppCompatActivity {
                     onClickNewUser();
                 } //onClick
             });
-            if (mCommon.mNumOfGroups == Constants.NUM_OF_GROUPS) { //if 2
-                ((RadioButton) findViewById(R.id.nu_gamegroup_silver)).setChecked(true);
-            } else { //if 1
+            if (mCommon.mNumOfGroups == 1) { //only 1 group enabled
                 ((RadioButton) findViewById(R.id.nu_gamegroup_gold)).setChecked(true);
                 ((RadioButton) findViewById(R.id.nu_gamegroup_silver)).setEnabled(false);  //only gold group
                 ((RadioButton) findViewById(R.id.del_gamegroup_gold)).setChecked(true);
                 ((RadioButton) findViewById(R.id.del_gamegroup_silver)).setEnabled(false);  //only gold group
+                fetchDataAndUpdateSpinner();
+            } else {
+                ((RadioButton) findViewById(R.id.nu_gamegroup_silver)).setChecked(true);
             }
+
 
             mDelSpinner = findViewById(R.id.del_spinner);
             RadioGroup mDelRadioGroup = findViewById(R.id.del_gamegroup_radiogroup);
@@ -491,7 +493,10 @@ public class Settings extends AppCompatActivity {
                 android.R.layout.simple_spinner_item, mPlayerList);
         mPlayerListAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         mDelSpinner.setAdapter(mPlayerListAdapter);
-        mDelSpinner.performClick();
+        if (mCommon.mNumOfGroups > 1) {
+            //if just one group, dont show the drop down menu at the start of the activity
+            mDelSpinner.performClick();
+        }
 
         //Set the text color of the Spinner's selected view (not a drop down list view)
         mDelSpinner.setSelection(0, true);

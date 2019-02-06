@@ -283,9 +283,20 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
             SharedData.getInstance().mClub = mClub;
             SharedData.getInstance().mUser = prefs.getString(Constants.DATA_USER, "");
             SharedData.getInstance().mRole = prefs.getString(Constants.DATA_ROLE, "");
+            SharedData.getInstance().mTournaMode = prefs.getBoolean(Constants.DATA_TMODE, false);
             Log.d(TAG, "onResume: " + SharedData.getInstance().toString());
             setTitle(mClub);
-            fetchInnings();
+
+            if (SharedData.getInstance().mTournaMode) {
+                Intent myIntent = new Intent(MainActivity.this, TournaMainActivity.class);
+                MainActivity.this.startActivity(myIntent);
+                //SharedData.getInstance().mTournaMode = false; //SGO
+                //TODO: Have to add Settings to tournamode
+                return;
+            } else {
+                fetchInnings();
+            }
+            Log.d(TAG, "onCreate: back from tourna");
             if (mOptionsMenu != null) {
                 //For scenarios where onResume() is called after onCreateOptionsMenu()
                 Log.d(TAG, "onResume() is called after onCreateOptionsMenu()");
@@ -368,6 +379,30 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                 SharedData.getInstance().wakeUpDBConnection();
                 Intent settingsIntent = new Intent(MainActivity.this, Settings.class);
                 MainActivity.this.startActivityForResult(settingsIntent, Constants.SETTINGS_ACTIVITY);
+                break;
+            case R.id.action_tournaMode:
+                //If DB connection is sleeping, wake it up!
+                AlertDialog.Builder tmBuilder = new AlertDialog.Builder(MainActivity.this);
+                tmBuilder.setTitle(SharedData.getInstance().getTitleStr("Enable Tournament Mode", MainActivity.this));
+                String display = "You can track your club leagues here.";
+                tmBuilder.setMessage(display);
+                tmBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        SharedData.getInstance().mTournaMode = true;
+                        //persist this
+                        SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+                        SharedPreferences.Editor editor = prefs.edit();
+                        editor.putBoolean(Constants.DATA_TMODE, true);
+                        editor.apply();
+                        //restart main activity
+                        finish();
+                        startActivity(getIntent());
+                    }
+                });
+                tmBuilder.setNegativeButton("Cancel", null);
+                tmBuilder.show();
+
                 break;
             case R.id.action_enter:
                 //If DB connection is sleeping, wake it up!
@@ -488,6 +523,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
 
         Toast.makeText(this, "Refreshing...", Toast.LENGTH_SHORT)
                 .show();
+        Log.v(TAG, "fetchInnings: ....");
 
         //Using runTransaction instead of addListenerForSingleValueEvent, as the later was giving stale data.
         final DatabaseReference inningsDBRef = FirebaseDatabase.getInstance().getReference().child(SharedData.getInstance().mClub).child(Constants.INNINGS);
@@ -497,10 +533,12 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
             public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
                 GenericTypeIndicator<List<InningsDBEntry>> t = new GenericTypeIndicator<List<InningsDBEntry>>() {
                 };
+                //In this impl, innings has to be a list, so the entries should be in sequence and should start at 0.
                 List<InningsDBEntry> innings = mutableData.getValue(t);
                 if (null == innings) {
                     //no innings in DB
                     SharedData.getInstance().mInnings = "";
+                    Log.v(TAG, "fetchInnings: .... null");
                     return Transaction.success(mutableData);
                 }
                 //reset the values to be read fresh from DB. This makes sure that DB is the master, in case of manual updates.
@@ -536,12 +574,18 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
         SharedData.getInstance().fetchProfile(MainActivity.this, MainActivity.this, mClub);
     }
 
-    //Callback after profile is fetched from DB. See SharedData impl of fetchProfile()
+    //CallbackRoutine Callback after profile is fetched from DB. See SharedData impl of fetchProfile()
     public void profileFetched() {
         SharedData data = SharedData.getInstance();
         Log.w(TAG, "profileFetched invoked ...." + data.toString());
         initAdapter();
         mRefreshing = false;
+    }
+
+    public void alertResult(final String in, final Boolean ok, final Boolean ko) {
+    }
+
+    public void completed(final String in, final Boolean ok) {
     }
 
     private void showRules() {

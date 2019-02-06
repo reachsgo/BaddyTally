@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.sg0.baddytally">
 
-
     <application
         android:name=".ScoreTally"
         android:fullBackupContent="@xml/backup_descriptor"
@@ -17,6 +16,7 @@
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -24,9 +24,20 @@
             android:name=".LoginActivity"
             android:label="@string/title_activity_login"
             android:noHistory="true" />
-        <activity android:name=".EnterData" />
+        <activity
+            android:name=".EnterData"
+            android:noHistory="true" />
         <activity android:name=".Summary" />
         <activity android:name=".Settings" />
+        <activity
+            android:name=".TournaMainActivity"
+            android:noHistory="true" />
+        <activity
+            android:name=".TournaEnterData"
+            android:noHistory="true" />
+        <activity
+            android:name=".TournaSettings"
+            android:noHistory="true" />
     </application>
 
 </manifest>

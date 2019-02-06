@@ -27,6 +27,7 @@ class Constants {
     public static final String DATA_SEC = "secpd";
     public static final String DATA_ROLE = "role";
     public static final String DATA_PHNUMS = "phnums";
+    public static final String DATA_TMODE = "tmode";
     public static final Integer NUM_OF_GROUPS = 2;
     public static final int SEASON_IDX = 0;
     public static final int INNINGS_IDX = 1;
@@ -38,4 +39,24 @@ class Constants {
     public static final int SUMMARY_ACTIVITY = 102;
     public static final int ENTERDATA_ACTIVITY = 103;
     public static final int RESTARTAPP = 666;
+
+    public static final String TOURNA = "tournaments";
+    public static final String DESCRIPTION = "desc";
+    public static final String ACTIVE = "active";
+    public static final String TEAMS_SUMMARY = "teams_sum";
+    public static final String TEAMS = "teams";
+    public static final String TEAM_DELIM1 = "> ";
+    public static final String TEAM_DELIM2 = " vs ";
+    public static final String PLAYERS = "players";
+    public static final String COLON_DELIM = ": ";
+    public static final String NAME = "name";
+    public static final String SCORE = "score";
+    public static final String MATCHES = "matches";
+    public static final String META = "meta";
+    public static final String DATA = "data";
+    public static final String INFO = "info";
+    public static final String NUM_OF_MATCHES = "mNum";
+    public static final String NUM_OF_GAMES = "bestOf";
+    public static final String COMPLETED = "done";
+    public static final String MATCHNUM = "M";
 }

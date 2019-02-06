@@ -1,10 +1,15 @@
 package com.sg0.baddytally;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.res.ResourcesCompat;
+import android.text.Spannable;
+import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
@@ -20,6 +25,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.MutableData;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 
@@ -30,9 +36,12 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -75,9 +84,13 @@ public class SharedData {
     public ArrayList<ActiveUserDBEntry> mActiveUsers;
     public Set<String> mGoldPresentPlayerNames;
     public Set<String> mSilverPresentPlayerNames;
+    public boolean mTournaMode;
+    public List<String> mTournaList;
+    public String mTournament;
+    public List<String> mTeams;
+    public HashMap<String, TeamInfo> mTeamInfoMap;
 
     private SharedData() {
-
         //Prevent form the reflection api.
         if (sSoleInstance != null){
             throw new RuntimeException("Use getInstance() method to get the single instance of this class.");
@@ -127,6 +140,13 @@ public class SharedData {
         mActiveUsers = null;
         mGoldPresentPlayerNames = new HashSet<>();  //initialize for the first time.
         mSilverPresentPlayerNames = new HashSet<>();  //initialize for the first time.
+        mTournaMode = false;
+        mTournaList = null;
+        mTournament = "";
+        mTeams = null;
+        mTeams = new ArrayList<>();
+        mTeamInfoMap = null;
+        mTeamInfoMap = new HashMap<>();
     }
 
     public boolean isRoot() {
@@ -646,7 +666,8 @@ public class SharedData {
                 ", mRole='" + mRole + '\'' +
                 ", mClub='" + mClub + '\'' +
                 ", mInnings='" + mInnings + '\'' +
-                ", mRoundName='" + mRoundName + '\'';
+                ", mRoundName='" + mRoundName + '\'' +
+                ", tournaMode='" + mTournaMode + '\'';
         //", mAdminCode='" + mAdminCode + '\'' +
         //", mMemCode='" + mMemCode + '\'';
         if (mGoldPlayers != null) str += ", mGoldPlayers=" + mGoldPlayers.size();
@@ -654,4 +675,170 @@ public class SharedData {
         str += '}';
         return str;
     }
+
+    public void fetchActiveTournaments(final Context context, final CallbackRoutine cb) {
+        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.TOURNA).child(Constants.ACTIVE);
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                List<String> tArray = new ArrayList<>();
+                for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
+                    Boolean status = childSnapshot.getValue(Boolean.class);
+                    Log.i(TAG, "onDataChange:" + childSnapshot.getKey() + ":" + status);
+                    if (status) tArray.add(childSnapshot.getKey());
+                }
+                mTournaList = tArray;
+                Log.i(TAG, "onDataChange, mTournaList:" + mTournaList.toString());
+                if (mTournaList.size() > 0) cb.completed(Constants.ACTIVE + Constants.TOURNA, true);
+                else {
+                    showToast(context, "No ongoing tournaments!", Toast.LENGTH_SHORT);
+                    cb.completed(Constants.ACTIVE + Constants.TOURNA, false);
+                    //finish(); //finish here will cause a loop in tournament mode.
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                showToast(context, "DB error on read: " + databaseError.getMessage(), Toast.LENGTH_SHORT);
+            }
+        });
+    }
+
+    public void readDBTeam(final String tournament, final Context context, final CallbackRoutine cb) {
+        if (tournament.isEmpty()) return;
+        final DatabaseReference teamScoreDBRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.TOURNA)
+                .child(tournament).child(Constants.TEAMS);
+        teamScoreDBRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                mTeamInfoMap.clear();
+                mTeams.clear();
+                for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
+
+                    final String team = childSnapshot.getKey();
+                    Log.i(TAG, "onDataChange Got:" + team);
+
+                    TeamInfo tI = new TeamInfo(team);
+                    mTeams.add(team);  //still need array to get a list of teams in order
+
+                    DataSnapshot descDS = childSnapshot.child(Constants.DESCRIPTION);
+                    String desc = descDS.getValue(String.class);
+                    if (desc != null) tI.desc = desc;
+                    else tI.desc = "";
+
+                    DataSnapshot scoreData = childSnapshot.child(Constants.SCORE);
+                    TeamScoreDBEntry scoreDBEntry = scoreData.getValue(TeamScoreDBEntry.class);
+                    if (scoreDBEntry != null) tI.score = scoreDBEntry;
+                    else tI.score = new TeamScoreDBEntry();
+                    Log.i(TAG, "onDataChange, scoreDBEntry:" + tI.score.toString());
+
+                    mTeamInfoMap.put(team, tI);
+                }
+
+                if (mTeams.size() > 0) {
+                    cb.completed(tournament, true);
+                } else {
+                    cb.completed(tournament, false);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                showToast(context, "DB error on read: " + databaseError.getMessage(), Toast.LENGTH_SHORT);
+            }
+        });
+    }
+
+
+    public TeamInfo getTeamInfo(final String team) {
+        TeamInfo tI = null;
+        if (mTeamInfoMap == null) return tI;
+        for (Map.Entry<String, TeamInfo> entry : mTeamInfoMap.entrySet()) {
+            if (team.equals(entry.getKey())) {
+                tI = entry.getValue();
+                break;
+            }
+        }
+        return tI;
+    }
+/*
+        Iterator it = mTeamInfoMap.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry pair = (Map.Entry)it.next();
+            if(team.equals(pair.getKey())) {
+                tI = (TeamInfo) pair.getValue();
+                break;
+            }
+        }
+*/
+
+    public MatchInfo getTeamsInvolvedInTheMatch(final String match) {
+        if (match.isEmpty()) {
+            Log.i(TAG, "getTeamsInvolvedInTheMatch, match is empty!");
+            return null;
+        }
+        MatchInfo mI = new MatchInfo();
+        String[] parts1 = match.split(Constants.TEAM_DELIM1);
+        mI.key = parts1[0];
+        String[] teams = parts1[1].split(Constants.TEAM_DELIM2);
+        int count = 0;
+        for (String t : teams) {
+            count++;
+            Log.i(TAG, "getTeamsInvolvedInTheMatch, team[" + count + "]:" + t);
+        }
+
+        if (count != 2) {
+            Log.e(TAG, "getTeamsInvolvedInTheMatch, 2 teams were expected:" + teams.toString());
+            return null;
+        }
+        mI.T1 = teams[0];
+        mI.T2 = teams[1];
+        Log.i(TAG, "getTeamsInvolvedInTheMatch: " + mI.toString());
+        return mI;
+    }
+
+    public void sortTeams() {
+        //playersList is obj reference of the actual list being passed in.
+        //Any updates to the contents will be visible to the caller.
+        //But, you cannot change the obj reference itself (ex: playersList = another_list;).
+        Collections.sort(mTeams, new Comparator<String>() {
+            @Override
+            public int compare(String team1, String team2) {
+                TeamInfo tInfo1 = getTeamInfo(team1);
+                TeamInfo tInfo2 = getTeamInfo(team2);
+                int value1 = Integer.valueOf(tInfo2.score.getPts()).compareTo(tInfo1.score.getPts()); //descending
+                if (value1 == 0) {
+                    int value2 = Integer.valueOf(tInfo2.score.getmW()).compareTo(tInfo1.score.getmW());
+                    if (value2 == 0) {
+                        int value3 = Integer.valueOf(tInfo2.score.getgW()).compareTo(tInfo1.score.getgW());
+                        if (value3 == 0) {
+                            return Integer.valueOf(tInfo2.score.getgPts()).compareTo(tInfo1.score.getgPts());
+                        } else return value3;
+                    } else return value2;
+                }
+                return value1;
+            }
+        });
+        Log.d(TAG, "sortTeams: Sorted mTeams: " + mTeams.toString());
+    }
+
+    public void showAlert(final CallbackRoutine cb, final Context context, final String title, final String msg) {
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(context);
+        alertBuilder.setTitle(title);
+        alertBuilder.setMessage(msg);
+        alertBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                cb.alertResult(title, true, false);
+            }
+        });
+        alertBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                cb.alertResult(title, false, true);
+            }
+        });
+        alertBuilder.show();
+    }
 }
+

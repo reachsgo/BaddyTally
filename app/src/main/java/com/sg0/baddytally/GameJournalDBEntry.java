@@ -144,6 +144,14 @@ class GameJournalDBEntry {
         return player.equalsIgnoreCase(mW1) || player.equalsIgnoreCase(mW2) || player.equalsIgnoreCase(mL1) || player.equalsIgnoreCase(mL2);
     }
 
+    public boolean aWinner(final String player) {
+        return player.equalsIgnoreCase(mW1) || player.equalsIgnoreCase(mW2);
+    }
+
+    public boolean aLoser(final String player) {
+        return player.equalsIgnoreCase(mL1) || player.equalsIgnoreCase(mL2);
+    }
+
     public boolean playersInvolved4(final String player1, final String player2, final String player3, final String player4) {
         return playerInvolved(player1) &&
                 playerInvolved(player2) &&
@@ -195,6 +203,16 @@ class GameJournalDBEntry {
         return "";
     }
 
+    public boolean exactlyEqual(GameJournalDBEntry o) {
+        if (this.mW1.equals(o.mW1) && this.mW2.equals(o.mW2) &&
+                this.mL1.equals(o.mL1) && this.mL2.equals(o.mL2) &&
+                this.mWS == o.mWS && this.mLS == o.mLS &&
+                this.mGNo == o.mGNo)
+            return true;
+
+        return false;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -217,12 +235,14 @@ class GameJournalDBEntry {
         return Objects.hash(getmW1(), getmW2(), getmL1(), getmL2());
     }
 
-    public String getWinnersString() {
+    //public String getWinnersString() ==> adds "winnersString" to firebase DB
+    public String getWinnersString(final boolean junk) {
         if (getmW2().isEmpty()) return getmW1();
         else return getmW1() + "/" + getmW2();
     }
 
-    public String getLosersString() {
+    //public String getLosersString() ==> adds "losersString" to firebase DB
+    public String getLosersString(final boolean junk) {
         if (getmL2().isEmpty()) return getmL1();
         else return getmL1() + "/" + getmL2();
     }

@@ -1,6 +1,16 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/action_enter"
+        android:orderInCategory="1"
+        app:showAsAction="never"
+        android:title="Enter score" />
+    <item
+        android:id="@+id/action_tournaMode"
+        android:orderInCategory="49"
+        android:title="@string/action_tournaMode"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_settings"
         android:orderInCategory="50"
         android:title="@string/action_settings"
@@ -11,11 +21,7 @@
         app:showAsAction="ifRoom"
         android:icon="@drawable/ic_baseline_autorenew_24px"
         android:title="Refresh"/>
-    <item
-        android:id="@+id/action_enter"
-        android:orderInCategory="1"
-        app:showAsAction="never"
-        android:title="Enter score"/>
+
     <item
         android:id="@+id/action_summary"
         android:orderInCategory="99"

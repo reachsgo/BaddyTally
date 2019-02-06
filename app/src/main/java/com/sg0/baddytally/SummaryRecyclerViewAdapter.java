@@ -111,7 +111,7 @@ public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecy
         GameJournalDBEntry jEntry = mGameJournalDBEntry.get(position);
         Menu pMenu = popup.getMenu();
         pMenu.add("");  //add some space at the top & bottom of the game text for that to standout
-        CharSequence gameDetails = SharedData.getInstance().getStyleString(jEntry.getWinnersString() + "  vs  " + jEntry.getLosersString(), Typeface.ITALIC);
+        CharSequence gameDetails = SharedData.getInstance().getStyleString(jEntry.getWinnersString(true) + "  vs  " + jEntry.getLosersString(true), Typeface.ITALIC);
         pMenu.add(gameDetails);
         pMenu.add(" ");
         pMenu.addSubMenu(Menu.NONE, DELETE_IDX, Menu.NONE, "Delete"); //groupId, itemId, order, title

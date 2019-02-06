@@ -168,6 +168,14 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
             }
         });
 
+        if (data.mTournaMode) {
+            Log.d(TAG, "onCreate Tournament mode");
+            findViewById(R.id.options_ll).setVisibility(View.GONE);
+            findViewById(R.id.new_round_btn).setVisibility(View.GONE);
+            findViewById(R.id.current_round).setVisibility(View.GONE);
+            findViewById(R.id.time_now).setVisibility(View.GONE);
+        }
+
     }
 
     private void prepareForLogin(String club, String secpd) {
@@ -192,7 +200,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         SharedData.getInstance().fetchProfile(LoginActivity.this, LoginActivity.this , mClub);
     }
 
-    //Callback after profile is fetched from DB. See SharedData impl of fetchProfile()
+    //CallbackRoutine Callback after profile is fetched from DB. See SharedData impl of fetchProfile()
     public void profileFetched() {
         SharedData data = SharedData.getInstance();
         Log.w(TAG, "profileFetched invoked ...." + data.toString());
@@ -200,6 +208,12 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         mMemCode = data.mMemCode;
         mRootCode = data.mRootCode;
         attemptLogin();
+    }
+
+    public void alertResult(final String in, final Boolean ok, final Boolean ko) {
+    }
+
+    public void completed(final String in, final Boolean ok) {
     }
 
     /**
@@ -324,13 +338,20 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     }
 
     private void createEnterDataActivity()     {
-        String newRoundFlag = "False";
-        Log.i(TAG, "successfulLogin, new round flag:" + newRoundFlag);
-        Intent myIntent = new Intent(LoginActivity.this, EnterData.class);
-        myIntent.putExtra("gametype", mGameTypeRadioButton.getText());
-        myIntent.putExtra("group", mGroupRadioButton.getText());
-        myIntent.putExtra("new_round", newRoundFlag);
-        LoginActivity.this.startActivityForResult(myIntent,Constants.ENTERDATA_ACTIVITY);
+        if (SharedData.getInstance().mTournaMode) {
+            Log.i(TAG, "successfulLogin, tournament mode");
+            Intent myIntent = new Intent(LoginActivity.this, TournaEnterData.class);
+            myIntent.putExtra("gametype", mGameTypeRadioButton.getText());
+            LoginActivity.this.startActivityForResult(myIntent, Constants.ENTERDATA_ACTIVITY);
+        } else {
+            String newRoundFlag = "False";
+            Log.i(TAG, "successfulLogin, new round flag:" + newRoundFlag);
+            Intent myIntent = new Intent(LoginActivity.this, EnterData.class);
+            myIntent.putExtra("gametype", mGameTypeRadioButton.getText());
+            myIntent.putExtra("group", mGroupRadioButton.getText());
+            myIntent.putExtra("new_round", newRoundFlag);
+            LoginActivity.this.startActivityForResult(myIntent, Constants.ENTERDATA_ACTIVITY);
+        }
     }
 
     private boolean isPasswordValid(String password) {
