@@ -89,6 +89,14 @@ public class SharedData {
     public String mTournament;
     public List<String> mTeams;
     public HashMap<String, TeamInfo> mTeamInfoMap;
+    public String mTournaType;
+
+    public List<String> getTeamPlayers(String team) {
+        if(mTeamInfoMap==null) return new ArrayList<>();
+        TeamInfo tI = mTeamInfoMap.get(team);
+        if(tI==null) return new ArrayList<>();
+        return tI.players;
+    }
 
     private SharedData() {
         //Prevent form the reflection api.
@@ -147,6 +155,7 @@ public class SharedData {
         mTeams = new ArrayList<>();
         mTeamInfoMap = null;
         mTeamInfoMap = new HashMap<>();
+        mTournaType = "";
     }
 
     public boolean isRoot() {
@@ -337,10 +346,10 @@ public class SharedData {
 
                                 }
                                 //Toss: Return a random value +1 or -1
-                                //Log.v(TAG, "sortPlayers: Tossing to sort " + p1.getName() + " and " + p2.getName());
+                                //Log.v(TAG, "sortPlayers: Tossing to sort " + p1.getDesc() + " and " + p2.getDesc());
                                 //Log.v(TAG, "sortPlayers: p1=" + p1.toString() + " and p2=" + p2.toString());
                                 if (!infoLog[0].isEmpty()) infoLog[0] += ", ";
-                                infoLog[0] += p1.getName() + " & " + p2.getName();
+                                infoLog[0] += p1.getDesc() + " & " + p2.getDesc();
                                 return randomPick();
                             } else return value4;
                         } else return value3;
@@ -376,7 +385,7 @@ public class SharedData {
                                 } else {
                                     //If the sorting is on season points, then toss (pick a random winner among the 2 players being compared).
                                     //Toss: Return a random value +1 or -1
-                                    //Log.v(TAG, "sortPlayers: Tossing to sort " + p1.getName() + " and " + p2.getName());
+                                    //Log.v(TAG, "sortPlayers: Tossing to sort " + p1.getDesc() + " and " + p2.getDesc());
                                     //Log.v(TAG, "sortPlayers: p1=" + p1.toString() + " and p2=" + p2.toString());
                                     if (!infoLog[0].isEmpty()) infoLog[0] += ", ";
                                     infoLog[0] += p1.getName() + " & " + p2.getName();
@@ -676,33 +685,7 @@ public class SharedData {
         return str;
     }
 
-    public void fetchActiveTournaments(final Context context, final CallbackRoutine cb) {
-        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.TOURNA).child(Constants.ACTIVE);
-        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                List<String> tArray = new ArrayList<>();
-                for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
-                    Boolean status = childSnapshot.getValue(Boolean.class);
-                    Log.i(TAG, "onDataChange:" + childSnapshot.getKey() + ":" + status);
-                    if (status) tArray.add(childSnapshot.getKey());
-                }
-                mTournaList = tArray;
-                Log.i(TAG, "onDataChange, mTournaList:" + mTournaList.toString());
-                if (mTournaList.size() > 0) cb.completed(Constants.ACTIVE + Constants.TOURNA, true);
-                else {
-                    showToast(context, "No ongoing tournaments!", Toast.LENGTH_SHORT);
-                    cb.completed(Constants.ACTIVE + Constants.TOURNA, false);
-                    //finish(); //finish here will cause a loop in tournament mode.
-                }
-            }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                showToast(context, "DB error on read: " + databaseError.getMessage(), Toast.LENGTH_SHORT);
-            }
-        });
-    }
 
     public void readDBTeam(final String tournament, final Context context, final CallbackRoutine cb) {
         if (tournament.isEmpty()) return;
@@ -772,30 +755,21 @@ public class SharedData {
         }
 */
 
-    public MatchInfo getTeamsInvolvedInTheMatch(final String match) {
-        if (match.isEmpty()) {
-            Log.i(TAG, "getTeamsInvolvedInTheMatch, match is empty!");
-            return null;
+    public Boolean checkIfPlayerAlreadyExists(final Context context, final String pShort) {
+        for (Map.Entry<String, TeamInfo> entry : mTeamInfoMap.entrySet()) {
+            TeamInfo tI = entry.getValue();
+            for(String p_nick: tI.p_nicks) {
+                if(p_nick.equals(pShort)) {
+                    Log.d(TAG, pShort + " already exists in " + tI.name);
+                    //showToast(context, pShort + " already exists in " + tI.name, Toast.LENGTH_SHORT);
+                    return true;
+                }
+            }
         }
-        MatchInfo mI = new MatchInfo();
-        String[] parts1 = match.split(Constants.TEAM_DELIM1);
-        mI.key = parts1[0];
-        String[] teams = parts1[1].split(Constants.TEAM_DELIM2);
-        int count = 0;
-        for (String t : teams) {
-            count++;
-            Log.i(TAG, "getTeamsInvolvedInTheMatch, team[" + count + "]:" + t);
-        }
-
-        if (count != 2) {
-            Log.e(TAG, "getTeamsInvolvedInTheMatch, 2 teams were expected:" + teams.toString());
-            return null;
-        }
-        mI.T1 = teams[0];
-        mI.T2 = teams[1];
-        Log.i(TAG, "getTeamsInvolvedInTheMatch: " + mI.toString());
-        return mI;
+        return false;
     }
+
+
 
     public void sortTeams() {
         //playersList is obj reference of the actual list being passed in.

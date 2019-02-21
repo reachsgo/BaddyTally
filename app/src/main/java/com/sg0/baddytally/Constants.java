@@ -58,5 +58,23 @@ class Constants {
     public static final String NUM_OF_MATCHES = "mNum";
     public static final String NUM_OF_GAMES = "bestOf";
     public static final String COMPLETED = "done";
-    public static final String MATCHNUM = "M";
+    public static final String MATCHID_PREFIX = "M";
+    public static final String MATCHSETID_PREFIX = "MS";
+    public static final String CB_READTOURNA = "fetchActiveTournaments";
+    public static final String CB_SHOWTOURNA = "showTournaments";
+    public static final String CB_READMATCHMETA = "readDBMatchMeta";
+    public static final String CB_SHOWMATCHES = "showMatches";
+    public static final String CB_NOMATCHFAOUND = "No match found!";
+    public static final String FIXTURE = "fix";
+    public static final String WINNER = "w";
+    public static final String TEAM1PLAYERS = "Team1Players";
+    public static final String TEAM2PLAYERS = "Team2Players";
+    public static final String TOURNATYPE = "TournaType";
+    public static final String EXTRAS = "Extras";
+    public static final String VIEWONLY = "ViewOnly";
+    public static final String MATCH = "Match";
+    public static final String LEAGUE = "LEAGUE";
+    public static final String ELIMINATION = "ELIMINATION";
+    public static final String BYE = "(bye)";
+
 }

@@ -216,6 +216,8 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     public void completed(final String in, final Boolean ok) {
     }
 
+    public void callback(final String key, final Object inobj) {}
+
     /**
      * Attempts to sign in or register the account specified by the login form.
      * If there are form errors (invalid email, missing fields, etc.), the
@@ -339,10 +341,24 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
 
     private void createEnterDataActivity()     {
         if (SharedData.getInstance().mTournaMode) {
+            Intent thisIntent = getIntent(); // gets the previously created intent
+            String tType = thisIntent.getStringExtra(Constants.TOURNATYPE);
+
             Log.i(TAG, "successfulLogin, tournament mode");
-            Intent myIntent = new Intent(LoginActivity.this, TournaEnterData.class);
-            myIntent.putExtra("gametype", mGameTypeRadioButton.getText());
-            LoginActivity.this.startActivityForResult(myIntent, Constants.ENTERDATA_ACTIVITY);
+            if(tType.equals(Constants.ELIMINATION)){
+                Intent myIntent = new Intent(LoginActivity.this, TournaBaseEnterData.class);
+                myIntent.putExtra(Constants.TOURNATYPE, tType);
+                myIntent.putExtra(Constants.MATCH, thisIntent.getStringExtra(Constants.MATCH));
+                myIntent.putStringArrayListExtra(Constants.TEAMS, thisIntent.getStringArrayListExtra(Constants.TEAMS));
+                myIntent.putStringArrayListExtra(Constants.TEAM1PLAYERS, thisIntent.getStringArrayListExtra(Constants.TEAM1PLAYERS));
+                myIntent.putStringArrayListExtra(Constants.TEAM2PLAYERS, thisIntent.getStringArrayListExtra(Constants.TEAM2PLAYERS));
+                LoginActivity.this.startActivityForResult(myIntent, Constants.ENTERDATA_ACTIVITY);
+            } else {
+                Intent myIntent = new Intent(LoginActivity.this, TournaEnterData.class);
+                myIntent.putExtra("gametype", mGameTypeRadioButton.getText());
+                LoginActivity.this.startActivityForResult(myIntent, Constants.ENTERDATA_ACTIVITY);
+            }
+
         } else {
             String newRoundFlag = "False";
             Log.i(TAG, "successfulLogin, new round flag:" + newRoundFlag);

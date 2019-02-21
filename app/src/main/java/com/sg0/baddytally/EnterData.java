@@ -229,13 +229,13 @@ public class EnterData extends AppCompatActivity {
                 //add the players present today first. This helps the user to make enter score quickly.
                 playerList.add(players.get(i).getName());
                 players.get(i).markToRelegate();  //reusing relegate flag here
-                //Log.w(TAG, "SGO PRESENT players[" + Integer.toString(i) + "] getName=[" + players.get(i).getName() + "]");
+                //Log.w(TAG, "SGO PRESENT players[" + Integer.toString(i) + "] getDesc=[" + players.get(i).getDesc() + "]");
             }
         }
         for (int i = 0; i < players.size(); i++) {
             if (! players.get(i).isMarkedToRelegate()) { //if not added in the loop before, then add now
                 playerList.add(players.get(i).getName());
-                //Log.w(TAG, "SGO NOT PRESENT players[" + Integer.toString(i) + "] getName=[" + players.get(i).getName() + "]");
+                //Log.w(TAG, "SGO NOT PRESENT players[" + Integer.toString(i) + "] getDesc=[" + players.get(i).getDesc() + "]");
             }
         }
         playerList.add("");  //blank as the last name (default)

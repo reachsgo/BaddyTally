@@ -286,7 +286,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
                 List<PointsDBEntry> list = dataSnapshot.getValue(genericTypeIndicator);
                 if (null == list || list.size() != 2) return;
                 Log.v(TAG, "FETCH: key=" + key + " player:" + dataSnapshot.getKey());
-                //PlayerData pData = new PlayerData(mPlayers.get(position).getGroup(), mPlayers.get(position).getName(), list);
+                //PlayerData pData = new PlayerData(mPlayers.get(position).getGroup(), mPlayers.get(position).getDesc(), list);
                 Log.v(TAG, "FETCH: player data[" + key + "] : " + list.get(key).toString());
                 if (Integer.toString(list.get(key).getPts()).equals(mPlayers.get(position).getPoints(key))) {
                     //Current Value in DB is same as that is in the list. This makes sure that the mPlayers list is not stale!

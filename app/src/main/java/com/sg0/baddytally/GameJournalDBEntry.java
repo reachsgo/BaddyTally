@@ -277,4 +277,32 @@ class GameJournalDBEntry {
         return  winner + "  vs  " + loser + "\n";
     }
 
+    public String toPlayersString(final String p1) {
+        String team1, team2;
+        if(aWinner(p1)) {
+            team1 = mW1;
+            team2 = mL1;
+            if (Constants.DOUBLES.equals(mGT)) {
+                team1 += "/" + mW2;
+                team2 += "/" + mL2;
+            }
+        } else {
+            team1 = mL1;
+            team2 = mW1;
+            if (Constants.DOUBLES.equals(mGT)) {
+                team1 += "/" + mL2;
+                team2 += "/" + mW2;
+            }
+        }
+        return  team1 + "  vs  " + team2 + "\n";
+    }
+
+    public String toScoreString(final String p1) {
+        if(aWinner(p1)) {
+            return mWS + "-" + mLS;
+        } else {
+            return mLS + "-" + mWS;
+        }
+    }
+
 }

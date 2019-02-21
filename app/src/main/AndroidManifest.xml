@@ -16,7 +16,6 @@
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -36,8 +35,17 @@
             android:name=".TournaEnterData"
             android:noHistory="true" />
         <activity
+            android:name=".TournaBaseEnterData"
+            android:noHistory="true" />
+        <activity
             android:name=".TournaSettings"
             android:noHistory="true" />
+        <activity
+            android:name=".TournaSummary"
+            android:noHistory="false" />
+        <activity
+            android:name=".TournaTable"
+            android:noHistory="false" />
     </application>
 
 </manifest>

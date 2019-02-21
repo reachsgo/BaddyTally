@@ -909,7 +909,7 @@ public class Settings extends AppCompatActivity {
         for (int idx = 1; idx <= shufNumPlayers; idx++) {
             if (dry_run) {
                 //SGO: No need to mark the source list (which will be the old list). Marking of target list is already done above.
-                //trace += srcList.get(srcList.size() - idx).getName() + " (" + srcList.get(srcList.size() - idx).getPoints_innings() + ") ";
+                //trace += srcList.get(srcList.size() - idx).getDesc() + " (" + srcList.get(srcList.size() - idx).getPoints_innings() + ") ";
                 //if(Constants.SILVER.equals(groupName)) targetList.get(targetList.size() - idx).markToRelegate();
                 //else targetList.get(targetList.size() - idx).markToPromote();
             } else {

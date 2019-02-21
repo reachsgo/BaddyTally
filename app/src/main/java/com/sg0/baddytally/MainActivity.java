@@ -44,6 +44,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -242,6 +243,8 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
         ImageButton suggestion_btn = findViewById(R.id.suggestions);
         suggestion_btn.setOnClickListener(suggestionsOnClickListener);
 
+
+
     }
 
     private void selectedEffect2(final int selectedViewId, final int otherViewId) {
@@ -265,8 +268,16 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
     @Override
     protected void onResume() {
         super.onResume();
+
+        //SGO
+        Intent tmpIntent = new Intent(MainActivity.this, TournaTable.class);
+        MainActivity.this.startActivity(tmpIntent);
+
+
         //Maintain DB connection state
         SharedData.getInstance().setUpDBConnectionListener();
+        return;
+        /*
         mInitialAttempt = false;
         setFooter();
         SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
@@ -308,6 +319,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                     mEnterDataItem.setEnabled(false);
             }
         }
+        */
 
 
     }
@@ -381,7 +393,12 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                 MainActivity.this.startActivityForResult(settingsIntent, Constants.SETTINGS_ACTIVITY);
                 break;
             case R.id.action_tournaMode:
-                //If DB connection is sleeping, wake it up!
+                if (mInitialAttempt) {
+                    Toast.makeText(this, "You have to Sign-in first.", Toast.LENGTH_SHORT)
+                            .show();
+                    return false;
+                }
+
                 AlertDialog.Builder tmBuilder = new AlertDialog.Builder(MainActivity.this);
                 tmBuilder.setTitle(SharedData.getInstance().getTitleStr("Enable Tournament Mode", MainActivity.this));
                 String display = "You can track your club leagues here.";
@@ -587,6 +604,8 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
 
     public void completed(final String in, final Boolean ok) {
     }
+
+    public void callback(final String key, final Object inobj) {}
 
     private void showRules() {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
