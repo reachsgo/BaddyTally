@@ -65,7 +65,8 @@ class Constants {
     public static final String CB_READMATCHMETA = "readDBMatchMeta";
     public static final String CB_SHOWMATCHES = "showMatches";
     public static final String CB_NOMATCHFAOUND = "No match found!";
-    public static final String FIXTURE = "fix";
+    public static final String FIXTURE_UPPER = "fixU";
+    public static final String FIXTURE_LOWER = "fixL";
     public static final String WINNER = "w";
     public static final String TEAM1PLAYERS = "Team1Players";
     public static final String TEAM2PLAYERS = "Team2Players";

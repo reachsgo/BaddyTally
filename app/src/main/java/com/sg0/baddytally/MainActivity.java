@@ -3,13 +3,11 @@ package com.sg0.baddytally;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
@@ -18,20 +16,15 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.telephony.PhoneNumberUtils;
-import android.telephony.SmsManager;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
-import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
@@ -44,7 +37,6 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -59,13 +51,10 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -269,15 +258,15 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
     protected void onResume() {
         super.onResume();
 
+                /*
         //SGO
-        Intent tmpIntent = new Intent(MainActivity.this, TournaTable.class);
+        Intent tmpIntent = new Intent(MainActivity.this, TournaTableLayout.class);
         MainActivity.this.startActivity(tmpIntent);
-
+*/
 
         //Maintain DB connection state
         SharedData.getInstance().setUpDBConnectionListener();
-        return;
-        /*
+
         mInitialAttempt = false;
         setFooter();
         SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
@@ -299,7 +288,8 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
             setTitle(mClub);
 
             if (SharedData.getInstance().mTournaMode) {
-                Intent myIntent = new Intent(MainActivity.this, TournaMainActivity.class);
+                Intent myIntent = new Intent(MainActivity.this, TournaTableLayout.class);
+                //Intent myIntent = new Intent(MainActivity.this, TournaMainActivity.class);
                 MainActivity.this.startActivity(myIntent);
                 //SharedData.getInstance().mTournaMode = false; //SGO
                 //TODO: Have to add Settings to tournamode
@@ -319,9 +309,6 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                     mEnterDataItem.setEnabled(false);
             }
         }
-        */
-
-
     }
 
     @Override

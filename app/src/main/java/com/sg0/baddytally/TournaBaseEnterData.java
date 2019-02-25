@@ -66,7 +66,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
         add(29);
         add(30);
     }};
-    private static final String TAG = "TournaEnterData";
+    private static final String TAG = "TournaBaseEnterData";
     private SharedData mCommon;
     private List<String> mMatches;
     private String mMatch;
@@ -354,7 +354,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
 
 
         populateGamePoints(mGameList);
-        makeItViewOnly();
+        if(mViewOnly) makeItViewOnly();
     }
 
     @Override
@@ -431,7 +431,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
         });
 
         dbRef = mDatabase.child(mCommon.mClub).child(Constants.TOURNA)
-                .child(mCommon.mTournament).child(Constants.FIXTURE).child(mMatchId);
+                .child(mCommon.mTournament).child(Constants.FIXTURE_UPPER).child(mMatchId);
 
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -743,11 +743,12 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             mMatchDBEntry.setW(winner);
             Log.d(TAG, "workToUpdateDB: after=" + mMatchDBEntry);
             mDatabase.child(mCommon.mClub).child(Constants.TOURNA)
-                    .child(mCommon.mTournament).child(Constants.FIXTURE).child(mMatchId)
+                    .child(mCommon.mTournament).child(Constants.FIXTURE_UPPER).child(mMatchId)
                     .setValue(mMatchDBEntry);
             Snackbar.make(findViewById(R.id.enterdata_ll), winner + " won!", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
 
+            //TODO: if external, then get fisturename and matchId from "ext" attr and set the winner there too.
             //Give time to show snackbar before closing the activity
             final Handler handler = new Handler();
             handler.postDelayed(new Runnable() {
