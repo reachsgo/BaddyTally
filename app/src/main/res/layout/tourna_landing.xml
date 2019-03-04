@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_nonbirdie_portrait">
+
+    <LinearLayout
+        android:id="@+id/tlanding_ll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="10dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/birdie"
+        android:orientation="vertical" >
+
+        <ListView
+            android:id="@+id/tournaments_lv"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@android:color/transparent"
+            android:divider="@color/colorTealGreen"
+            android:dividerHeight="5dp"
+            android:cacheColorHint="@color/colorTealGreen" >
+        </ListView>
+    </LinearLayout>
+
+</android.support.design.widget.CoordinatorLayout>

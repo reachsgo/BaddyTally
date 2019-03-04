@@ -5,7 +5,7 @@ import android.util.Log;
 import java.util.List;
 
 public class TeamDBEntry {
-    final private int MAX_ID_LEN = 6;
+    final private int MAX_ID_LEN = 12;
     private String id;
     private List<String> p;
 
@@ -35,6 +35,10 @@ public class TeamDBEntry {
 
     public void setP(List<String> p) {
         this.p = p;
+    }
+
+    public String toDispString() {
+        return "name=" + id + ", players=" + p.toString();
     }
 
     @Override

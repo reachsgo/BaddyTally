@@ -57,6 +57,8 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     private String mRole;
     private boolean mInitialAttempt;
     private boolean mNewRoundFlag;
+    private boolean mTournaFlag;
+    private String mActToStart;
 
 
     private void killActivity(){
@@ -76,6 +78,17 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         mGameTypeRadioGroup = findViewById(R.id.gametype_radiogroup);
         mGroupRadioGroup = findViewById(R.id.gamegroup_radiogroup);
         mNewRoundFlag = false;
+        mTournaFlag = false;
+        Intent thisIntent = getIntent(); // gets the previously created intent
+        String tType = thisIntent.getStringExtra(Constants.TOURNATYPE);
+        if(null!=tType && !tType.isEmpty()) {
+            mTournaFlag = true;
+        }
+        mActToStart = "";
+        String actToStart = thisIntent.getStringExtra(Constants.ACTIVITY);
+        if(null!=actToStart && !actToStart.isEmpty()) {
+            mActToStart = actToStart;
+        }
 
         //checked attribute in XML doesnt seem to work in the new API version.
         //so, setting the defaults in code here.
@@ -168,7 +181,9 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
             }
         });
 
-        if (data.mTournaMode) {
+        //if (data.mTournaMode) {
+        if(mTournaFlag || mActToStart.equals(Constants.ACTIVITY_SETTINGS) ||
+                mActToStart.equals(Constants.ACTIVITY_TOURNA_SETTINGS)) {
             Log.d(TAG, "onCreate Tournament mode");
             findViewById(R.id.options_ll).setVisibility(View.GONE);
             findViewById(R.id.new_round_btn).setVisibility(View.GONE);
@@ -288,7 +303,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         data.mUser = mUser;
 
         showProgress(false);
-        if (mInitialAttempt) {
+        if (mInitialAttempt && mActToStart.isEmpty()) {
             killActivity();   //finish was not ending the activity here.
             return;
         }
@@ -340,15 +355,29 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     }
 
     private void createEnterDataActivity()     {
-        if (SharedData.getInstance().mTournaMode) {
+
+        if(mActToStart.equals(Constants.ACTIVITY_SETTINGS)) {
+            SharedData.getInstance().wakeUpDBConnection();
+            Intent settingsIntent = new Intent(LoginActivity.this, Settings.class);
+            LoginActivity.this.startActivityForResult(settingsIntent, Constants.SETTINGS_ACTIVITY);
+            return;
+        } else if(mActToStart.equals(Constants.ACTIVITY_TOURNA_SETTINGS)) {
+            SharedData.getInstance().wakeUpDBConnection();
+            Intent settingsIntent = new Intent(LoginActivity.this, TournaSettings.class);
+            LoginActivity.this.startActivityForResult(settingsIntent, Constants.SETTINGS_ACTIVITY);
+            return;
+        }
+        //if (SharedData.getInstance().mTournaMode) {
+        if (mTournaFlag) {
             Intent thisIntent = getIntent(); // gets the previously created intent
             String tType = thisIntent.getStringExtra(Constants.TOURNATYPE);
 
             Log.i(TAG, "successfulLogin, tournament mode");
-            if(tType.equals(Constants.ELIMINATION)){
+            if(tType.equals(Constants.SE) || tType.equals(Constants.DE)){
                 Intent myIntent = new Intent(LoginActivity.this, TournaBaseEnterData.class);
                 myIntent.putExtra(Constants.TOURNATYPE, tType);
                 myIntent.putExtra(Constants.MATCH, thisIntent.getStringExtra(Constants.MATCH));
+                myIntent.putExtra(Constants.FIXTURE, thisIntent.getStringExtra(Constants.FIXTURE));
                 myIntent.putStringArrayListExtra(Constants.TEAMS, thisIntent.getStringArrayListExtra(Constants.TEAMS));
                 myIntent.putStringArrayListExtra(Constants.TEAM1PLAYERS, thisIntent.getStringArrayListExtra(Constants.TEAM1PLAYERS));
                 myIntent.putStringArrayListExtra(Constants.TEAM2PLAYERS, thisIntent.getStringArrayListExtra(Constants.TEAM2PLAYERS));

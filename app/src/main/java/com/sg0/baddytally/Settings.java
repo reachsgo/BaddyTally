@@ -224,8 +224,12 @@ public class Settings extends AppCompatActivity {
 
                     //Restart the app: Needed to re-invoke Application.onCreate() to disable DB persistence,
                     //though that behavior is very inconsistent. See comments in ScoreTally.java.
-                    setResult(Constants.RESTARTAPP);
-                    killActivity();
+                    //setResult(Constants.RESTARTAPP);
+                    //killActivity();
+
+                    Intent intent = new Intent(getApplicationContext(), MainSigninActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivity(intent);
                 }
             }
         });

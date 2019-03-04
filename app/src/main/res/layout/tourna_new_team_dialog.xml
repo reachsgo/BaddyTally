@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="2dp"
+    android:background="@drawable/bg_nonbirdie_portrait"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="60dp"
+        android:text="Create a new team"
+        android:textAllCaps="true"
+        android:textColor="@android:color/black"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="4dip"
+        android:background="@color/colorWhite" />
+
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="10dp"
+            android:text="Name: "
+            android:textColor="@android:color/black"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/newTeam_et"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:hint="TEAM007"
+            android:maxLength="12"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:textColor="@color/colorTealGreen"
+            android:textColorHint="@android:color/darker_gray"
+            android:textSize="15sp"
+            android:textStyle="italic" />
+    </LinearLayout>
+    <View
+        android:layout_marginTop="1dp"
+        android:layout_width="match_parent"
+        android:layout_height="2dip"
+        android:background="@color/colorWhite" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="1dp"
+        android:layout_gravity="center"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:layout_marginStart="10dp"
+            android:text="Number Of Players:"
+            android:textColor="@android:color/black"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/numPlayers"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:layout_marginStart="1dp"
+            android:theme="@style/ThemeOverlay.AppCompat.Light" />
+    </LinearLayout>
+
+
+    <View
+        android:layout_marginTop="3dp"
+        android:layout_width="match_parent"
+        android:layout_height="2dip"
+        android:background="@color/colorWhite" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="horizontal">
+        <EditText
+            android:id="@+id/p1_et"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="20dp"
+            android:gravity="center"
+            android:hint="player1"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:textColor="@color/colorTealGreen"
+            android:textColorHint="@android:color/darker_gray"
+            android:textSize="15sp"
+            android:textStyle="italic" />
+        <EditText
+            android:id="@+id/p2_et"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:hint="player2"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:textColor="@color/colorTealGreen"
+            android:textColorHint="@android:color/darker_gray"
+            android:textSize="15sp"
+            android:textStyle="italic" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="horizontal">
+        <EditText
+            android:id="@+id/p3_et"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="20dp"
+            android:gravity="center"
+            android:hint="player3"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:textColor="@color/colorTealGreen"
+            android:textColorHint="@android:color/darker_gray"
+            android:textSize="15sp"
+            android:textStyle="italic" />
+        <EditText
+            android:id="@+id/p4_et"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:hint="player4"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:textColor="@color/colorTealGreen"
+            android:textColorHint="@android:color/darker_gray"
+            android:textSize="15sp"
+            android:textStyle="italic" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="horizontal">
+            <EditText
+                android:id="@+id/p5_et"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="20dp"
+                android:gravity="center"
+                android:hint="player5"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:textColor="@color/colorTealGreen"
+                android:textColorHint="@android:color/darker_gray"
+                android:textSize="15sp"
+                android:textStyle="italic" />
+            <EditText
+                android:id="@+id/p6_et"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:hint="player6"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:textColor="@color/colorTealGreen"
+                android:textColorHint="@android:color/darker_gray"
+                android:textSize="15sp"
+                android:textStyle="italic" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="horizontal">
+            <EditText
+                android:id="@+id/p7_et"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="20dp"
+                android:gravity="center"
+                android:hint="player5"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:textColor="@color/colorTealGreen"
+                android:textColorHint="@android:color/darker_gray"
+                android:textSize="15sp"
+                android:textStyle="italic" />
+            <EditText
+                android:id="@+id/p8_et"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:hint="player6"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:textColor="@color/colorTealGreen"
+                android:textColorHint="@android:color/darker_gray"
+                android:textSize="15sp"
+                android:textStyle="italic" />
+        </LinearLayout>
+    </LinearLayout>
+    <View
+        android:layout_marginTop="1dp"
+        android:layout_width="match_parent"
+        android:layout_height="2dip"
+        android:background="@color/colorWhite" />
+
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="5dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/enter_button"
+            style="?android:textAppearanceSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="30dp"
+            android:layout_gravity="center"
+            android:layout_margin="20dp"
+            android:layout_weight="1"
+            android:background="@drawable/roundedrect"
+            android:text="@string/action_enter"
+            android:textColor="@android:color/white"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/cancel_button"
+            style="?android:textAppearanceSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="30dp"
+            android:layout_gravity="center"
+            android:layout_margin="20dp"
+            android:layout_weight="1"
+            android:background="@drawable/roundedrect"
+            android:text="cancel"
+            android:textColor="@android:color/white"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_gravity="center"
+        android:background="@drawable/birdie"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+    </LinearLayout>
+
+</LinearLayout>

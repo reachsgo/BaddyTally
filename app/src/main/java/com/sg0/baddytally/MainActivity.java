@@ -265,7 +265,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
 */
 
         //Maintain DB connection state
-        SharedData.getInstance().setUpDBConnectionListener();
+        //SharedData.getInstance().setUpDBConnectionListener();
 
         mInitialAttempt = false;
         setFooter();
@@ -283,13 +283,15 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
             SharedData.getInstance().mClub = mClub;
             SharedData.getInstance().mUser = prefs.getString(Constants.DATA_USER, "");
             SharedData.getInstance().mRole = prefs.getString(Constants.DATA_ROLE, "");
-            SharedData.getInstance().mTournaMode = prefs.getBoolean(Constants.DATA_TMODE, false);
+            //SharedData.getInstance().mTournaMode = prefs.getBoolean(Constants.DATA_TMODE, false);
             Log.d(TAG, "onResume: " + SharedData.getInstance().toString());
             setTitle(mClub);
 
+            fetchInnings();
+            /*
             if (SharedData.getInstance().mTournaMode) {
-                Intent myIntent = new Intent(MainActivity.this, TournaTableLayout.class);
-                //Intent myIntent = new Intent(MainActivity.this, TournaMainActivity.class);
+                //Intent myIntent = new Intent(MainActivity.this, TournaTableLayout.class);
+                Intent myIntent = new Intent(MainActivity.this, TournaMainActivity.class);
                 MainActivity.this.startActivity(myIntent);
                 //SharedData.getInstance().mTournaMode = false; //SGO
                 //TODO: Have to add Settings to tournamode
@@ -298,6 +300,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                 fetchInnings();
             }
             Log.d(TAG, "onCreate: back from tourna");
+            */
             if (mOptionsMenu != null) {
                 //For scenarios where onResume() is called after onCreateOptionsMenu()
                 Log.d(TAG, "onResume() is called after onCreateOptionsMenu()");
@@ -321,7 +324,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
 
         if (resultCode == Constants.RESTARTAPP) {
             Log.d(TAG, "onActivityResult: RESTARTING app");
-            Intent mStartActivity = new Intent(MainActivity.this, MainActivity.class);
+            Intent mStartActivity = new Intent(MainActivity.this, MainSigninActivity.class);
             int mPendingIntentId = 3331;  //some random number.
             PendingIntent mPendingIntent = PendingIntent.getActivity(MainActivity.this, 0, mStartActivity,
                     PendingIntent.FLAG_CANCEL_CURRENT);
@@ -375,10 +378,14 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
             // action with ID action_settings was selected
             case R.id.action_settings:
                 //If DB connection is sleeping, wake it up!
-                SharedData.getInstance().wakeUpDBConnection();
-                Intent settingsIntent = new Intent(MainActivity.this, Settings.class);
-                MainActivity.this.startActivityForResult(settingsIntent, Constants.SETTINGS_ACTIVITY);
+                //SharedData.getInstance().wakeUpDBConnection();
+                //Intent settingsIntent = new Intent(MainActivity.this, Settings.class);
+                //MainActivity.this.startActivityForResult(settingsIntent, Constants.SETTINGS_ACTIVITY);
+                Intent myIntent = new Intent(MainActivity.this, LoginActivity.class);
+                myIntent.putExtra(Constants.ACTIVITY, Constants.ACTIVITY_SETTINGS);
+                MainActivity.this.startActivity(myIntent);
                 break;
+                /*
             case R.id.action_tournaMode:
                 if (mInitialAttempt) {
                     Toast.makeText(this, "You have to Sign-in first.", Toast.LENGTH_SHORT)
@@ -408,14 +415,15 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                 tmBuilder.show();
 
                 break;
+                */
             case R.id.action_enter:
                 //If DB connection is sleeping, wake it up!
                 SharedData.getInstance().wakeUpDBConnection();
                 if (mInitialAttempt) {
-                    Intent myIntent = new Intent(MainActivity.this, LoginActivity.class);
+                    myIntent = new Intent(MainActivity.this, LoginActivity.class);
                     MainActivity.this.startActivity(myIntent);
                 } else if (!SharedData.getInstance().mMemCode.isEmpty()) {
-                    Intent myIntent = new Intent(MainActivity.this, LoginActivity.class);
+                    myIntent = new Intent(MainActivity.this, LoginActivity.class);
                     //Set the Player data in shared data structure. Player data is filled in a
                     //different (asynchronous) listener in FireBaseDBReader. Overwrite the player data
                     //every time, so that even if initial calls are done too fast (before player data is
@@ -438,8 +446,8 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                 } else {
                     //If DB connection is sleeping, wake it up!
                     SharedData.getInstance().wakeUpDBConnection();
-                    Intent myIntent = new Intent(MainActivity.this, Summary.class);
-                    MainActivity.this.startActivityForResult(myIntent, Constants.SUMMARY_ACTIVITY);
+                    Intent mySumIntent = new Intent(MainActivity.this, Summary.class);
+                    MainActivity.this.startActivityForResult(mySumIntent, Constants.SUMMARY_ACTIVITY);
                 }
                 break;
             case R.id.action_rules:

@@ -40,6 +40,9 @@ class Constants {
     public static final int ENTERDATA_ACTIVITY = 103;
     public static final int RESTARTAPP = 666;
 
+    public static final String ACTIVITY = "Activity";
+    public static final String ACTIVITY_SETTINGS = "Settings";
+    public static final String ACTIVITY_TOURNA_SETTINGS = "TournaSettings";
     public static final String TOURNA = "tournaments";
     public static final String DESCRIPTION = "desc";
     public static final String ACTIVE = "active";
@@ -67,6 +70,12 @@ class Constants {
     public static final String CB_NOMATCHFAOUND = "No match found!";
     public static final String FIXTURE_UPPER = "fixU";
     public static final String FIXTURE_LOWER = "fixL";
+    public static final String DE_FINALS = "F-1";
+    public static final String DE_FINALS_M1 = "1";
+    public static final String DE_FINALS_M2 = "2";
+    public static final String DE_EXTLINK_INDICATOR = "*";
+    public static final String DE_EXTLINK_INDICATOR_DISPLAY = "[UB]";
+    public static final String DE_EXTLINK_INDICATOR_DISPLAY_LONG = " [from UB]";
     public static final String WINNER = "w";
     public static final String TEAM1PLAYERS = "Team1Players";
     public static final String TEAM2PLAYERS = "Team2Players";
@@ -74,8 +83,13 @@ class Constants {
     public static final String EXTRAS = "Extras";
     public static final String VIEWONLY = "ViewOnly";
     public static final String MATCH = "Match";
-    public static final String LEAGUE = "LEAGUE";
-    public static final String ELIMINATION = "ELIMINATION";
+    public static final String FIXTURE = "Fixture";
+    public static final String TYPE = "type";
+    public static final String LEAGUE = "League";
+    public static final String SE = "SE";  //Single Elimination
+    public static final String DE = "DE";  //Double Elimination
+    public static final String SE_LONG = "SE: Single Elimination";  //Single Elimination
+    public static final String DE_LONG = "DE: Double Elimination";  //Double Elimination
     public static final String BYE = "(bye)";
-
+    public static final String BYE_DISPLAY = "bye";
 }

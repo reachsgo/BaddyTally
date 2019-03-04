@@ -3,13 +3,10 @@ package com.sg0.baddytally;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.res.ResourcesCompat;
-import android.text.Spannable;
-import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
@@ -23,9 +20,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.MutableData;
-import com.google.firebase.database.Query;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 
@@ -38,7 +33,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -79,17 +73,19 @@ public class SharedData {
     private boolean mUserNotifyEnabled;
     private boolean mDBConnected;
     private boolean mDBLock;
+    private Long mDBLockAcquireTime;
     private String mStoreHistory;
     private ValueEventListener mDBConnectListener;
     public ArrayList<ActiveUserDBEntry> mActiveUsers;
     public Set<String> mGoldPresentPlayerNames;
     public Set<String> mSilverPresentPlayerNames;
-    public boolean mTournaMode;
-    public List<String> mTournaList;
+    //public boolean mTournaMode;
+    public HashMap<String, String> mTournaMap;
     public String mTournament;
     public List<String> mTeams;
     public HashMap<String, TeamInfo> mTeamInfoMap;
     public String mTournaType;
+
 
     public List<String> getTeamPlayers(String team) {
         if(mTeamInfoMap==null) return new ArrayList<>();
@@ -144,12 +140,13 @@ public class SharedData {
         mUserNotifyEnabled = true;
         mDBConnected = false;
         mDBLock = false;
+        mDBLockAcquireTime = 0L;
         mStoreHistory = "";
         mActiveUsers = null;
         mGoldPresentPlayerNames = new HashSet<>();  //initialize for the first time.
         mSilverPresentPlayerNames = new HashSet<>();  //initialize for the first time.
-        mTournaMode = false;
-        mTournaList = null;
+        //mTournaMode = false;
+        mTournaMap = null;
         mTournament = "";
         mTeams = null;
         mTeams = new ArrayList<>();
@@ -179,6 +176,19 @@ public class SharedData {
         mRoundName = "";
         mInningsDBKey = -1;
         setDBUpdated(true);
+    }
+
+    public void initData(final Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+        String club = prefs.getString(Constants.DATA_CLUB, "");
+        if (!club.isEmpty()) {
+            Log.d(TAG, "initData for " + club);
+            mClub = club;
+            mUser = prefs.getString(Constants.DATA_USER, "");
+            mRole = prefs.getString(Constants.DATA_ROLE, "");
+            //mTournaMode = prefs.getBoolean(Constants.DATA_TMODE, false);
+            Log.d(TAG, "initData: " + SharedData.getInstance().toString());
+        }
     }
 
     private void addHistory(final String story) {
@@ -523,6 +533,7 @@ public class SharedData {
     }
 
     public boolean isDBLocked() {
+        Log.d(TAG, "isDBLocked: " + mDBLock + "," + mDBLockAcquireTime);
         return mDBLock;
     }
 
@@ -534,7 +545,8 @@ public class SharedData {
         //    -- added advantage is that a DB online check is done before the critical operation is performed
         //    -- there are comments saying that performing a write makes sure that the DB is in sync.
         //       (but that might be only for that particular DB tree, anyways!)
-        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.INTERNALS).child(Constants.LOCK);
+        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub)
+                .child(Constants.INTERNALS).child(Constants.LOCK);
         dbRef.runTransaction(new Transaction.Handler() {
             @NonNull
             @Override
@@ -565,11 +577,13 @@ public class SharedData {
                 if (error != null || !committed || dataSnapshot == null) {
                     if (null != error)
                         Log.w(TAG, "changeDBLockState: onComplete: Failed:", error.toException());
-                    else Log.w(TAG, "changeDBLockState: onComplete: Failed");
+                    else Log.w(TAG, "changeDBLockState: onComplete: Failed"); //DB connection might be stale
                     mDBLock = false;
                 } else {
                     try {
                         mDBLock = dataSnapshot.getValue(Boolean.class);
+                        //save the last time a lock was acquired
+                        Log.w(TAG, "changeDBLockState: onComplete: Success:" + mDBLock + "," + mDBLockAcquireTime);
                     } catch (NullPointerException e) {
                         //java.lang.NullPointerException: Attempt to invoke virtual method 'boolean java.lang.Boolean.booleanValue()' on a null object reference
                         //SGO: If INTERNALS/locked node is not present in DB, dataSnapshot is not set to null, but a null pointer exception
@@ -580,7 +594,7 @@ public class SharedData {
                         Log.w(TAG, "changeDBLockState: onComplete: Error:" + e.getMessage());
                         mDBLock = false;
                     }
-                    Log.w(TAG, "changeDBLockState: onComplete: Success");
+
                 }
             }
         });
@@ -588,13 +602,32 @@ public class SharedData {
 
     public void acquireDBLock() {
         mDBLock = false;
-        Log.i(TAG, "acquireDBLock: acquiring...");
+        Log.i(TAG, "acquireDBLock: acquiring..." + mDBLockAcquireTime);
         changeDBLockState(true);
+        if(mDBLockAcquireTime >0L) {
+            Long timeInMins = System.currentTimeMillis() / 60000;
+            if ((timeInMins - mDBLockAcquireTime) > 3) {
+                //DB is been locked for ore than 3 mins
+                Log.w(TAG, "isDBLocked: force release lock: " + (timeInMins - mDBLockAcquireTime) +
+                        " timeInMins=" + timeInMins + " mDBLockAcquireTime=" + mDBLockAcquireTime);
+                releaseDBLock(true);
+            }
+        } else mDBLockAcquireTime = System.currentTimeMillis() / 60000;
     }
 
     public void releaseDBLock() {
-        Log.i(TAG, "releaseDBLock: releasing...");
-        changeDBLockState(false);
+        //public API: Lock is released only if locked by this device.
+        releaseDBLock(false);
+    }
+
+    private void releaseDBLock(final Boolean force) {
+
+        if(isDBLocked() || force) {
+            //SGO: If force flag is set, Lock is released even if not locked by this device.
+            changeDBLockState(false);
+            mDBLockAcquireTime = 0L;
+        }
+        Log.i(TAG, "releaseDBLock: releasing..." + mDBLockAcquireTime);
     }
 
     public void createDBLock() {
@@ -675,8 +708,7 @@ public class SharedData {
                 ", mRole='" + mRole + '\'' +
                 ", mClub='" + mClub + '\'' +
                 ", mInnings='" + mInnings + '\'' +
-                ", mRoundName='" + mRoundName + '\'' +
-                ", tournaMode='" + mTournaMode + '\'';
+                ", mRoundName='" + mRoundName + '\'';
         //", mAdminCode='" + mAdminCode + '\'' +
         //", mMemCode='" + mMemCode + '\'';
         if (mGoldPlayers != null) str += ", mGoldPlayers=" + mGoldPlayers.size();
@@ -685,11 +717,50 @@ public class SharedData {
         return str;
     }
 
+    public Boolean isLeagueTournament(final String tourna) {
+        String tournaType = getTournamentType(tourna);
+        if(tournaType.isEmpty()) return false;
 
+        Log.i(TAG, "isLeagueTournament:" + tourna + "," + tournaType);
+        if(tournaType.equals(Constants.LEAGUE)) {
+            return true;
+        }
+        return false;
+    }
+
+    public Boolean isEliminationTournament(final String tourna) {
+        String tournaType = getTournamentType(tourna);
+        if(tournaType.isEmpty()) return false;
+
+        Log.i(TAG, "isEliminationTournament:" + tourna + "," + tournaType);
+        if(tournaType.equals(Constants.SE) || tournaType.equals(Constants.DE)) {
+            return true;
+        }
+        return false;
+    }
+
+    public Boolean isSETournament(final String tourna) {
+        return getTournamentType(tourna).equals(Constants.SE);
+    }
+
+    public Boolean isDETournament(final String tourna) {
+        return getTournamentType(tourna).equals(Constants.DE);
+    }
+
+    public String getTournamentType(final String tourna) {
+        if(null==tourna || tourna.isEmpty()) return "";
+        if(null==mTournaMap || mTournaMap.size()==0) return "";
+
+        String tournaType = mTournaMap.get(tourna);
+        if(null==tournaType) return "";
+
+        return tournaType;
+    }
 
     public void readDBTeam(final String tournament, final Context context, final CallbackRoutine cb) {
         if (tournament.isEmpty()) return;
-        final DatabaseReference teamScoreDBRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.TOURNA)
+        final DatabaseReference teamScoreDBRef = FirebaseDatabase.getInstance().getReference().child(mClub)
+                .child(Constants.TOURNA)
                 .child(tournament).child(Constants.TEAMS);
         teamScoreDBRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -803,13 +874,13 @@ public class SharedData {
         alertBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                cb.alertResult(title, true, false);
+                if(null!=cb) cb.alertResult(title, true, false);
             }
         });
         alertBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                cb.alertResult(title, false, true);
+                if(null!=cb) cb.alertResult(title, false, true);
             }
         });
         alertBuilder.show();

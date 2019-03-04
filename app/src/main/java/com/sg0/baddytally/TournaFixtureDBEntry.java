@@ -7,201 +7,367 @@ import android.util.Log;
 
 import com.google.firebase.database.IgnoreExtraProperties;
 
-@IgnoreExtraProperties
-class TournaFixtureDBEntry {
-    //shorter names will save firebase DB space
-    private String t1;
-    private String t2;
-    private String pr1;
-    private String pr2;
-    private String W;
-    private String ext;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+class ExternalLink {
+    private String l;  //label
+    private String m;  //match Id
+    private Boolean s;  //source or not
 
 
-    public TournaFixtureDBEntry() {
-        this.t1 = "";
-        this.t2 = "";
-        this.pr1 = "";
-        this.pr2 = "";
-        this.W = "";
-        this.ext = "";
+    public ExternalLink() {}
+
+    public ExternalLink(String l, String m, Boolean s) {
+        this.l = l;
+        this.m = m;
+        this.s = s;
     }
 
-    public TournaFixtureDBEntry(String t1, String t2, String pr1, String pr2, String w) {
-        this.t1 = t1;
-        this.t2 = t2;
-        this.pr1 = pr1;
-        this.pr2 = pr2;
-        W = w;
-        this.ext = "";
+    public String getL() {
+        return l;
+    }
+
+    public void setL(String l) {
+        this.l = l;
+    }
+
+    public String getM() {
+        return m;
+    }
+
+    public void setM(String m) {
+        this.m = m;
+    }
+
+    public Boolean getS() {
+        return s;
+    }
+
+    public void setS(Boolean s) {
+        this.s = s;
+    }
+
+
+    @Override
+    public String toString() {
+        return "Ext{" +
+                l + '.' + m + '.' + s +
+                '}';
+    }
+}
+
+@IgnoreExtraProperties
+class TournaFixtureDBEntry {
+    final static private String TAG = "TournaFixtureDBEntry";
+    //supports only 2 teams
+    private final int TEAM1_IDX = 0;
+    private final int TEAM2_IDX = 1;
+
+    //shorter names will save firebase DB space
+    private List<String> T;  //teams
+    private List<String> P;  //Previous links
+    private List<ExternalLink> E;  //Previous links
+    private String W;        //winner
+    private Boolean F;  //final or not
+
+    private void clear() {
+        this.T = null;  //null is better, as an object with null is not written into firebase DB
+        this.P = null;
+        this.E = null;
+        this.W = null;
+        this.F = false;
+    }
+
+    public TournaFixtureDBEntry() {
+        clear();
     }
 
     public TournaFixtureDBEntry(final TournaFixtureDBEntry o) {
-        this.t1 = o.t1;
-        this.t2 = o.t2;
-        this.pr1 = o.pr1;
-        this.pr2 = o.pr2;
+        clear();
+        if(null!=o.getT()) this.T = new ArrayList<>(o.getT());
+        if(null!=o.getP()) this.P = new ArrayList<>(o.getP());
+        if(null!=o.getE()) this.E = new ArrayList<>(o.getE());
         this.W = o.W;
-        this.ext = o.ext;
     }
 
     public TournaFixtureDBEntry(final TournaMatchNode mN) {
-
+        clear();
         if(mN.isExternalLink()) {
-            //If a leaf node,
-            setExternalLink(mN.getDesc(), true);
-            this.t1 = mN.getExtMatchIdStr();
+            if(!mN.getWinner().isEmpty()) {
+                setW(mN.getWinner());  //There could be a winner in case of a BYE in UB match.
+            } else {
+                //EXTERNALLEAF node: only created in Lower Bracket. So, sourceFlag is false;
+                setExtLink(TEAM1_IDX, mN.getExtFixtureLabel(), mN.getExtMatchId(), false);
+                setTeam(TEAM1_IDX, mN.getExtMatchIdStr());
+                setTeam(TEAM2_IDX, Constants.BYE);
+            }
             Log.d("TournaFixtureDBEntry", "isExternalLink: " + toString());
             return;
         } else if(mN.isBye()) {
-            this.t1 = Constants.BYE;
-            this.pr1 = "";
-            this.t2 = "";
-            this.pr2 = "";
-            this.W = "";
-            this.ext = "";
+            setW(Constants.BYE);
+            //setTeam(TEAM1_IDX,Constants.BYE);
+            //setTeam(TEAM2_IDX, "");
             Log.d("TournaFixtureDBEntry", "isBye: " + toString());
             return;
         } else if(mN.isLeaf()) {
             Log.d("TournaFixtureDBEntry", "++isLeaf:++");
         }
 
-        if(mN.t1.isExternalLink()) {
+        if(null==mN.t1) {
+            Log.d("TournaFixtureDBEntry", "++ T1 is null ++");
+        } else if(mN.t1.isExternalLink()) {
             //team1 node is an external link
-            this.t1 = mN.t1.getExtMatchIdStr();
+            if(!mN.t1.getWinner().isEmpty()) {
+                setTeam(TEAM1_IDX, mN.t1.getWinner());
+            } else {
+                setTeam(TEAM1_IDX, mN.t1.getExtMatchIdStr());
+            }
             //if previous link is not set, then vertical lines will not be drawn
             //between EXTERNALLEAF and regular NODE (with teams linking to EXTERNALLEAF nodes) in the same round.
-            this.pr1 = mN.t1.getId();
+            setPrevLink(TEAM1_IDX, mN.t1.getId());
             Log.d("TournaFixtureDBEntry", "mN.t1.isExternalLink: " + toString());
         } else if(mN.t1.isLeaf()) {
-            this.t1 = mN.t1.getDesc();   //desc has the team name, id has row-matchId
-            this.pr1 = "";
+            setTeam(TEAM1_IDX, mN.t1.getDesc());  //desc has the team name, id has row-matchId
+            setPrevLink(TEAM1_IDX, "");
             Log.d("TournaFixtureDBEntry", "mN.t1.isLeaf: " + toString());
             //this.pr1 = mN.t1.getId();
         } else {
-            this.t1 = "";
-            this.pr1 = mN.t1.getId();
+            setTeam(TEAM1_IDX, "");
+            setPrevLink(TEAM1_IDX, mN.t1.getId());
             Log.d("TournaFixtureDBEntry", "mN.t1.isLeaf else: " + toString());
         }
 
-        if(mN.t2.isExternalLink()) {
+        if(null==mN.t2) {
+            Log.d("TournaFixtureDBEntry", "++ T2 is null ++");
+        } else if(mN.t2.isExternalLink()) {
             //team2 node is an external link
-            this.t2 = mN.t2.getExtMatchIdStr();
+            if(!mN.t2.getWinner().isEmpty()) {
+                setTeam(TEAM2_IDX, mN.t2.getWinner());
+            } else {
+                setTeam(TEAM2_IDX, mN.t2.getExtMatchIdStr());
+            }
+
             //if previous link is not set, then vertical lines will not be drawn
             //between EXTERNALLEAF and regular NODE (with teams linking to EXTERNALLEAF nodes) in the same round.
-            this.pr2 = mN.t2.getId();
+            setPrevLink(TEAM2_IDX, mN.t2.getId());
             Log.d("TournaFixtureDBEntry", "mN.t2.isExternalLink: " + toString());
         } else if(mN.t2.isLeaf()) {
-            this.t2 = mN.t2.getDesc();  //desc has the team name, id has row-matchId
-            this.pr2 = "";
+            setTeam(TEAM2_IDX, mN.t2.getDesc());  //desc has the team name, id has row-matchId
+            setPrevLink(TEAM2_IDX, "");
             //this.pr2 = mN.t2.getId();
             Log.d("TournaFixtureDBEntry", "mN.t2.isLeaf: " + toString());
         } else {
-            this.t2 = "";
-            this.pr2 = mN.t2.getId();
+            setTeam(TEAM2_IDX, "");
+            setPrevLink(TEAM2_IDX, mN.t2.getId());
             Log.d("TournaFixtureDBEntry", "mN.t2.isLeaf else: " + toString());
         }
+        if(!mN.getWinner().isEmpty()) setW(mN.getWinner());
 
-        this.W = "";
-        this.ext = mN.getExternalLinkDesc();
-        //carry over whatever is set in external link desc.
-        //For the successor of EXTERNALLEAF node, desc is set external fixture label.
-        //This helps to display external links properly
-
+        if(!mN.getExternalLinkDesc().isEmpty()) {
+            //carry over whatever is set in external link desc.
+            //For the successor of EXTERNALLEAF node, desc is set external fixture label.
+            //This helps to display external links properly
+            setExtLink(TEAM1_IDX, mN.getExtFixtureLabel(), mN.getExtMatchId(), false);
+        }
+        Log.d("TournaFixtureDBEntry: ", toString());
     }
 
-    public String getT1() {
-        return t1;
+    public Boolean validTeams() {
+       if(T==null) return false;
+       if(T.size()!=2) return false;
+
+       return true;
     }
 
-    public void setT1(String t1) {
-        this.t1 = t1;
+    public List<String> getT() {
+        return T;
     }
 
-    public String getT2() {
-        return t2;
+    public void setT(List<String> t) {
+        T = t;
     }
 
-    public void setT2(String t2) {
-        this.t2 = t2;
+    public List<String> getP() {
+        return P;
     }
 
-    public String getPr1() {
-        return pr1;
+    public void setP(List<String> p) {
+        P = p;
     }
 
-    public void setPr1(String pr1) {
-        this.pr1 = pr1;
+    public List<ExternalLink> getE() {
+        return E;
     }
 
-    public String getPr2() {
-        return pr2;
+    public void setE(List<ExternalLink> e) {
+        E = e;
     }
 
-    public void setPr2(String pr2) {
-        this.pr2 = pr2;
+    public Boolean getF() {  //is it final?
+        if(null==F) return false;
+        return F;
+    }
+
+    public void setF(Boolean f) {
+        F = f;
+    }
+
+    public void setTeam(final int idx, final String team){
+        if(null==T) T = new ArrayList<>();
+        for (int i = T.size(); i <= idx; i++) {
+            T.add(""); //add to list if not already there
+        }
+        T.set(idx, team);
+    }
+
+    public void setT1(final Boolean junk, final String team){
+        setTeam(TEAM1_IDX, team);
+    }
+
+    public void setT2(final Boolean junk, final String team){
+        setTeam(TEAM2_IDX, team);
+    }
+
+    public void setPrevLink(final int idx, final String prev){
+        if(null==P) P = new ArrayList<>();
+        for (int i = P.size(); i <= idx; i++) {
+            P.add(""); //add to list if not already there
+        }
+        P.set(idx, prev);
+    }
+
+    public void setExtLink(final int idx, final String label, final String matchId, final Boolean src){
+        if(null==E) E = new ArrayList<>();
+        for (int i = E.size(); i <= idx; i++) {
+            E.add(null); //add to list if not already there
+        }
+        E.set(idx, new ExternalLink(label, matchId, src));
+    }
+
+    public String getTeam(final int idx){
+        if(null==T) return "";
+        if(idx > T.size()-1) return "";
+        return T.get(idx);
+    }
+
+    public String getT1(final Boolean junk) {
+        return getTeam(TEAM1_IDX);
+    }
+
+    public String getT2(final Boolean junk) {
+        return getTeam(TEAM2_IDX);
+    }
+
+    public String getPrevLink(final int idx){
+        if(null==P) return "";
+        if(idx > P.size()-1) return "";
+        return P.get(idx);
+    }
+
+    public String getPr1(final Boolean junk) {
+        return getPrevLink(TEAM1_IDX);
+    }
+
+    public String getPr2(final Boolean junk) {
+        return getPrevLink(TEAM2_IDX);
+    }
+
+    public String getExtLinkLabel(final int idx){
+        if(null==E) return "";
+        if(idx > E.size()-1) return "";
+        return E.get(idx).getL();
+    }
+
+    public String getExtLinkMatchId(final int idx){
+        if(null==E) return "";
+        if(idx > E.size()-1) return "";
+        return E.get(idx).getM();
+    }
+
+    public Boolean getExtLinkSrcFlag(final int idx){
+        if(null==E) return false;
+        if(idx > E.size()-1) return false;
+        return E.get(idx).getS();
     }
 
     public String getW() {
         return W;
     }
 
+    public String getLoser(final Boolean junk) {
+        if(null==getW() || getW().isEmpty()) return "";
+        Log.d(TAG, "DB:getLoser: " + toString());
+        if(getW().equals(getT1(true))) return getT2(true);
+        else if(getW().equals(getT2(true))) return getT1(true);
+        else return "";
+    }
+
     public void setW(String w) {
         W = w;
     }
 
-    public String getExt() {
-        return ext;
-    }
+    public void setWinnerString() {
+        String team1 = getT1(true);
+        String team2 = getT2(true);
+        if(team1.isEmpty() && team2.isEmpty()) {
+            //if t1 & t2 are null, then its a leaf node.
+            //NODELEAF (winner is set), BYELEAF or EXTERNALLEAF.
+            Log.d(TAG, "setWinnerString, nothing to do: " + toString());
+            return;
+        }
 
-    public void setExt(String ext) {
-        this.ext = ext;
-    }
+        Log.d(TAG, "setWinnerString:" + team1 + " vs " + team2);
+        if(team1.equals(Constants.BYE)) setW(team2);
+        else if(team2.equals(Constants.BYE)) setW(team1);
 
-    public String getExtFixtureLabel(final boolean junk) {
-        return getExt();
+        Log.d(TAG, "setWinnerString: " + toString());
     }
 
     //public Boolean isBye() ==> adds "bye" to firebase DB
     public Boolean isBye(final boolean junk) {
-        if(getT1().equals(Constants.BYE) && getT2().isEmpty())
-            return true;
-        if(getT2().equals(Constants.BYE) && getT1().isEmpty())
-            return true;
+        //If this is a BYE LEAF NODE, team1 will be set as Bye and team2 will be empty
+
+        if(null!=getW() && getW().equals(Constants.BYE)) return true;
+        if(getT1(true).equals(Constants.BYE) && getT2(true).equals(Constants.BYE)) return true;
+        //if(getTeam(TEAM1_IDX).equals(Constants.BYE) && getTeam(TEAM2_IDX).isEmpty())
+        //    return true;
+
         return false;
     }
 
     //public Boolean isBye() ==> adds "bye" to firebase DB
     public Boolean oneTeamGettingABye(final boolean junk) {
-        if(getT1().equals(Constants.BYE) || getT2().equals(Constants.BYE))
+        //If this is a BYE NODE, one of the teams will be BYE
+        if(getTeam(TEAM1_IDX).equals(Constants.BYE) || getTeam(TEAM2_IDX).equals(Constants.BYE))
             return true;
         return false;
     }
 
-    //junk is a dummy param added so that firebase doesnt add another attribute to DB
-    public void setExternalLink(final String desc, final boolean junk) {
-        setExt(desc); //fixtureName+"_"+matchId
-        this.t1 = "";
-        this.pr1 = "";
-        this.t2 = Constants.BYE;
-        this.pr2 = "";
-        this.W = "";
+    public Boolean isExternalLink(final int junk) {
+        if(E==null) return false;
+        if(E.size()>0) return true;
+        return false;
     }
 
-    public Boolean isExternalLink(final String fixtureName, final String matchId) {
-        if(getExt().equals(fixtureName + "_" + matchId)) return true;
+    Boolean isThereAWinner(Boolean junk) {
+        return !isEmpty(getW());
+    }
+
+    Boolean isEmpty(final String s) {
+        if(null==s) return true;
+        if(s.isEmpty()) return true;
         return false;
     }
 
     @Override
     public String toString() {
-        return "FixtureDBEntry{" +
-                "t1='" + t1 + '\'' +
-                ", t2='" + t2 + '\'' +
-                ", pr1='" + pr1 + '\'' +
-                ", pr2='" + pr2 + '\'' +
-                ", W='" + W + '\'' +
-                ", ext='" + ext + '\'' +
-                '}';
+        return "TournaFixtureDBEntry{" +
+                "T=" + T +
+                ", P=" + P +
+                ", E=" + E +
+                ", W=" + W + '}';
     }
 }
