@@ -49,6 +49,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
         Log.d(TAG, "onCreate: ");
         mTUtil = new TournaUtil(TournaLanding.this, TournaLanding.this);
         mCommon = SharedData.getInstance();
+
         mCustomDialog = new TournaEditTextDialog(TournaLanding.this, TournaLanding.this);
         mTournaList = new ArrayList<String>();
         mTournaLA = new ArrayAdapter<String>(
@@ -73,9 +74,11 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
         mTournaLV.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
+
                 if(!mCommon.isRoot()) return false;
                 if (i >= mTournaList.size()) return false;
-                mCommon.wakeUpDBConnection();
+                mCommon.wakeUpDBConnection_profile();
+
 
                     Log.d(TAG, "mTournaLV onItemClick: " + mTournaList.get(i));
                     final String tourna = mTournaList.get(i);
@@ -127,6 +130,10 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
         super.onResume();
         Log.d(TAG, "onResume: ");
 
+        if(mCommon.isDBUpdated()) {
+            refresh();
+            mCommon.setDBUpdated(false);
+        }
     }
 
     //CallbackRoutine Callback interfaces
@@ -189,8 +196,11 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
                 break;
             // action with ID action_settings was selected
             case R.id.action_settings:
-                Intent myIntent = new Intent(TournaLanding.this, LoginActivity.class);
-                myIntent.putExtra(Constants.ACTIVITY, Constants.ACTIVITY_TOURNA_SETTINGS);
+                //wake up connection and read profile again from DB to check for password changes
+                mCommon.wakeUpDBConnection_profile();
+                //Intent myIntent = new Intent(TournaLanding.this, LoginActivity.class);
+                //myIntent.putExtra(Constants.ACTIVITY, Constants.ACTIVITY_TOURNA_SETTINGS);
+                Intent myIntent = new Intent(TournaLanding.this, TournaSettings.class);
                 TournaLanding.this.startActivity(myIntent);
                 break;
             case R.id.action_summary:
@@ -209,6 +219,9 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     }
 
     private void deleteTourna(final String tourna) {
+        if(!mCommon.isPermitted(getApplicationContext())) {
+            return;
+        }
         Log.v(TAG, "deleteTourna:" + tourna);
         SharedData.getInstance().wakeUpDBConnection();
         String msg = "Existing tournament data will be lost permanently. Are you sure? ";

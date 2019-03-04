@@ -616,7 +616,7 @@ public class Settings extends AppCompatActivity {
         Log.w(TAG, "onClickCreateNewInnings: mWinPercNum=" + SharedData.getInstance().mWinPercNum);
 
         //If there is no lock parameter in DB, create it now.
-        mCommon.createDBLock();
+        mCommon.createDBLock(null);
 
         if (mCommon.mInnings.isEmpty()) {
             if (!mCommon.isDBConnected()) {

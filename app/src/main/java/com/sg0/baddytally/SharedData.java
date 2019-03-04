@@ -480,17 +480,20 @@ public class SharedData {
          */
 
         /* This routine was first implemented for the below DB node:
-        final DatabaseReference inningsDBRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.INTERNALS).child("awake");
+        final DatabaseReference inningsDBRef = FirebaseDatabase.getInstance().getReference()
+                                               .child(mClub).child(Constants.INTERNALS).child("awake");
 
         But, then it was changed to read user-data:
         Instead of simply doing a mock write to wakeup DB connection, lets keep tab of the last login from this user.
         */
+        if(mClub.isEmpty() || mUser.isEmpty()) return;
         Date c = Calendar.getInstance().getTime();
         SimpleDateFormat df = new SimpleDateFormat("MM-dd", Locale.CANADA);
         final String login_day = df.format(c);
 
 
-        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.ACTIVE_USERS).child(mUser);
+        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub)
+                .child(Constants.ACTIVE_USERS).child(mUser);
         dbRef.runTransaction(new Transaction.Handler() {
             @NonNull
             @Override
@@ -532,6 +535,69 @@ public class SharedData {
         });
     }
 
+    public void wakeUpDBConnection_profile() {
+        // Do a mock transaction to wake up the database connection.
+        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                .child(mClub).child(Constants.PROFILE);
+
+        dbRef.runTransaction(new Transaction.Handler() {
+            @NonNull
+            @Override
+            public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
+
+                //Log.w(TAG, "wakeUpDBConnection_profile: onDataChange");
+                for (MutableData child : mutableData.getChildren()) {
+                    if(null==child) continue;
+                    switch (child.getKey()) {
+                        case "admincode":
+                            mAdminCode = child.getValue(String.class);
+                            break;
+                        case "memcode":
+                            mMemCode = child.getValue(String.class);
+                            break;
+                        case "rootcode":
+                            mRootCode = child.getValue(String.class);
+                            break;
+                        case "numgroups":
+                            mNumOfGroups = child.getValue(Integer.class);
+                            break;
+                        case "wake":
+                            //just write something into DB to keep the DB connection alive
+                            Boolean wake = child.getValue(Boolean.class);
+                            child.setValue(!wake);
+                            Log.w(TAG, "doTransaction: wake=" + !wake );
+                            break;
+                    } //switch case
+                }
+                Log.w(TAG, "wakeUpDBConnection_profile: onDataChange:" + mAdminCode + "/" + mRootCode);
+                return Transaction.success(mutableData);
+            }
+
+            @Override
+            public void onComplete(@Nullable DatabaseError error, boolean committed,
+                                   @Nullable DataSnapshot dataSnapshot) { }
+        });
+    }
+
+    public Boolean isPermitted(final Context context){
+        SharedPreferences prefs = context.getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+        final String secpd = prefs.getString(Constants.DATA_SEC, "");
+        Log.d(TAG, "isPermitted: " + secpd + " " +mRootCode + "," + mAdminCode + "," + mMemCode);
+        if(secpd.isEmpty()) return true;
+        if (secpd.equals(mAdminCode)) {
+            return true;
+        } else if (secpd.equals(mMemCode)) {
+            return true;
+        } else if (secpd.equals(mRootCode)) {
+            return true;
+        }
+
+        Toast.makeText(context,
+                "No permission, login again using new credentials",
+                Toast.LENGTH_LONG).show();
+        return false;
+    }
+
     public boolean isDBLocked() {
         Log.d(TAG, "isDBLocked: " + mDBLock + "," + mDBLockAcquireTime);
         return mDBLock;
@@ -539,14 +605,18 @@ public class SharedData {
 
     //There is no need to synchronize this, as it is never called from different threads.
     //Idea is to synchronize with others users operating on teh same DB.
-    private void changeDBLockState(final boolean target) {
+    private void changeDBLockState(final boolean target, final String tourna) {
         // Why a lock?
         //    -- main reason being Innings creation is done by only one root user.
         //    -- added advantage is that a DB online check is done before the critical operation is performed
         //    -- there are comments saying that performing a write makes sure that the DB is in sync.
         //       (but that might be only for that particular DB tree, anyways!)
-        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub)
-                .child(Constants.INTERNALS).child(Constants.LOCK);
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub);
+        if(null==tourna || tourna.isEmpty())
+            dbRef = dbRef.child(Constants.INTERNALS).child(Constants.LOCK);
+        else
+            dbRef = dbRef.child(Constants.TOURNA).child(tourna)
+                    .child(Constants.INTERNALS).child(Constants.LOCK);
         dbRef.runTransaction(new Transaction.Handler() {
             @NonNull
             @Override
@@ -561,11 +631,16 @@ public class SharedData {
                 }
                 else {
                     if (locked == target) {
-                        Log.w(TAG, "changeDBLockState: Already set to " + target);
+                        Log.w(TAG, "changeDBLockState:" + tourna + " Already set to " + target);
                         return Transaction.abort();
                     } else {
-                        Log.w(TAG, "changeDBLockState: lock changed to " + target);
+                        Log.w(TAG, "changeDBLockState:" + tourna + " lock changed to " + target);
                         mutableData.setValue(target);
+                        //SGO: mDBLock was designed to be set from onComplete below.
+                        //But, there seems to be cases where onComplete() doesnt seem to be invoked.
+                        //I saw this for a success case (lock changed to true), may be it happens on failure cases too.
+                        //Below set is added as a workaround.
+                        mDBLock = target;
                     }
                     return Transaction.success(mutableData);
                 }
@@ -582,14 +657,13 @@ public class SharedData {
                 } else {
                     try {
                         mDBLock = dataSnapshot.getValue(Boolean.class);
-                        //save the last time a lock was acquired
                         Log.w(TAG, "changeDBLockState: onComplete: Success:" + mDBLock + "," + mDBLockAcquireTime);
                     } catch (NullPointerException e) {
                         //java.lang.NullPointerException: Attempt to invoke virtual method 'boolean java.lang.Boolean.booleanValue()' on a null object reference
                         //SGO: If INTERNALS/locked node is not present in DB, dataSnapshot is not set to null, but a null pointer exception
                         //     is thrown here. Just gonna catch it here to avoid crash.
                         //This was seen in a case where innings was on going, and the app was upgraded. Newer version of app depended on INTERNALS/locked
-                        //but the older version never new about INTERNALS/locked. Workaround was to manually create INTERNALS/locked in the DB for that club.
+                        //but the older version never knew about INTERNALS/locked. Workaround was to manually create INTERNALS/locked in the DB for that club.
                         //This issue will not happen if the new app is used to create the innings (INTERNALS/locked node iwll be created in DB).
                         Log.w(TAG, "changeDBLockState: onComplete: Error:" + e.getMessage());
                         mDBLock = false;
@@ -600,38 +674,71 @@ public class SharedData {
         });
     }
 
+
+/* In some cases, getting a lock takes more time. See the sequence below.
+03-04 15:57:56.081 23935-23935/com.sg0.baddytally I/SharedData: acquireDBLock: acquiring...0
+03-04 15:57:56.604 23935-23935/com.sg0.baddytally V/TournaBaseEnterData: After DB lock wait...
+03-04 15:57:56.605 23935-23935/com.sg0.baddytally D/TournaBaseEnterData: workToUpdateDB: club1
+03-04 15:57:56.605 23935-23935/com.sg0.baddytally D/SharedData: isDBLocked: false,25862217
+03-04 15:57:56.605 23935-23935/com.sg0.baddytally E/TournaBaseEnterData: workToUpdateDB: Another update is in progress, please refresh and try again later...
+03-04 15:57:57.106 23935-23935/com.sg0.baddytally D/TournaBaseEnterData: releaseLockAndCleanup: fin=true, dbUpd=true
+03-04 15:57:57.106 23935-23935/com.sg0.baddytally D/SharedData: isDBLocked: false,25862217
+03-04 15:57:57.270 23935-24054/com.sg0.baddytally W/SharedData: wakeUpDBConnection: update DB for user:usr
+03-04 15:57:57.295 23935-24054/com.sg0.baddytally W/SharedData: changeDBLockState:DEMO lock changed to true
+03-04 15:57:57.321 23935-23935/com.sg0.baddytally I/Choreographer: Skipped 43 frames!  The application may be doing too much work on its main thread.
+03-04 15:57:57.384 23935-23935/com.sg0.baddytally W/SharedData: wakeUpDBConnection: onComplete: Success: ActiveUserDBEntry{ver='2.1', role='root', device='C6806', last_login='03-04'}
+03-04 15:57:57.429 23935-23935/com.sg0.baddytally W/SharedData: changeDBLockState: onComplete: Success:true,25862217
+*/
+
     public void acquireDBLock() {
+        acquireDBLock(null);
+    }
+
+    public void acquireDBLock(final String tourna) {
         mDBLock = false;
         Log.i(TAG, "acquireDBLock: acquiring..." + mDBLockAcquireTime);
-        changeDBLockState(true);
+        changeDBLockState(true, tourna);
         if(mDBLockAcquireTime >0L) {
             Long timeInMins = System.currentTimeMillis() / 60000;
             if ((timeInMins - mDBLockAcquireTime) > 3) {
                 //DB is been locked for ore than 3 mins
                 Log.w(TAG, "isDBLocked: force release lock: " + (timeInMins - mDBLockAcquireTime) +
                         " timeInMins=" + timeInMins + " mDBLockAcquireTime=" + mDBLockAcquireTime);
-                releaseDBLock(true);
+                releaseDBLock(true, tourna);
             }
         } else mDBLockAcquireTime = System.currentTimeMillis() / 60000;
     }
 
     public void releaseDBLock() {
         //public API: Lock is released only if locked by this device.
-        releaseDBLock(false);
+        releaseDBLock(false, null);
     }
 
-    private void releaseDBLock(final Boolean force) {
+    public void releaseDBLock(final String tourna) {
+        //public API: Lock is released only if locked by this device.
+        releaseDBLock(false, tourna);
+    }
 
-        if(isDBLocked() || force) {
+    private void releaseDBLock(final Boolean force, final String tourna) {
+
+        if(force || isDBLocked()) {
             //SGO: If force flag is set, Lock is released even if not locked by this device.
-            changeDBLockState(false);
+            changeDBLockState(false, tourna);
             mDBLockAcquireTime = 0L;
+            Log.i(TAG, "releaseDBLock: releasing..." + mDBLockAcquireTime);
         }
-        Log.i(TAG, "releaseDBLock: releasing..." + mDBLockAcquireTime);
+
     }
 
-    public void createDBLock() {
-        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.INTERNALS);
+    public void createDBLock(final String tourna) {
+        DatabaseReference tmpDBRef = FirebaseDatabase.getInstance().getReference()
+                .child(mClub);
+        if(null==tourna || tourna.isEmpty())
+            tmpDBRef = tmpDBRef.child(Constants.INTERNALS);
+        else
+            tmpDBRef = tmpDBRef.child(Constants.TOURNA).child(tourna)
+                    .child(Constants.INTERNALS);
+        final DatabaseReference dbRef = tmpDBRef;
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -672,6 +779,7 @@ public class SharedData {
                         case "numgroups":
                             mNumOfGroups = child.getValue(Integer.class);
                             break;
+
                     } //switch case
                 }
                 //Log.w(TAG, "fetchProfile: onDataChange:" + mAdminCode + "/" + mRootCode);

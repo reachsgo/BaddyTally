@@ -2,6 +2,7 @@ package com.sg0.baddytally;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -23,9 +24,11 @@ import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -183,13 +186,42 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
 
         //if (data.mTournaMode) {
         if(mTournaFlag || mActToStart.equals(Constants.ACTIVITY_SETTINGS) ||
-                mActToStart.equals(Constants.ACTIVITY_TOURNA_SETTINGS)) {
+                mActToStart.equals(Constants.ACTIVITY_TOURNA_SETTINGS) ||
+                mActToStart.equals(Constants.INITIAL)) {
             Log.d(TAG, "onCreate Tournament mode");
             findViewById(R.id.options_ll).setVisibility(View.GONE);
             findViewById(R.id.new_round_btn).setVisibility(View.GONE);
             findViewById(R.id.current_round).setVisibility(View.GONE);
             findViewById(R.id.time_now).setVisibility(View.GONE);
         }
+
+        Switch clearcache_sw = findViewById(R.id.clearcache_sw);
+        clearcache_sw.setChecked(false);
+        clearcache_sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @SuppressLint("ApplySharedPref")
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean bChecked) {
+                if (bChecked) {
+                    SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.clear();
+                    editor.commit();
+                    SharedData.getInstance().clear();
+                    SharedData.getInstance().setDBUpdated(true); //notify Main to refresh view
+                    Toast.makeText(LoginActivity.this, "Cache cleared!", Toast.LENGTH_SHORT)
+                            .show();
+
+                    //Restart the app: Needed to re-invoke Application.onCreate() to disable DB persistence,
+                    //though that behavior is very inconsistent. See comments in ScoreTally.java.
+                    //setResult(Constants.RESTARTAPP);
+                    //killActivity();
+
+                    Intent intent = new Intent(getApplicationContext(), MainSigninActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivity(intent);
+                }
+            }
+        });
 
     }
 
@@ -304,6 +336,11 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
 
         showProgress(false);
         if (mInitialAttempt && mActToStart.isEmpty()) {
+            killActivity();   //finish was not ending the activity here.
+            return;
+        }
+
+        if(mActToStart.equals(Constants.INITIAL)) {
             killActivity();   //finish was not ending the activity here.
             return;
         }

@@ -48,7 +48,7 @@
             android:maxLength="12"
             android:maxLines="1"
             android:singleLine="true"
-            android:textColor="@color/colorTealGreen"
+            android:textColor="@color/colorWhite"
             android:textColorHint="@android:color/darker_gray"
             android:textSize="15sp"
             android:textStyle="italic" />
@@ -112,7 +112,7 @@
             android:hint="player1"
             android:maxLines="1"
             android:singleLine="true"
-            android:textColor="@color/colorTealGreen"
+            android:textColor="@color/colorWhite"
             android:textColorHint="@android:color/darker_gray"
             android:textSize="15sp"
             android:textStyle="italic" />
@@ -124,7 +124,7 @@
             android:hint="player2"
             android:maxLines="1"
             android:singleLine="true"
-            android:textColor="@color/colorTealGreen"
+            android:textColor="@color/colorWhite"
             android:textColorHint="@android:color/darker_gray"
             android:textSize="15sp"
             android:textStyle="italic" />
@@ -143,7 +143,7 @@
             android:hint="player3"
             android:maxLines="1"
             android:singleLine="true"
-            android:textColor="@color/colorTealGreen"
+            android:textColor="@color/colorWhite"
             android:textColorHint="@android:color/darker_gray"
             android:textSize="15sp"
             android:textStyle="italic" />
@@ -155,7 +155,7 @@
             android:hint="player4"
             android:maxLines="1"
             android:singleLine="true"
-            android:textColor="@color/colorTealGreen"
+            android:textColor="@color/colorWhite"
             android:textColorHint="@android:color/darker_gray"
             android:textSize="15sp"
             android:textStyle="italic" />
@@ -174,7 +174,7 @@
                 android:hint="player5"
                 android:maxLines="1"
                 android:singleLine="true"
-                android:textColor="@color/colorTealGreen"
+                android:textColor="@color/colorWhite"
                 android:textColorHint="@android:color/darker_gray"
                 android:textSize="15sp"
                 android:textStyle="italic" />
@@ -186,7 +186,7 @@
                 android:hint="player6"
                 android:maxLines="1"
                 android:singleLine="true"
-                android:textColor="@color/colorTealGreen"
+                android:textColor="@color/colorWhite"
                 android:textColorHint="@android:color/darker_gray"
                 android:textSize="15sp"
                 android:textStyle="italic" />
@@ -205,7 +205,7 @@
                 android:hint="player5"
                 android:maxLines="1"
                 android:singleLine="true"
-                android:textColor="@color/colorTealGreen"
+                android:textColor="@color/colorWhite"
                 android:textColorHint="@android:color/darker_gray"
                 android:textSize="15sp"
                 android:textStyle="italic" />
@@ -217,7 +217,7 @@
                 android:hint="player6"
                 android:maxLines="1"
                 android:singleLine="true"
-                android:textColor="@color/colorTealGreen"
+                android:textColor="@color/colorWhite"
                 android:textColorHint="@android:color/darker_gray"
                 android:textSize="15sp"
                 android:textStyle="italic" />

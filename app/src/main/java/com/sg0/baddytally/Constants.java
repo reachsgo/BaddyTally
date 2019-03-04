@@ -43,6 +43,7 @@ class Constants {
     public static final String ACTIVITY = "Activity";
     public static final String ACTIVITY_SETTINGS = "Settings";
     public static final String ACTIVITY_TOURNA_SETTINGS = "TournaSettings";
+    public static final String INITIAL = "Initial";
     public static final String TOURNA = "tournaments";
     public static final String DESCRIPTION = "desc";
     public static final String ACTIVE = "active";

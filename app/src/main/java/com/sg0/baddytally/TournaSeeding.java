@@ -261,7 +261,13 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
         HashMap<String,TournaFixtureDBEntry> fixMap = sesr.createSEFixture(mSeededTeams);
         writeFixtureToDB(fixMap, Constants.FIXTURE_UPPER);
         //unitTest(fixMap);
-        killActivity();
+
+
+        mCommon.mTournament = mTourna;
+        Intent myIntent = new Intent(TournaSeeding.this, TournaMainActivity.class);
+        TournaSeeding.this.startActivity(myIntent);
+
+        //killActivity();
     }
 
     public void doubleElimination() {
@@ -275,7 +281,12 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
         writeFixtureToDB(fixMap, Constants.FIXTURE_LOWER);
         updateFixtureForExtLinks(ubFixMap, fixMap, Constants.FIXTURE_LOWER, Constants.FIXTURE_UPPER);
         //unitTest(fixMap);
-        killActivity();
+
+        mCommon.mTournament = mTourna;
+        Intent myIntent = new Intent(TournaSeeding.this, TournaMainActivity.class);
+        TournaSeeding.this.startActivity(myIntent);
+
+        //killActivity();
     }
     
     void isFixtureInDB(final String fixLabel) {
@@ -296,7 +307,7 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
                     //Give root an option to overwrite
                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaSeeding.this);
                     alertBuilder.setTitle("Warning");
-                    alertBuilder.setMessage("Fixture is already in DB.\n" +
+                    alertBuilder.setMessage("Fixture exists for this tournament.\n\n" +
                             "You will lose all the tournament data, if you overwrite the data in DB.\n" +
                             "Select cancel below or you are the destroyer!");
                     alertBuilder.setPositiveButton("Overwrite", new DialogInterface.OnClickListener() {

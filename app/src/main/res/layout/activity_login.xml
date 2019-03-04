@@ -206,6 +206,25 @@
             </LinearLayout>
         </ScrollView>
 
+        <LinearLayout
+            android:id="@+id/clearcache_ll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:background="@color/colorBlack"
+            android:orientation="horizontal">
+
+            <Switch
+                android:id="@+id/clearcache_sw"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="5dp"
+                android:layout_marginStart="20dp"
+                android:text="Logout / Clear cache"
+                android:textColor="@android:color/white"
+                android:textStyle="bold" />
+
+        </LinearLayout>
 
         <ImageView
             android:layout_width="match_parent"

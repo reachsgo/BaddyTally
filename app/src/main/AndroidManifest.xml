@@ -60,7 +60,7 @@
             android:noHistory="false" />
         <activity
             android:name=".TournaSeeding"
-            android:noHistory="false" />
+            android:noHistory="true" />
     </application>
 
 </manifest>

@@ -143,6 +143,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             }
         });
         mCommon = SharedData.getInstance();
+        if(!mCommon.isPermitted(getApplicationContext())) killActivity();
         mAlertTitle = "";
         mAlertMsg = "";
         mFinishActivity = false;
@@ -742,7 +743,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             //or collect all the data, increment in appl memory and then finally do a single write to DB at the end.
             //To avoid a conflict when 2 users are entering the same score.
             //Without lock, inconsistency is seen: missing journal entry or points are not added.
-            SharedData.getInstance().acquireDBLock();
+            SharedData.getInstance().acquireDBLock(mCommon.mTournament);
 
             //Give some time for all other threads (firebase DB updates) to catch up.
             //Updates includes DB lock update.
@@ -776,7 +777,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
                         releaseLockAndCleanup();
                     }
                 }
-            }, 500); //no need of a long wait here, as the firebase local cache will already be updated
+            }, 2000); //no need of a long wait here, as the firebase local cache will already be updated
 
         } else finish();
 
@@ -1003,7 +1004,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
 
     private void releaseLockAndCleanup() {
         Log.d(TAG, "releaseLockAndCleanup: fin=" + mFinishActivity + ", dbUpd=" + mCommon.isDBUpdated());
-        mCommon.releaseDBLock();
+        mCommon.releaseDBLock(mCommon.mTournament);
         if (null != mProgressDialog && mProgressDialog.isShowing()) {
             mProgressDialog.dismiss();
             mProgressDialog = null;
@@ -1019,7 +1020,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
                 public void run() {
                     if (mFinishActivity) finish();
                 }
-            }, 2000);
+            }, 1000);
         } else if(!mAlertMsg.isEmpty()) {
             //show dialog
             AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaBaseEnterData.this);

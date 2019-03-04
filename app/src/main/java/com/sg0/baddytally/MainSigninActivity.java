@@ -30,6 +30,7 @@ public class MainSigninActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent myIntent = new Intent(MainSigninActivity.this, LoginActivity.class);
+                myIntent.putExtra(Constants.ACTIVITY, Constants.INITIAL);
                 MainSigninActivity.this.startActivity(myIntent);
             }
         });
@@ -50,15 +51,21 @@ public class MainSigninActivity extends AppCompatActivity {
 
         //Maintain DB connection state
         SharedData.getInstance().setUpDBConnectionListener();
+        SharedData.getInstance().wakeUpDBConnection_profile();
+
+        //login once when the app is started
+        //Intent myIntent = new Intent(MainSigninActivity.this, LoginActivity.class);
+        //myIntent.putExtra(Constants.ACTIVITY, Constants.INITIAL);
+        //MainSigninActivity.this.startActivity(myIntent);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "onResume: ");
-        SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
-        String club = prefs.getString(Constants.DATA_CLUB, "");
-        if (!club.isEmpty()) {
+        //SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+        //String club = prefs.getString(Constants.DATA_CLUB, "");
+        if (!SharedData.getInstance().mClub.isEmpty()) {
             Intent myIntent = new Intent(MainSigninActivity.this, MainSelection2.class);
             MainSigninActivity.this.startActivity(myIntent);
         }
