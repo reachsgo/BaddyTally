@@ -10,6 +10,7 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -188,8 +189,12 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     }
 
     private void showOptions(final View view, final ViewHolder holder) {
-        if (null!=mFullListOfPlayers) return;  //nothing to be done if the view (supposed to be readonly transient view) is for the full set of players.
-        PopupMenu popup = new PopupMenu(mContext, view);
+
+        //nothing to be done if the view (supposed to be readonly transient view) is for the full set of players.
+        if (null!=mFullListOfPlayers) return;
+
+        Context wrapper = new ContextThemeWrapper(mContext, R.style.RegularPopup);
+        PopupMenu popup = new PopupMenu(wrapper, view);
         popup.getMenuInflater().inflate(R.menu.main_popup_menu, popup.getMenu());
         if (Build.VERSION.SDK_INT >= 23) {
             popup.setGravity(Gravity.RIGHT);

@@ -1,5 +1,7 @@
 package com.sg0.baddytally;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
@@ -7,8 +9,11 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 
 public class MainSigninActivity extends AppCompatActivity {
@@ -32,20 +37,6 @@ public class MainSigninActivity extends AppCompatActivity {
                 Intent myIntent = new Intent(MainSigninActivity.this, LoginActivity.class);
                 myIntent.putExtra(Constants.ACTIVITY, Constants.INITIAL);
                 MainSigninActivity.this.startActivity(myIntent);
-            }
-        });
-
-        Button settings = findViewById(R.id.settings);
-        settings.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                //SharedData.getInstance().wakeUpDBConnection();
-                Intent settingsIntent = new Intent(MainSigninActivity.this, Settings.class);
-                MainSigninActivity.this.startActivityForResult(settingsIntent, Constants.SETTINGS_ACTIVITY);
-                //Intent myIntent = new Intent(MainSigninActivity.this, LoginActivity.class);
-                //myIntent.putExtra(Constants.ACTIVITY, Constants.ACTIVITY_SETTINGS);
-                //MainSigninActivity.this.startActivity(myIntent);
-
             }
         });
 
@@ -77,5 +68,74 @@ public class MainSigninActivity extends AppCompatActivity {
         super.onBackPressed();
         finish();
     }
+
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.basic_menu_main, menu);
+        menu.findItem(R.id.action_logout).setVisible(false);
+        menu.findItem(R.id.action_refresh).setVisible(false);
+        MenuItem settings = menu.findItem(R.id.action_settings);
+        settings.setTitle("New Club");
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            // action with ID action_refresh was selected
+            case R.id.action_refresh:
+                //nothing to do
+                break;
+            // action with ID action_settings was selected
+            case R.id.action_settings:
+                //create a new club
+                AlertDialog.Builder newclubDialog = new AlertDialog.Builder(MainSigninActivity.this);
+                newclubDialog.setMessage(
+                        "You are about to send a request to ScoreTally team to create a new club login for you.\n" +
+                        "ScoreTally team will get back to you after setting up your account.\n\n" +
+                        "You will now be directed to your favourite email client. Please fill in the template details before sending the email.")
+                        .setTitle(SharedData.getInstance().getTitleStr("Create new club:",
+                                MainSigninActivity.this))
+                        .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                sendEmail();
+                            }
+                        }).show();
+                break;
+            case R.id.action_logout:
+                break;
+            case R.id.action_about:
+                //int versionCode = BuildConfig.VERSION_CODE;
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainSigninActivity.this);
+                builder.setMessage("Version: " + BuildConfig.VERSION_NAME)
+                        .setTitle(SharedData.getInstance().getTitleStr(Constants.APPNAME, MainSigninActivity.this))
+                        .setNeutralButton("Ok", null).show();
+                break;
+            default:
+                break;
+        }
+        return true;
+    }
+
+    private void sendEmail() {
+        Intent email = new Intent(Intent.ACTION_SEND);
+        email.putExtra(Intent.EXTRA_EMAIL, new String[]{"scoretallyteam@gmail.com"});
+        email.putExtra(Intent.EXTRA_SUBJECT, "ScoreTally: Request to create new club");
+        email.putExtra(Intent.EXTRA_TEXT, "Please fill in the below template and send the email. " +
+                        "ScoreTally team will get back to you after setting up your account.\n" +
+                "\nMy Contact Info:\n" +
+                "        <name>\n        <phone>\n        <email>\n" +
+                "\n\nNew Club Info:\n" +
+                "        short name : <short name>\n" +
+                "        description : <long name>\n" +
+                "        max players : <N>\n" +
+                "\n\nNotes: <any queries/comments/suggestions>\n" +
+                "\n\nCheers,\n" +
+                "<yours truly>\n\n"
+        );
+        email.setType("message/rfc822");
+        startActivity(Intent.createChooser(email, "Choose an Email client :"));
+    }
+
 
 }

@@ -1,5 +1,6 @@
 package com.sg0.baddytally;
 
+import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.graphics.Typeface;
 import android.os.Build;
@@ -18,6 +19,7 @@ import android.text.TextUtils;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -248,7 +250,8 @@ public class Summary extends AppCompatActivity {
     }
 
     private void showOptions(final View view) {
-        final PopupMenu popup = new PopupMenu(Summary.this, view);
+        Context wrapper = new ContextThemeWrapper(Summary.this, R.style.RegularPopup);
+        final PopupMenu popup = new PopupMenu(wrapper, view);
         popup.getMenuInflater().inflate(R.menu.summary_popup_menu, popup.getMenu());
         popup.getMenu().clear();
         Menu pMenu = popup.getMenu();

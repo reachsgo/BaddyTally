@@ -6,13 +6,13 @@
     android:orientation="vertical">
 
     <RelativeLayout
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
+        android:layout_width="220dp"
+        android:layout_height="130dp"
         android:layout_marginTop="30dp"
         android:layout_marginStart="10dp"
         android:layout_marginEnd="10dp"
         android:layout_gravity="center"
-        android:layout_weight="1"
+
         android:background="@drawable/birdie_b_left"
         android:orientation="horizontal">
 
@@ -30,12 +30,11 @@
     </RelativeLayout>
 
     <RelativeLayout
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
+        android:layout_width="220dp"
+        android:layout_height="130dp"
         android:layout_marginStart="10dp"
         android:layout_marginEnd="10dp"
         android:layout_gravity="center"
-        android:layout_weight="1"
         android:background="@drawable/birdie_b_right"
         android:orientation="horizontal">
 
@@ -52,15 +51,12 @@
 
     </RelativeLayout>
 
-    <LinearLayout
+    <ImageView
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginEnd="10dp"
+        android:layout_height="match_parent"
         android:layout_gravity="center"
-        android:background="@drawable/birdie"
-        android:layout_weight="1"
-        android:orientation="horizontal">
-    </LinearLayout>
+        android:background="@android:color/transparent"
+        android:contentDescription="smash"
+        android:src="@drawable/birdie" />
 
 </LinearLayout>

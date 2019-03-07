@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/birdie"
+    android:backgroundTint="@color/colorGold"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="200dp"
+        android:layout_height="20dp"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:layout_marginTop="25dp"
+        android:text="Match information"
+        android:textAllCaps="true"
+        android:textColor="@android:color/holo_red_dark"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <View
+        android:layout_width="200dp"
+        android:layout_height="4dp"
+        android:layout_marginTop="2dp"
+        android:layout_gravity="center"
+        android:background="@color/colorTealGreen" />
+
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/rname_tv"
+            android:layout_width="200dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:layout_margin="2dp"
+            android:textColor="@android:color/black"
+            android:textSize="12sp" />
+        <View
+            android:layout_width="200dp"
+            android:layout_height="1dip"
+            android:layout_gravity="center"
+            android:background="@color/colorTealGreen" />
+
+        <TextView
+            android:id="@+id/team1_tv"
+            android:layout_width="200dp"
+            android:layout_height="25dp"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:layout_marginTop="5dp"
+            android:textColor="@android:color/black"
+            android:textSize="15sp"
+            android:text="--"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/team1p_tv"
+            android:layout_width="200dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:layout_margin="1dp"
+            android:textColor="@android:color/black"
+            android:textSize="13sp" />
+
+        <TextView
+            android:layout_width="200dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:layout_margin="10dp"
+            android:text="vs"
+            android:textColor="@android:color/black"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/team2_tv"
+            android:layout_width="200dp"
+            android:layout_height="25dp"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:layout_margin="1dp"
+            android:textColor="@android:color/black"
+            android:text="--"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/team2p_tv"
+            android:layout_width="200dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:layout_margin="1dp"
+            android:textColor="@android:color/black"
+            android:textSize="13sp" />
+
+        <View
+            android:layout_marginTop="3dp"
+            android:layout_width="200dp"
+            android:layout_height="1dip"
+            android:layout_gravity="center"
+            android:background="@color/colorTealGreen" />
+
+        <TextView
+            android:id="@+id/winner_tv"
+            android:layout_width="200dp"
+            android:layout_height="25dp"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:layout_margin="10dp"
+            android:textColor="@android:color/black"
+            android:text="--"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="200dp"
+            android:layout_height="1dip"
+            android:layout_gravity="center"
+            android:background="@color/colorTealGreen" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/ok_button"
+        style="?android:textAppearanceSmall"
+        android:layout_width="200dp"
+        android:layout_height="20dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/roundbtn"
+        android:text="Ok"
+        android:textColor="@android:color/black"
+        android:textStyle="bold" />
+
+</LinearLayout>

@@ -73,7 +73,7 @@ public class SharedData {
     private boolean mUserNotifyEnabled;
     private boolean mDBConnected;
     private boolean mDBLock;
-    private Long mDBLockAcquireTime;
+    private Long mDBLockAcqAttemptTime;
     private String mStoreHistory;
     private ValueEventListener mDBConnectListener;
     public ArrayList<ActiveUserDBEntry> mActiveUsers;
@@ -140,7 +140,7 @@ public class SharedData {
         mUserNotifyEnabled = true;
         mDBConnected = false;
         mDBLock = false;
-        mDBLockAcquireTime = 0L;
+        mDBLockAcqAttemptTime = 0L;
         mStoreHistory = "";
         mActiveUsers = null;
         mGoldPresentPlayerNames = new HashSet<>();  //initialize for the first time.
@@ -599,7 +599,8 @@ public class SharedData {
     }
 
     public boolean isDBLocked() {
-        Log.d(TAG, "isDBLocked: " + mDBLock + "," + mDBLockAcquireTime);
+        Log.d(TAG, "isDBLocked: " + mDBLock + "," + mDBLockAcqAttemptTime);
+        if(mDBLock) mDBLockAcqAttemptTime = 0L;  //Acquire attempt was successful, so reset.
         return mDBLock;
     }
 
@@ -657,7 +658,7 @@ public class SharedData {
                 } else {
                     try {
                         mDBLock = dataSnapshot.getValue(Boolean.class);
-                        Log.w(TAG, "changeDBLockState: onComplete: Success:" + mDBLock + "," + mDBLockAcquireTime);
+                        Log.w(TAG, "changeDBLockState: onComplete: Success:" + mDBLock + "," + mDBLockAcqAttemptTime);
                     } catch (NullPointerException e) {
                         //java.lang.NullPointerException: Attempt to invoke virtual method 'boolean java.lang.Boolean.booleanValue()' on a null object reference
                         //SGO: If INTERNALS/locked node is not present in DB, dataSnapshot is not set to null, but a null pointer exception
@@ -696,17 +697,17 @@ public class SharedData {
 
     public void acquireDBLock(final String tourna) {
         mDBLock = false;
-        Log.i(TAG, "acquireDBLock: acquiring..." + mDBLockAcquireTime);
+        Log.i(TAG, "acquireDBLock: acquiring..." + mDBLockAcqAttemptTime);
         changeDBLockState(true, tourna);
-        if(mDBLockAcquireTime >0L) {
+        if(mDBLockAcqAttemptTime >0L) {
             Long timeInMins = System.currentTimeMillis() / 60000;
-            if ((timeInMins - mDBLockAcquireTime) > 3) {
+            if ((timeInMins - mDBLockAcqAttemptTime) > 3) {
                 //DB is been locked for ore than 3 mins
-                Log.w(TAG, "isDBLocked: force release lock: " + (timeInMins - mDBLockAcquireTime) +
-                        " timeInMins=" + timeInMins + " mDBLockAcquireTime=" + mDBLockAcquireTime);
+                Log.w(TAG, "isDBLocked: force release lock: " + (timeInMins - mDBLockAcqAttemptTime) +
+                        " timeInMins=" + timeInMins + " mDBLockAcqAttemptTime=" + mDBLockAcqAttemptTime);
                 releaseDBLock(true, tourna);
             }
-        } else mDBLockAcquireTime = System.currentTimeMillis() / 60000;
+        } else mDBLockAcqAttemptTime = System.currentTimeMillis() / 60000;
     }
 
     public void releaseDBLock() {
@@ -724,8 +725,8 @@ public class SharedData {
         if(force || isDBLocked()) {
             //SGO: If force flag is set, Lock is released even if not locked by this device.
             changeDBLockState(false, tourna);
-            mDBLockAcquireTime = 0L;
-            Log.i(TAG, "releaseDBLock: releasing..." + mDBLockAcquireTime);
+            mDBLockAcqAttemptTime = 0L;
+            Log.i(TAG, "releaseDBLock: releasing..." + mDBLockAcqAttemptTime);
         }
 
     }
@@ -993,5 +994,12 @@ public class SharedData {
         });
         alertBuilder.show();
     }
+
+    public static String truncate(String str, int len) {
+        if (str.length() > len) {
+            return str.substring(0, len) + "..";
+        } else {
+            return str;
+        }}
 }
 

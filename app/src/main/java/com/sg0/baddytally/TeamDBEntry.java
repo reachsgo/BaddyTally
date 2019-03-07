@@ -26,7 +26,7 @@ public class TeamDBEntry {
         this.id = id.toLowerCase();
         if(this.id.length()>MAX_ID_LEN)
             this.id = this.id.substring(0,MAX_ID_LEN-1);
-        Log.e("TeamDBEntry", "setId: " + this.id);
+        //Log.e("TeamDBEntry", "setId: " + this.id);
     }
 
     public List<String> getP() {

@@ -1,14 +1,16 @@
 package com.sg0.baddytally;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -35,7 +37,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
 
     private TournaUtil mTUtil;
     private SharedData mCommon;
-    private TournaEditTextDialog mCustomDialog;
+    //private TournaEditTextDialog mCustomDialog;
     private ListView mTournaLV;
     private ArrayAdapter mTournaLA;
     private ArrayList<String> mTournaList;
@@ -50,7 +52,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
         mTUtil = new TournaUtil(TournaLanding.this, TournaLanding.this);
         mCommon = SharedData.getInstance();
 
-        mCustomDialog = new TournaEditTextDialog(TournaLanding.this, TournaLanding.this);
+        //mCustomDialog = new TournaEditTextDialog(TournaLanding.this, TournaLanding.this);
         mTournaList = new ArrayList<String>();
         mTournaLA = new ArrayAdapter<String>(
                 this, R.layout.listitem_bigbold,
@@ -65,8 +67,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
                 if (mTournaList.size() > i) {
                     Log.d(TAG, "mTournaLV onItemClick: " + mTournaList.get(i));
                     mCommon.mTournament = mTournaList.get(i);
-                    Intent myIntent = new Intent(TournaLanding.this, TournaMainActivity.class);
-                    TournaLanding.this.startActivity(myIntent);
+                    selectActivityForTourna();
                 }
             }
         });
@@ -84,7 +85,8 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
                     final String tourna = mTournaList.get(i);
 
 
-                final PopupMenu popup = new PopupMenu(TournaLanding.this, view);
+                Context wrapper = new ContextThemeWrapper(TournaLanding.this, R.style.RedPopup);
+                final PopupMenu popup = new PopupMenu(wrapper, view);
                 popup.getMenuInflater().inflate(R.menu.summary_popup_menu, popup.getMenu());
                 if (Build.VERSION.SDK_INT >= 23) {
                     popup.setGravity(Gravity.END);
@@ -123,6 +125,25 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
 
     private void refresh() {
         mTUtil.fetchActiveTournaments(); //CB_READTOURNA
+    }
+
+    private Boolean selectActivityForTourna() {
+        Log.d(TAG, "selectActivityForTourna: ");
+        if(mCommon.mTournament.isEmpty()) return false;
+        if(null==mCommon.mTournaMap || mCommon.mTournaMap.size()==0) return false;
+        for(Map.Entry<String,String> tourna : mCommon.mTournaMap.entrySet()) {
+            if(tourna.getKey().equals(mCommon.mTournament)) {
+                if(tourna.getValue().equals(Constants.DE) || tourna.getValue().equals(Constants.SE)) {
+                    Intent myIntent = new Intent(TournaLanding.this, TournaTableLayout.class);
+                    TournaLanding.this.startActivity(myIntent);
+                } else if(tourna.getValue().equals(Constants.LEAGUE)) {
+                    Intent myIntent = new Intent(TournaLanding.this, TournaMainActivity.class);
+                    TournaLanding.this.startActivity(myIntent);
+                }
+                break;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -181,8 +202,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.tourna_menu_main, menu);
-        menu.findItem(R.id.action_summary).setVisible(false);
+        inflater.inflate(R.menu.basic_menu_main, menu);
         return true;
     }
 
@@ -198,12 +218,20 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
             case R.id.action_settings:
                 //wake up connection and read profile again from DB to check for password changes
                 mCommon.wakeUpDBConnection_profile();
-                //Intent myIntent = new Intent(TournaLanding.this, LoginActivity.class);
-                //myIntent.putExtra(Constants.ACTIVITY, Constants.ACTIVITY_TOURNA_SETTINGS);
                 Intent myIntent = new Intent(TournaLanding.this, TournaSettings.class);
                 TournaLanding.this.startActivity(myIntent);
                 break;
-            case R.id.action_summary:
+            case R.id.action_logout:
+                SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.clear();
+                editor.commit();
+                mCommon.clear();
+                Toast.makeText(TournaLanding.this, "Cache cleared!", Toast.LENGTH_SHORT)
+                        .show();
+                Intent intent = new Intent(getApplicationContext(), MainSigninActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
                 break;
             case R.id.action_about:
                 //int versionCode = BuildConfig.VERSION_CODE;

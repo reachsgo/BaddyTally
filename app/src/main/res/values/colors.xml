@@ -10,4 +10,5 @@
     <color name="colorLightGrey">#778899</color>
     <color name="colorRed">#FF0000</color>
     <color name="colorTealGreen">#008080</color>
+    <color name="colorPopup">#66B2FF</color>
 </resources>

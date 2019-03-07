@@ -195,33 +195,6 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
             findViewById(R.id.time_now).setVisibility(View.GONE);
         }
 
-        Switch clearcache_sw = findViewById(R.id.clearcache_sw);
-        clearcache_sw.setChecked(false);
-        clearcache_sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @SuppressLint("ApplySharedPref")
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean bChecked) {
-                if (bChecked) {
-                    SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
-                    SharedPreferences.Editor editor = prefs.edit();
-                    editor.clear();
-                    editor.commit();
-                    SharedData.getInstance().clear();
-                    SharedData.getInstance().setDBUpdated(true); //notify Main to refresh view
-                    Toast.makeText(LoginActivity.this, "Cache cleared!", Toast.LENGTH_SHORT)
-                            .show();
-
-                    //Restart the app: Needed to re-invoke Application.onCreate() to disable DB persistence,
-                    //though that behavior is very inconsistent. See comments in ScoreTally.java.
-                    //setResult(Constants.RESTARTAPP);
-                    //killActivity();
-
-                    Intent intent = new Intent(getApplicationContext(), MainSigninActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    startActivity(intent);
-                }
-            }
-        });
 
     }
 

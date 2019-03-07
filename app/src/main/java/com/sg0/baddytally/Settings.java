@@ -123,6 +123,8 @@ public class Settings extends AppCompatActivity {
         mWinPercInfo = "";
         Log.w(TAG, "onCreate :" + mCommon.toString());
 
+        if(!mCommon.isPermitted(getApplicationContext())) return;
+
         if (!Constants.ROOT.equals(mCommon.mRole)) {
             //non root user
             Snackbar.make(findViewById(R.id.settings_ll), "Some options might not be available to you!",
@@ -206,35 +208,6 @@ public class Settings extends AppCompatActivity {
 
         } //root user else
 
-        Switch clearcache_sw = findViewById(R.id.clearcache_sw);
-        clearcache_sw.setChecked(false);
-        clearcache_sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @SuppressLint("ApplySharedPref")
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean bChecked) {
-                if (bChecked) {
-                    SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
-                    SharedPreferences.Editor editor = prefs.edit();
-                    editor.clear();
-                    editor.commit();
-                    mCommon.clear();
-                    mCommon.setDBUpdated(true); //notify Main to refresh view
-                    Toast.makeText(Settings.this, "Cache cleared!", Toast.LENGTH_SHORT)
-                            .show();
-
-                    //Restart the app: Needed to re-invoke Application.onCreate() to disable DB persistence,
-                    //though that behavior is very inconsistent. See comments in ScoreTally.java.
-                    //setResult(Constants.RESTARTAPP);
-                    //killActivity();
-
-                    Intent intent = new Intent(getApplicationContext(), MainSigninActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    startActivity(intent);
-                }
-            }
-        });
-
-
         Button history_btn = findViewById(R.id.history_btn);
         history_btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -274,33 +247,7 @@ public class Settings extends AppCompatActivity {
         });
 
 
-
-        Button createNewClub_btn = findViewById(R.id.createNewClub_btn);
-        createNewClub_btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                AlertDialog.Builder builder = new AlertDialog.Builder(Settings.this);
-                builder.setMessage("You are about to send a request to ScoreTally team to create a new club login for you.\n" +
-                        "ScoreTally team will get back to you after setting up your account.\n\n" +
-                        "You will now be directed to your favourite email client. Please fill in the template details before sending the email.")
-                        .setTitle(mCommon.getTitleStr("Create new club:", Settings.this))
-                        .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                sendEmail();
-                            }
-                        }).show();
-            } //onClick
-        });
-
-        if (!mCommon.mClub.isEmpty()) {
-            //If already signed in for a club, dont show this.
-            Log.w(TAG, "createNewClub_btn.setOnClickListener: NOT empty club name");
-            createNewClub_btn.setVisibility(View.GONE);
-        }
-
-        ((EditText) findViewById(R.id.winPercNum)).setText(""+Constants.SHUFFLE_WINPERC_NUM_GAMES);
+         ((EditText) findViewById(R.id.winPercNum)).setText(""+Constants.SHUFFLE_WINPERC_NUM_GAMES);
 
         FloatingActionButton fab = findViewById(R.id.fab_return);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -358,25 +305,7 @@ public class Settings extends AppCompatActivity {
             } //onClick
         });
     }
-    private void sendEmail() {
-        Intent email = new Intent(Intent.ACTION_SEND);
-        email.putExtra(Intent.EXTRA_EMAIL, new String[]{"scoretallyteam@gmail.com"});
-        email.putExtra(Intent.EXTRA_SUBJECT, "ScoreTally: Request to create new club");
-        email.putExtra(Intent.EXTRA_TEXT, "Please fill in the below template and send the email. ScoreTally team will get back to you after setting up your account.\n" +
-                "\nMy Contact Info:\n" +
-                "        <name>\n        <phone>\n" +
-                "\n\nNew Club Info:\n" +
-                "        name : <name>\n" +
-                "        number of groups : <1 or 2>\n" +
-                "        max players : <N>\n" +
-                "        frequency of game days : <times per week/month>\n" +
-                "\n\nNotes: <any queries/comments/suggestions>\n" +
-                "\n\nCheers,\n" +
-                "<yours truly>\n\n"
-        );
-        email.setType("message/rfc822");
-        startActivity(Intent.createChooser(email, "Choose an Email client :"));
-    }
+
 
     private void onClickNewUser() {
         String tmpName = ((EditText) findViewById(R.id.newuser)).getText().toString();

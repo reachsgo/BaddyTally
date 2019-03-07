@@ -7,6 +7,9 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -36,6 +39,9 @@ import java.util.Map;
 
 public class TournaBaseEnterData extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
 
+    private static final int RESULT_SUCCESS = 0;
+    private static final int RESULT_FAILURE = 1;
+    private static final int MSG_FETCHGAMES = 100;
     private static final List<Integer> scoreList = new ArrayList<Integer>() {{
         add(0);
         add(1);
@@ -118,6 +124,10 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
     private Boolean mUnlockDB;
     private Boolean mGamesReadFromDB;
 
+    //private HandlerThread mWorker;
+    //private Handler mWorkerHandler;
+    private Handler mMainHandler;
+    private Integer mDBLockCount;
 
     private void killActivity() {
         setResult(RESULT_OK);
@@ -148,6 +158,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
         mAlertMsg = "";
         mFinishActivity = false;
         mUnlockDB = false;
+        mDBLockCount = 0;
         //mClub = mCommon.mClub;
         //mCommon.mClub = "club1"; //SGO TODO remove!
 
@@ -202,11 +213,38 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
         mSpinner_W.setAdapter(winnerAdapter);
         mSpinner_W.setSelection(0);
 
+
+
+
+
+        //mMainHandler = new Handler(Looper.getMainLooper()) {
+        mMainHandler = new Handler();
+
+        /*
+        mWorker = new HandlerThread("MyHandlerThread");
+        mWorker.start();
+        Looper looper = mWorker.getLooper();
+        mWorkerHandler = new Handler(looper) {
+            @Override
+            public void handleMessage(Message msg) {
+                super.handleMessage(msg);
+                Log.d(TAG, "handleMessage: " + msg.what + " arg1=" + msg.arg1 + " arg2=" + msg.arg2);
+                switch (msg.what) {
+                    case MSG_FETCHGAMES:
+                        fetchGames(mMatchId, true);
+                        break;
+                }
+            }
+        };
+        */
+
         mGamesReadFromDB = false;
         if(mMatchId.isEmpty() || mFixtureLabel.isEmpty()) {
             Toast.makeText(TournaBaseEnterData.this, "Match ID or Label not available!",
                     Toast.LENGTH_LONG).show();
-        } else fetchGames(mMatchId, true);
+        } else {
+            fetchGames(mMatchId, true);
+        }
 
     }
 
@@ -214,10 +252,13 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
     @Override
     protected void onStart() {
         super.onStart();
-        Log.v(TAG, "onStart");
+        Log.v(TAG, "onStart:" + Thread.currentThread().getId());
+
+        
     }
 
     private void prepareForInput() {
+        Log.i(TAG, "prepareForInput tid=" + Thread.currentThread().getId());
         mCommon.wakeUpDBConnection();
         mSpinner_P1 = findViewById(R.id.spinner_p1);
         mSpinner_P2 = findViewById(R.id.spinner_p2);
@@ -382,7 +423,8 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
 
 
     private void rearrangeDropdownList(Spinner spinner, ArrayAdapter<String> adapter, List<String> players) {
-        Log.v(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
+        //Log.v(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/"
+        //        + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
         adapter.clear();
         //Collections.sort(players);  //sorted already so that players present on the court comes first.
         adapter.addAll(players);
@@ -407,16 +449,27 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             spinner.setSelection(adapter.getCount() - 1);
             mSpinner_P4_selection = spinner.getItemAtPosition(0).toString();
         }
-        Log.i(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
+        //Log.i(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" +
+        //        mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
         adapter.notifyDataSetChanged();
     }
+
+
+    //SGO: NOTE:
+    // "The Firebase Database client performs all network and disk operations off the main thread.
+    //  The Firebase Database client invokes all callbacks to your code on the main thread.
+    //  So network and disk access for the database are no reason to spin up your own threads or use
+    //  background tasks. But if you do disk, network I/O or CPU intensive operations in the callback,
+    //  you might need to perform those off the main thread yourself."
+    //So, even if fetchGames() is invoked in a worker thread, firebase call back onDataChange()
+    //will be invoked in the main thread.
 
     private void fetchGames(final String matchId, final Boolean reinit) {
         //avoid loop for DE , where DE_FINALS_M2 is read
         //from fetchGames(DE_FINALS_M1)
         if(mGamesReadFromDB) return;
 
-        Log.i(TAG, "fetchGames... matchId=" + matchId + " mMatchId=" + mMatchId);
+        Log.i(TAG, "fetchGames(" + Thread.currentThread().getId() + ")  matchId=" + matchId + " mMatchId=" + mMatchId);
         DatabaseReference dbRef = mDatabase.child(mCommon.mClub).child(Constants.TOURNA)
                 .child(mCommon.mTournament).child(Constants.MATCHES).child(mFixtureLabel)
                 .child(matchId);
@@ -447,7 +500,8 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                Toast.makeText(TournaBaseEnterData.this, "DB error while fetching games: " + databaseError.toString(),
+                Toast.makeText(TournaBaseEnterData.this, "DB error while fetching games: "
+                                + databaseError.toString(),
                         Toast.LENGTH_LONG).show();
                 killActivity();
             }
@@ -468,17 +522,19 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
 
                 mMatchId = matchId;  //imp to set DE_FINALS_M2 here, if present in DB
                 if(mMatchDBEntry.isThereAWinner(true)){
-                        String winner = mMatchDBEntry.getW();
-                        Log.i(TAG, "set Winner!");
-                        if(mTeams.get(0).equals(winner)) mSpinner_W.setSelection(1);
-                        else if(mTeams.get(1).equals(winner)) mSpinner_W.setSelection(2);
-                        CheckBox checkbox = findViewById(R.id.completed);
-                        checkbox.setChecked(true);
-                        if(!mCommon.isRoot() && !mViewOnly) {
-                            makeItViewOnly();
-                            Toast.makeText(TournaBaseEnterData.this, "Match already completed!",
-                                    Toast.LENGTH_LONG).show();
-                        }
+
+                            String winner = mMatchDBEntry.getW();
+                            Log.i(TAG, Thread.currentThread().getId() + " mMainHandler set Winner!");
+                            if(mTeams.get(0).equals(winner)) mSpinner_W.setSelection(1);
+                            else if(mTeams.get(1).equals(winner)) mSpinner_W.setSelection(2);
+                            CheckBox checkbox = findViewById(R.id.completed);
+                            checkbox.setChecked(true);
+                            if(!mCommon.isRoot() && !mViewOnly) {
+                                makeItViewOnly();
+                                Toast.makeText(TournaBaseEnterData.this, "Match already completed!",
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        
                     }
                 }
 
@@ -494,6 +550,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
 
 
     private void populateGamePoints(ArrayList<GameJournalDBEntry> gameList) {
+        //Log.i(TAG, "populateGamePoints tid=" + Thread.currentThread().getId());
         if (gameList == null) return;
         int num = 1;
         for (GameJournalDBEntry g : gameList) {
@@ -501,7 +558,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             //Don't have to check if playerInvolved(), as the match is added in DB for the players taken from DB.
             //Check if T1 is the winning team or losing team
             for (String p : mT1_players) {
-                Log.d(TAG, "populateGamePoints: " + g.toReadableString() + " T1 player=" + p);
+                //Log.d(TAG, "populateGamePoints: " + g.toReadableString() + " T1 player=" + p);
                 if (g.aWinner(p)) {
                     //get Winner's score as T1's score
                     setGamePointSpinner(g.getmGNo(), g.getmWS(), g.getmLS());
@@ -550,7 +607,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
     }
 
     private void setGamePointSpinner(final int gameNum, final int t1Score, final int t2Score) {
-        Log.i(TAG, "setGamePointSpinner,case " + gameNum + ": " + t1Score + "/" + t2Score);
+        //Log.i(TAG, "setGamePointSpinner,case " + gameNum + ": " + t1Score + "/" + t2Score);
         Spinner tmpS = getRespectiveSpinner(gameNum, 1);
         if (tmpS != null) tmpS.setSelection(t1Score);
         tmpS = getRespectiveSpinner(gameNum, 2);
@@ -566,7 +623,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             checkbox.setChecked(false);
             return false;
         }
-        Log.i(TAG, "isMatchDone:" + newGameList.size());
+        //Log.i(TAG, "isMatchDone:" + newGameList.size());
         final Integer TEAM1_IDX = 1;
         final Integer TEAM2_IDX = 2;
         int winner_team_idx = 0;
@@ -583,15 +640,15 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             if (jEntry.aWinner(randomPlayerT2)) randomPlayerT2_Wins++;
         }
         if (gamesCompleted == 1) {
-            Log.i(TAG, "One game completed");
+            //Log.i(TAG, "One game completed");
             if (randomPlayerT1_Wins == 1) winner_team_idx = TEAM1_IDX;
             else if (randomPlayerT2_Wins == 1) winner_team_idx = TEAM2_IDX;
         } else if (randomPlayerT1_Wins > (mBestOf / 2)) {
             winner_team_idx = TEAM1_IDX;
-            Log.i(TAG, "isMatchDone: " + randomPlayerT1 + "=" + randomPlayerT1_Wins + " > " + mBestOf / 2 + " winner=" + winner_team_idx);
+            //Log.i(TAG, "isMatchDone: " + randomPlayerT1 + "=" + randomPlayerT1_Wins + " > " + mBestOf / 2 + " winner=" + winner_team_idx);
         } else if (randomPlayerT2_Wins > (mBestOf / 2)) {
             winner_team_idx = TEAM2_IDX;
-            Log.i(TAG, "isMatchDone: " + randomPlayerT2 + "=" + randomPlayerT2_Wins + " > " + mBestOf / 2 + " winner=" + winner_team_idx);
+            //Log.i(TAG, "isMatchDone: " + randomPlayerT2 + "=" + randomPlayerT2_Wins + " > " + mBestOf / 2 + " winner=" + winner_team_idx);
         }
 
         if (winner_team_idx > 0) {
@@ -744,11 +801,12 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             //To avoid a conflict when 2 users are entering the same score.
             //Without lock, inconsistency is seen: missing journal entry or points are not added.
             SharedData.getInstance().acquireDBLock(mCommon.mTournament);
-
+            waitForDBLock();
             //Give some time for all other threads (firebase DB updates) to catch up.
             //Updates includes DB lock update.
-            final Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
+            //final Handler handler = new Handler();
+            /*
+            mWorkerHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     mCommon.setDBUpdated(false);
@@ -759,6 +817,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
                     //wait for DB update to complete, before unlocking
                     try {
                         for (int i = 0; i < 20; i++) {  //max of 10s
+                            Log.v(TAG, "loop" + i);
                             Thread.sleep(500);
                             if (mUnlockDB) {
                                 releaseLockAndCleanup();
@@ -778,25 +837,39 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
                     }
                 }
             }, 2000); //no need of a long wait here, as the firebase local cache will already be updated
-
+*/
         } else finish();
 
         return true;
     }
 
+    private void waitForDBLock() {
+        if (!mCommon.isDBLocked()) {
+            mDBLockCount++;
+            if(mDBLockCount < 20) {  //max of 20s to get DB lock
+                mMainHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        waitForDBLock();
+                    }
+                }, 1000);
+            } else {
+                Log.e(TAG, "waitForDBLock: Failed to acquire lock:" + mDBLockCount);
+                mAlertTitle = "";
+                Log.e(TAG, "workToUpdateDB: Failed to update DB, please refresh and try again later...");
+                mAlertMsg = "DB not accessible, please refresh and try again later...";
+                mFinishActivity = true;
+                mCommon.setDBUpdated(true);
+                mUnlockDB = true;
+                releaseLockAndCleanup();
+            }
+        } else {
+            workToUpdateDB();
+        }
+    }
 
     private void workToUpdateDB() {
         Log.d(TAG, "workToUpdateDB: " + mCommon.mClub);
-        if (!SharedData.getInstance().isDBLocked()) {
-            mAlertTitle = "";
-            Log.e(TAG, "workToUpdateDB: Another update is in progress, please refresh and try again later...");
-            mAlertMsg = "Another update is in progress, please refresh and try again later...";
-            mFinishActivity = true;
-            mCommon.setDBUpdated(true);
-            mUnlockDB = true;
-            return;
-        }
-
         Log.d(TAG, "workToUpdateDB: " + mFixtureLabel + " mId=" + mMatchId);
         Log.d(TAG, "workToUpdateDB: " + mGameList.toString());
         final DatabaseReference dbRef = mDatabase.child(mCommon.mClub).child(Constants.TOURNA)
@@ -816,6 +889,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             //Thus max DB lock period of 3 mins was implemented (refer SharedData.mDBLockedTime)
             if(null==mMatchDBEntry) {
                 Log.e(TAG, "workToUpdateDB: mMatchDBEntry=null, mMatchId=" + mMatchId);
+                releaseLockAndCleanup();
                 return;
             }
             mMatchDBEntry.setT1(true, mTeams.get(0));
@@ -863,16 +937,19 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
                         }
                     });
                     alertBuilder.show();
+                    releaseLockAndCleanup();
                     return;
                 } else {
                     mAlertTitle = winner + " won!";
                     mAlertMsg = "";
                     mFinishActivity = true;
                     mUnlockDB = true;
+                    releaseLockAndCleanup();
                     return;
                 }
             }
 
+            //not DE
             mAlertTitle = winner + " won!";
             if(mMatchDBEntry.isExternalLink(0) && mMatchDBEntry.getF()) {
                 //This is the final match and there is an external link (DE tournament)
@@ -923,6 +1000,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             mUnlockDB = true;
         }
         mUnlockDB = true;
+        releaseLockAndCleanup();
     }
 
     private void propogateTheWinner(final String fixLabel, final String matchId, final String winner) {
@@ -1007,15 +1085,23 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
         mCommon.releaseDBLock(mCommon.mTournament);
         if (null != mProgressDialog && mProgressDialog.isShowing()) {
             mProgressDialog.dismiss();
-            mProgressDialog = null;
         }
+        mProgressDialog = null;  //whether the activity is in the foreground or not, nullify it.
+        //mWorker.quit();
+
+        //it could happen that the user moves this app to background while the background loop is running.
+        //In thats case, dialog will fail: "WindowManager$BadTokenException: Unable to add window"
+        //So, check if this activity is in foreground before displaying dialogue.
+        if(isFinishing()) return;
+        if(!ScoreTally.isActivityVisible()) return;
+
         if(!mAlertTitle.isEmpty() && mAlertMsg.isEmpty()) {
             //Show snackbar
             Snackbar.make(findViewById(R.id.enterdata_ll), mAlertTitle, Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
+            mAlertTitle = "";
             //Give time to show snackbar before closing the activity
-            final Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
+            mMainHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     if (mFinishActivity) finish();
@@ -1051,7 +1137,25 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
         findViewById(R.id.completed).setEnabled(false);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ScoreTally.activityResumed();
+    }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        ScoreTally.activityPaused();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        //mWorker.quit();
+        //mWorker = null;
+        mMainHandler = null;
+    }
 }
 
 

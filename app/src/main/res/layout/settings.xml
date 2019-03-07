@@ -221,28 +221,6 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/clearcache_ll"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="5dp"
-            android:background="@color/colorPrimary"
-            android:orientation="horizontal">
-
-            <Switch
-                android:id="@+id/clearcache_sw"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="5dp"
-                android:layout_marginStart="20dp"
-                android:text="Logout / Clear cache"
-                android:textColor="@android:color/black"
-                android:textStyle="bold" />
-
-        </LinearLayout>
-
-
-
-        <LinearLayout
             android:id="@+id/history_ll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -271,25 +249,6 @@
                 android:background="@drawable/roundbtn"
                 android:text="Users"
                 android:textSize="13sp"
-                android:textColor="@android:color/black"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="5dp"
-            android:background="@color/colorPrimary"
-            android:orientation="horizontal">
-            <Button
-                android:id="@+id/createNewClub_btn"
-                style="?android:textAppearanceSmall"
-                android:layout_width="match_parent"
-                android:layout_height="25dp"
-                android:layout_gravity="center"
-                android:layout_margin="5dp"
-                android:background="@drawable/roundbtn"
-                android:text="Create New Club"
                 android:textColor="@android:color/black"
                 android:textStyle="bold" />
         </LinearLayout>

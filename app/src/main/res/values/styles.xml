@@ -17,4 +17,18 @@
         <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
     </style>
 
+    <style name="RegularPopup" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:textColor">@android:color/black</item>
+        <item name="android:itemBackground">@color/colorPopup</item>
+    </style>
+
+    <style name="WhitePopup" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:textColor">@color/colorWhite</item>
+        <item name="android:itemBackground">@color/colorPopup</item>
+    </style>
+
+    <style name="RedPopup" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:textColor">@color/colorRed</item>
+        <item name="android:itemBackground">@color/colorPopup</item>
+    </style>
 </resources>

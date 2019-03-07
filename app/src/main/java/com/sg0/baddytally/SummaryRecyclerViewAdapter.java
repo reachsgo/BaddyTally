@@ -9,6 +9,7 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -102,7 +103,8 @@ public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecy
         final int position = holder.getAdapterPosition();
         final int DELETE_IDX = 1;
         final int CANCEL_IDX = 2;
-        final PopupMenu popup = new PopupMenu(mContext, view);
+        Context wrapper = new ContextThemeWrapper(mContext, R.style.RedPopup);
+        final PopupMenu popup = new PopupMenu(wrapper, view);
         popup.getMenuInflater().inflate(R.menu.summary_popup_menu, popup.getMenu());
         if (Build.VERSION.SDK_INT >= 23) {
             popup.setGravity(Gravity.END);

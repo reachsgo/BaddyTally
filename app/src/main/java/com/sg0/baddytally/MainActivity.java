@@ -30,6 +30,7 @@ import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.text.style.SuperscriptSpan;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -257,16 +258,6 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
     @Override
     protected void onResume() {
         super.onResume();
-
-                /*
-        //SGO
-        Intent tmpIntent = new Intent(MainActivity.this, TournaTableLayout.class);
-        MainActivity.this.startActivity(tmpIntent);
-*/
-
-        //Maintain DB connection state
-        //SharedData.getInstance().setUpDBConnectionListener();
-
         mInitialAttempt = false;
         setFooter();
         SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
@@ -378,44 +369,11 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
             // action with ID action_settings was selected
             case R.id.action_settings:
                 //If DB connection is sleeping, wake it up!
-                //SharedData.getInstance().wakeUpDBConnection();
-                //Intent settingsIntent = new Intent(MainActivity.this, Settings.class);
-                //MainActivity.this.startActivityForResult(settingsIntent, Constants.SETTINGS_ACTIVITY);
-                Intent myIntent = new Intent(MainActivity.this, LoginActivity.class);
+                SharedData.getInstance().wakeUpDBConnection_profile();
+                Intent myIntent = new Intent(MainActivity.this, Settings.class);
                 myIntent.putExtra(Constants.ACTIVITY, Constants.ACTIVITY_SETTINGS);
                 MainActivity.this.startActivity(myIntent);
                 break;
-                /*
-            case R.id.action_tournaMode:
-                if (mInitialAttempt) {
-                    Toast.makeText(this, "You have to Sign-in first.", Toast.LENGTH_SHORT)
-                            .show();
-                    return false;
-                }
-
-                AlertDialog.Builder tmBuilder = new AlertDialog.Builder(MainActivity.this);
-                tmBuilder.setTitle(SharedData.getInstance().getTitleStr("Enable Tournament Mode", MainActivity.this));
-                String display = "You can track your club leagues here.";
-                tmBuilder.setMessage(display);
-                tmBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        SharedData.getInstance().mTournaMode = true;
-                        //persist this
-                        SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
-                        SharedPreferences.Editor editor = prefs.edit();
-                        editor.putBoolean(Constants.DATA_TMODE, true);
-                        editor.apply();
-                        //restart main activity
-                        finish();
-                        startActivity(getIntent());
-                    }
-                });
-                tmBuilder.setNegativeButton("Cancel", null);
-                tmBuilder.show();
-
-                break;
-                */
             case R.id.action_enter:
                 //If DB connection is sleeping, wake it up!
                 SharedData.getInstance().wakeUpDBConnection();
@@ -533,9 +491,11 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
         //Read DB only on startup & refresh. Otherwise on every resume of app, data is read from DB and that adds to the DB traffic.
         if (!mRefreshing) return;
 
-        Toast.makeText(this, "Refreshing...", Toast.LENGTH_SHORT)
-                .show();
+
         Log.v(TAG, "fetchInnings: ....");
+
+        final Handler handler = new Handler();
+
 
         //Using runTransaction instead of addListenerForSingleValueEvent, as the later was giving stale data.
         final DatabaseReference inningsDBRef = FirebaseDatabase.getInstance().getReference().child(SharedData.getInstance().mClub).child(Constants.INNINGS);
@@ -543,6 +503,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
             @NonNull
             @Override
             public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
+
                 GenericTypeIndicator<List<InningsDBEntry>> t = new GenericTypeIndicator<List<InningsDBEntry>>() {
                 };
                 //In this impl, innings has to be a list, so the entries should be in sequence and should start at 0.
@@ -551,8 +512,29 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                     //no innings in DB
                     SharedData.getInstance().mInnings = "";
                     Log.v(TAG, "fetchInnings: .... null");
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(MainActivity.this,
+                                    "No ongoing league innings for this club.", Toast.LENGTH_SHORT)
+                                    .show();
+                        }
+                    }, 2000);
                     return Transaction.success(mutableData);
                 }
+
+                //Even for a profile present in DB, the above null case will be hit once.
+                //So, add the toast to handler queue and if there is another call back within
+                //that time (3s here), then the below code will cancel the first toast message.
+                handler.removeCallbacksAndMessages(null);
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this, "Refreshing...", Toast.LENGTH_SHORT)
+                                .show();
+                    }
+                });
+
                 //reset the values to be read fresh from DB. This makes sure that DB is the master, in case of manual updates.
                 SharedData.getInstance().mInnings = "";
                 SharedData.getInstance().mRoundName = "";
@@ -568,6 +550,16 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
                         SharedData.getInstance().mRoundName = mRoundName;
                         SharedData.getInstance().mInningsDBKey = innings.indexOf(val);
                         Log.v(TAG, "fetchInnings: key:" + SharedData.getInstance().mInningsDBKey + " data:" + val.toString());
+
+                        if (SharedData.getInstance().mInnings.isEmpty()) {
+                            //no innings configured in DB yet
+                            mOptionsMenu.findItem(R.id.action_enter).setVisible(false);
+                            mOptionsMenu.findItem(R.id.action_summary).setVisible(false);
+                        } else {
+                            mOptionsMenu.findItem(R.id.action_enter).setVisible(true);
+                            mOptionsMenu.findItem(R.id.action_summary).setVisible(true);
+                        }
+
                         break;
                     }
                 }
@@ -653,7 +645,8 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
 
     private void showGroupPopup() {
         final ImageButton view = findViewById(R.id.suggestions);
-        final PopupMenu popup = new PopupMenu(MainActivity.this, view);
+        Context wrapper = new ContextThemeWrapper(MainActivity.this, R.style.RegularPopup);
+        final PopupMenu popup = new PopupMenu(wrapper, view);
         popup.getMenuInflater().inflate(R.menu.summary_popup_menu, popup.getMenu());
         popup.getMenu().clear();
         Menu pMenu = popup.getMenu();

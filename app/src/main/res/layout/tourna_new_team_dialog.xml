@@ -7,6 +7,7 @@
     android:orientation="vertical">
 
     <TextView
+        android:id="@+id/newTeam_tv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -41,11 +42,11 @@
 
         <EditText
             android:id="@+id/newTeam_et"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:gravity="center"
             android:hint="TEAM007"
-            android:maxLength="12"
+            android:maxLength="@integer/max_shortname_len"
             android:maxLines="1"
             android:singleLine="true"
             android:textColor="@color/colorWhite"
@@ -105,12 +106,13 @@
             android:orientation="horizontal">
         <EditText
             android:id="@+id/p1_et"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_marginEnd="20dp"
             android:gravity="center"
             android:hint="player1"
             android:maxLines="1"
+            android:maxLength="@integer/max_longname_len"
             android:singleLine="true"
             android:textColor="@color/colorWhite"
             android:textColorHint="@android:color/darker_gray"
@@ -118,11 +120,12 @@
             android:textStyle="italic" />
         <EditText
             android:id="@+id/p2_et"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:gravity="center"
             android:hint="player2"
             android:maxLines="1"
+            android:maxLength="@integer/max_longname_len"
             android:singleLine="true"
             android:textColor="@color/colorWhite"
             android:textColorHint="@android:color/darker_gray"
@@ -136,12 +139,13 @@
             android:orientation="horizontal">
         <EditText
             android:id="@+id/p3_et"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_marginEnd="20dp"
             android:gravity="center"
             android:hint="player3"
             android:maxLines="1"
+            android:maxLength="@integer/max_longname_len"
             android:singleLine="true"
             android:textColor="@color/colorWhite"
             android:textColorHint="@android:color/darker_gray"
@@ -149,11 +153,12 @@
             android:textStyle="italic" />
         <EditText
             android:id="@+id/p4_et"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:gravity="center"
             android:hint="player4"
             android:maxLines="1"
+            android:maxLength="@integer/max_longname_len"
             android:singleLine="true"
             android:textColor="@color/colorWhite"
             android:textColorHint="@android:color/darker_gray"
@@ -167,12 +172,13 @@
             android:orientation="horizontal">
             <EditText
                 android:id="@+id/p5_et"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_marginEnd="20dp"
                 android:gravity="center"
                 android:hint="player5"
                 android:maxLines="1"
+                android:maxLength="@integer/max_longname_len"
                 android:singleLine="true"
                 android:textColor="@color/colorWhite"
                 android:textColorHint="@android:color/darker_gray"
@@ -180,11 +186,12 @@
                 android:textStyle="italic" />
             <EditText
                 android:id="@+id/p6_et"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:gravity="center"
                 android:hint="player6"
                 android:maxLines="1"
+                android:maxLength="@integer/max_longname_len"
                 android:singleLine="true"
                 android:textColor="@color/colorWhite"
                 android:textColorHint="@android:color/darker_gray"
@@ -198,12 +205,13 @@
             android:orientation="horizontal">
             <EditText
                 android:id="@+id/p7_et"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_marginEnd="20dp"
                 android:gravity="center"
                 android:hint="player5"
                 android:maxLines="1"
+                android:maxLength="@integer/max_longname_len"
                 android:singleLine="true"
                 android:textColor="@color/colorWhite"
                 android:textColorHint="@android:color/darker_gray"
@@ -211,11 +219,12 @@
                 android:textStyle="italic" />
             <EditText
                 android:id="@+id/p8_et"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:gravity="center"
                 android:hint="player6"
                 android:maxLines="1"
+                android:maxLength="@integer/max_longname_len"
                 android:singleLine="true"
                 android:textColor="@color/colorWhite"
                 android:textColorHint="@android:color/darker_gray"
@@ -264,15 +273,12 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-    <LinearLayout
+
+    <ImageView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginEnd="10dp"
-        android:layout_gravity="center"
-        android:background="@drawable/birdie"
         android:layout_weight="1"
-        android:orientation="horizontal">
-    </LinearLayout>
-
+        android:layout_gravity="center"
+        android:background="@android:color/transparent"
+        android:src="@drawable/birdie" />
 </LinearLayout>
