@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 
 public class TournaSeeding extends AppCompatActivity implements CallbackRoutine {
@@ -52,7 +53,7 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
     private ListView mSeedLV;
     private ArrayAdapter mTeamLA;
     private ArrayAdapter mSeedLA;
-    private Button enter, cancel;
+    private Button enter, cancel, random;
     private String mTourna;
     private SharedData mCommon;
     private ArrayList<TeamDBEntry> mTeamsFromDB;
@@ -158,6 +159,23 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
                             "Once fixture is created, new teams cannot be added to this tournament.\n" +
                                     "Are you sure to continue with creating fixture?");
                 }
+            }
+        });
+
+        random = findViewById(R.id.random_button);
+        random.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String team;
+                while (mTeams.size()>0) {
+                    int random = new Random().nextInt(mTeams.size());
+                    team = mTeams.get(random);
+                    Log.e(TAG, "onClick: random=" + random + ", team=" + team );
+                    mTeams.remove(team);
+                    mSeededTeams.add(team);
+                }
+                mTeamLA.notifyDataSetChanged();
+                mSeedLA.notifyDataSetChanged();
             }
         });
 

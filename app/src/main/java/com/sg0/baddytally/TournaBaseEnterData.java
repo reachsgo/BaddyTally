@@ -524,7 +524,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
                 if(mMatchDBEntry.isThereAWinner(true)){
 
                             String winner = mMatchDBEntry.getW();
-                            Log.i(TAG, Thread.currentThread().getId() + " mMainHandler set Winner!");
+                            Log.i(TAG, Thread.currentThread().getId() + " set Winner!");
                             if(mTeams.get(0).equals(winner)) mSpinner_W.setSelection(1);
                             else if(mTeams.get(1).equals(winner)) mSpinner_W.setSelection(2);
                             CheckBox checkbox = findViewById(R.id.completed);
@@ -802,47 +802,14 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             //Without lock, inconsistency is seen: missing journal entry or points are not added.
             SharedData.getInstance().acquireDBLock(mCommon.mTournament);
             waitForDBLock();
-            //Give some time for all other threads (firebase DB updates) to catch up.
-            //Updates includes DB lock update.
-            //final Handler handler = new Handler();
-            /*
-            mWorkerHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    mCommon.setDBUpdated(false);
-                    mUnlockDB = false;
-                    mFinishActivity = false;
-                    Log.v(TAG, "After DB lock wait...");
-                    workToUpdateDB();
-                    //wait for DB update to complete, before unlocking
-                    try {
-                        for (int i = 0; i < 20; i++) {  //max of 10s
-                            Log.v(TAG, "loop" + i);
-                            Thread.sleep(500);
-                            if (mUnlockDB) {
-                                releaseLockAndCleanup();
-                                return;
-                            }
-                        }
-                        Log.v(TAG, "MAX wait over, unlocking DB..");
-                        releaseLockAndCleanup();  //unlock anyways if MAX loop is done.
-
-                    } catch (InterruptedException e) {
-                        Log.w(TAG, "doInBackground: InterruptedException=" + e.getMessage());
-                        releaseLockAndCleanup();
-                    } catch (Exception e) {
-                        Log.w(TAG, "doInBackground: Exception:" + e.getMessage());
-                        e.printStackTrace();
-                        releaseLockAndCleanup();
-                    }
-                }
-            }, 2000); //no need of a long wait here, as the firebase local cache will already be updated
-*/
         } else finish();
 
         return true;
     }
 
+    //To not block the UI thread, waitForDBLock() is invoked every second by posting
+    //it delayed (by 1s) back into the mainhandler of UI thread. If it is found that DB is locked
+    //in one of the iterations, the loop is broken. Otherwise a max of 20 loops.
     private void waitForDBLock() {
         if (!mCommon.isDBLocked()) {
             mDBLockCount++;

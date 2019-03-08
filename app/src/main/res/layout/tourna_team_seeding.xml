@@ -92,10 +92,23 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginEnd="20dp"
+            android:layout_marginEnd="5dp"
             android:layout_weight="1"
             android:background="@drawable/roundedrect"
             android:text="create fixture"
+            android:textColor="@android:color/white"
+            android:textStyle="bold" />
+        <Button
+            android:id="@+id/random_button"
+            style="?android:textAppearanceSmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginStart="5dp"
+            android:layout_marginEnd="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/roundedrect"
+            android:text="random"
             android:textColor="@android:color/white"
             android:textStyle="bold" />
 
@@ -105,7 +118,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginStart="20dp"
+            android:layout_marginStart="5dp"
             android:layout_weight="1"
             android:background="@drawable/roundedrect"
             android:text="cancel"

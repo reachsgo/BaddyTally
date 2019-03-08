@@ -85,6 +85,8 @@ public class SharedData {
     public List<String> mTeams;
     public HashMap<String, TeamInfo> mTeamInfoMap;
     public String mTournaType;
+    public int mTable_view_resid;
+    public int mCount;   //general purpose count
 
 
     public List<String> getTeamPlayers(String team) {
@@ -153,6 +155,8 @@ public class SharedData {
         mTeamInfoMap = null;
         mTeamInfoMap = new HashMap<>();
         mTournaType = "";
+        mTable_view_resid = R.layout.tourna_match_info_small;
+        mCount = 0;
     }
 
     public boolean isRoot() {
