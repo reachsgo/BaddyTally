@@ -4,11 +4,13 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.res.ResourcesCompat;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StrikethroughSpan;
@@ -155,7 +157,7 @@ public class SharedData {
         mTeamInfoMap = null;
         mTeamInfoMap = new HashMap<>();
         mTournaType = "";
-        mTable_view_resid = R.layout.tourna_match_info_small;
+        mTable_view_resid = R.layout.tourna_match_info_tiny;
         mCount = 0;
     }
 
@@ -285,6 +287,12 @@ public class SharedData {
     public SpannableStringBuilder getColorString(CharSequence text, int color) {
         SpannableStringBuilder ssBuilder = new SpannableStringBuilder(text);
         ssBuilder.setSpan(new ForegroundColorSpan(color), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        return ssBuilder;
+    }
+
+    public SpannableStringBuilder getBgColorString(CharSequence text, int color) {
+        SpannableStringBuilder ssBuilder = new SpannableStringBuilder(text);
+        ssBuilder.setSpan(new BackgroundColorSpan(color), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         return ssBuilder;
     }
 
@@ -1000,10 +1008,14 @@ public class SharedData {
     }
 
     public static String truncate(String str, int len) {
+        String retStr;
         if (str.length() > len) {
-            return str.substring(0, len) + "..";
+            retStr = str.substring(0, len);
         } else {
             return str;
-        }}
+        }
+        if(len>5) retStr += "..";
+        return retStr;
+    }
 }
 

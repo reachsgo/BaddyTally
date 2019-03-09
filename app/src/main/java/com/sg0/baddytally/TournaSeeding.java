@@ -3,6 +3,7 @@ package com.sg0.baddytally;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -19,6 +20,8 @@ import android.text.TextUtils;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -57,7 +60,8 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
     private String mTourna;
     private SharedData mCommon;
     private ArrayList<TeamDBEntry> mTeamsFromDB;
-
+    private Menu mOptionsMenu;
+    private MenuItem mCountText;
 
     private void killActivity(){
         setResult(RESULT_OK);
@@ -97,7 +101,8 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
         mTeams = new ArrayList<>();
         mSeededTeams = new ArrayList<>();
         mTeamsFromDB = new ArrayList<>();
-
+        mOptionsMenu = null;
+        mCountText = null;
         Log.d(TAG, "onCreate: "+ mTourna);
 
         mTeamLV = this.findViewById(R.id.team_list);
@@ -118,6 +123,12 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
                 mTeamLA.notifyDataSetChanged();
                 mSeededTeams.add(team);
                 mSeedLA.notifyDataSetChanged();
+                mCountText.setTitle(Integer.toString(mSeededTeams.size()));
+                /*
+                if(null!=mOptionsMenu) {
+                    MenuItem mCountText = mOptionsMenu.findItem(R.id.action_text);
+                    mCountText.setTitle(mSeededTeams.size());
+                }*/
             }
         });
 
@@ -130,6 +141,7 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
                 mTeamLA.notifyDataSetChanged();
                 mSeededTeams.remove(i);
                 mSeedLA.notifyDataSetChanged();
+                mCountText.setTitle(Integer.toString(mSeededTeams.size()));
             }
         });
 
@@ -152,7 +164,7 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
                 if(mTeams.size()>0 && mSeededTeams.size()>0) {
                     mCommon.showAlert(TournaSeeding.this, TournaSeeding.this, SEEDING,
                             "There are some more teams to be seeded.\n" +
-                                    "Once fixture is created, new teams cannot be added to this tournament.\n" +
+                                    "Once fixture is created, new teams cannot be added to this tournament.\n\n" +
                                     "Are you sure to continue creating fixture without these teams?");
                 } else {
                     mCommon.showAlert(TournaSeeding.this, TournaSeeding.this, SEEDING,
@@ -174,8 +186,17 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
                     mTeams.remove(team);
                     mSeededTeams.add(team);
                 }
+                Toast.makeText(TournaSeeding.this,
+                        mSeededTeams.size() + " teams seeded",
+                        Toast.LENGTH_SHORT).show();
                 mTeamLA.notifyDataSetChanged();
                 mSeedLA.notifyDataSetChanged();
+                mCountText.setTitle(Integer.toString(mSeededTeams.size()));
+                /*
+                if(null!=mOptionsMenu) {
+                    MenuItem mCountText = mOptionsMenu.findItem(R.id.action_text);
+
+                }*/
             }
         });
 
@@ -215,11 +236,18 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
                     mTeams.add(dbEntry.getId());
                 }
 
-                if(mTeams.size()>0) mTeamLA.notifyDataSetChanged();
-                mCommon.showAlert(null, TournaSeeding.this, "",
-                        "Select teams from the list on left in the order of seeding (i.e, No.1 seeded team to be selected first.)");
-
-
+                if(mTeams.size()>0) {
+                    mTeamLA.notifyDataSetChanged();
+                    mCommon.showAlert(null, TournaSeeding.this, SEEDING,
+                            "You have "+ mTeams.size() + " teams to seed.\n\n" +
+                                    "Select teams from the list on left in the order of seeding " +
+                                    "(i.e, No.1 seeded team to be selected first.)\n\n" +
+                                    "Or click random for automatic random seeding.");
+                } else {
+                    Toast.makeText(TournaSeeding.this,
+                            "No teams added!",
+                            Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
@@ -412,6 +440,26 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
         }
     }
     public void completed (final String in, final Boolean ok) {}
+
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.text_menu_main, menu);
+        mOptionsMenu = menu;
+        mCountText = mOptionsMenu.findItem(R.id.action_text);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            // action with ID action_refresh was selected
+            case R.id.action_text:
+                break;
+            default:
+                break;
+        }
+        return true;
+    }
+
 }
 
 

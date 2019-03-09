@@ -100,5 +100,17 @@ public class MainSelection2 extends AppCompatActivity {
         return true;
     }
 
+    private void killActivity() {
+        setResult(RESULT_OK);
+        finish();
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        SharedData.getInstance().mCount = Constants.EXIT_APPLICATION;
+        killActivity();
+    }
+
 
 }

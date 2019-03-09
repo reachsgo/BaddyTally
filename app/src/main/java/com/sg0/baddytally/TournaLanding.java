@@ -42,6 +42,10 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     private ArrayAdapter mTournaLA;
     private ArrayList<String> mTournaList;
 
+    private void killActivity() {
+        setResult(RESULT_OK);
+        finish();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -155,6 +159,12 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
             refresh();
             mCommon.setDBUpdated(false);
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        killActivity();
     }
 
     //CallbackRoutine Callback interfaces

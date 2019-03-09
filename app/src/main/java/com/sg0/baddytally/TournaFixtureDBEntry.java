@@ -130,12 +130,55 @@ class TournaFixtureDBEntry {
             setPrevLink(TEAM1_IDX, mN.t1.getId());
             Log.d("TournaFixtureDBEntry", "mN.t1.isExternalLink: " + toString());
         } else if(mN.t1.isLeaf()) {
-            setTeam(TEAM1_IDX, mN.t1.getDesc());  //desc has the team name, id has row-matchId
+            if(!mN.t1.getWinner().isEmpty()) {
+                setTeam(TEAM1_IDX, mN.t1.getWinner());
+            } else setTeam(TEAM1_IDX, mN.t1.getDesc());  //desc has the team name, id has row-matchId
+            //For Bye's coming into LB, SESR sets the winner as Bye. there is no
+            //createRegularMatchesForThisRound() -> setWinnerString() sets the winner as Bye.
+            //setWinnerString:[: (-1,-1)=fixU/1-3,EXTERNALLEAF,NULL,NULL,(bye)(W),false] vs [: (-1,-1)=fixU/1-4,EXTERNALLEAF,NULL,NULL,(bye)(W),false]
+            //setWinnerString: [: (-1,-1)=fixU,NODE,/fixU/1-3,/fixU/1-4,(bye)(W),false]
+
+            //createRegularMatchesForThisRound - Adding: [: (-1,-1)=fixU,NODE,/fixU/1-3,/fixU/1-4,(bye)(W),false]
+            //setWinnerString:[: (-1,-1)=fixU/1-3,EXTERNALLEAF,NULL,NULL,(bye)(W),false] vs [: (-1,-1)=fixU/1-4,EXTERNALLEAF,NULL,NULL,(bye)(W),false]
+            //setWinnerString: [: (-1,-1)=fixU,NODE,/fixU/1-3,/fixU/1-4,(bye)(W),false]
+
+            //createRegularMatchesForThisRound - Adding: [: (-1,-1)=fixU,NODE,/fixU/2-10,/fixU,(W),false]
+            //setWinnerString:[: (-1,-1)=fixU/2-10,EXTERNALLEAF,NULL,NULL,(W),false] vs [: (-1,-1)=fixU,NODE,/fixU/1-3,/fixU/1-4,(bye)(W),false]
+            //setWinnerString: [: (-1,-1)=fixU,NODE,/fixU/2-10,/fixU,(W),false]
+
             setPrevLink(TEAM1_IDX, "");
             Log.d("TournaFixtureDBEntry", "mN.t1.isLeaf: " + toString());
             //this.pr1 = mN.t1.getId();
         } else {
             setTeam(TEAM1_IDX, "");
+            /*
+                                             -------------
+                                             |  EXTLEAF   |
+                                             |  2-10*(W)  |__________
+                                             --------------          |
+                                                                     |
+                      -------------           ------------           |       -------------
+                      |  EXTLEAF   |_________|    NODE-A  |          |_______|    NODE-B  |
+                      |   bye(W)   |         |    bye(W)  |                  |            |
+                      --------------     ____|            |__________________|            |
+                                         |    ------------                   |            |
+                                         |                                    -------------
+                      -------------      |
+                      | EXTLEAF   |______|
+                      |   bye(W)  |
+                      ------------
+
+                      For LB TournaMatchNode structure like above where 2 BYEs (losers from UB) are
+                      coming to LB, the immediate node (NODE-A) created will have the winner set as bye.
+                            createRegularMatchesForThisRound() -> setWinnerString()
+                            //setWinnerString:[: (-1,-1)=fixU/1-3,EXTERNALLEAF,NULL,NULL,(bye)(W),false] vs [: (-1,-1)=fixU/1-4,EXTERNALLEAF,NULL,NULL,(bye)(W),false]
+                            //setWinnerString: [: (-1,-1)=fixU,NODE,/fixU/1-3,/fixU/1-4,(bye)(W),false]
+                      In this case, NODE-B when translated to TournaFixtureDBEntry should have its team2 name
+                      set properly to "bye". This should happen here, as this will not be done later from EnterScore.
+            */
+            if(!mN.t1.getWinner().isEmpty()) {
+                setTeam(TEAM1_IDX, mN.t1.getWinner());
+            }
             setPrevLink(TEAM1_IDX, mN.t1.getId());
             Log.d("TournaFixtureDBEntry", "mN.t1.isLeaf else: " + toString());
         }
@@ -155,23 +198,29 @@ class TournaFixtureDBEntry {
             setPrevLink(TEAM2_IDX, mN.t2.getId());
             Log.d("TournaFixtureDBEntry", "mN.t2.isExternalLink: " + toString());
         } else if(mN.t2.isLeaf()) {
-            setTeam(TEAM2_IDX, mN.t2.getDesc());  //desc has the team name, id has row-matchId
+            if(!mN.t2.getWinner().isEmpty()) {
+                setTeam(TEAM2_IDX, mN.t2.getWinner());
+            } else setTeam(TEAM2_IDX, mN.t2.getDesc());  //desc has the team name, id has row-matchId
             setPrevLink(TEAM2_IDX, "");
             //this.pr2 = mN.t2.getId();
             Log.d("TournaFixtureDBEntry", "mN.t2.isLeaf: " + toString());
         } else {
             setTeam(TEAM2_IDX, "");
+            if(!mN.t2.getWinner().isEmpty()) {
+                setTeam(TEAM2_IDX, mN.t2.getWinner());
+            }
             setPrevLink(TEAM2_IDX, mN.t2.getId());
             Log.d("TournaFixtureDBEntry", "mN.t2.isLeaf else: " + toString());
         }
         if(!mN.getWinner().isEmpty()) setW(mN.getWinner());
 
+        /*
         if(!mN.getExternalLinkDesc().isEmpty()) {
             //carry over whatever is set in external link desc.
             //For the successor of EXTERNALLEAF node, desc is set external fixture label.
             //This helps to display external links properly
             setExtLink(TEAM1_IDX, mN.getExtFixtureLabel(), mN.getExtMatchId(), false);
-        }
+        }*/
         Log.d("TournaFixtureDBEntry: ", toString());
     }
 

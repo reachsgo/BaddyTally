@@ -38,7 +38,8 @@ class Constants {
     public static final int LOGIN_ACTIVITY = 101;
     public static final int SUMMARY_ACTIVITY = 102;
     public static final int ENTERDATA_ACTIVITY = 103;
-    public static final int RESTARTAPP = 666;
+    public static final int RESTARTAPP = 665;
+    public static final int EXIT_APPLICATION = -666;
 
     public static final String ACTIVITY = "Activity";
     public static final String ACTIVITY_SETTINGS = "Settings";

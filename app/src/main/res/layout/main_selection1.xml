@@ -12,6 +12,11 @@
         android:layout_gravity="center"
         android:background="@android:color/transparent"
         android:src="@drawable/birdie" />
+    <View
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
 
     <RelativeLayout
         android:layout_width="125dp"

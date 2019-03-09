@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/team1p_tv"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:text="---"
+        android:textColor="@android:color/black"
+        android:textSize="11sp" />
+    <TextView
+        android:id="@+id/team2p_tv"
+        android:layout_below="@id/team1p_tv"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="1dp"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:text="---"
+        android:textColor="@android:color/black"
+        android:textSize="11sp" />
+
+    <Button
+        android:id="@+id/info_btn"
+        style="?android:textAppearanceSmall"
+        android:layout_width="100dp"
+        android:layout_height="30dp"
+        android:layout_gravity="center"
+        android:background="@android:color/transparent"
+        android:textColor="@android:color/black"
+        android:textStyle="bold" />
+
+</RelativeLayout>

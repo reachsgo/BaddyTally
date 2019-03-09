@@ -50,12 +50,16 @@ public class MainSigninActivity extends AppCompatActivity {
         //MainSigninActivity.this.startActivity(myIntent);
     }
 
+    private void killActivity() {
+        setResult(RESULT_OK);
+        finish();
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "onResume: ");
-        //SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
-        //String club = prefs.getString(Constants.DATA_CLUB, "");
+        if(SharedData.getInstance().mCount == Constants.EXIT_APPLICATION) killActivity();
         if (!SharedData.getInstance().mClub.isEmpty()) {
             Intent myIntent = new Intent(MainSigninActivity.this, MainSelection2.class);
             MainSigninActivity.this.startActivity(myIntent);
