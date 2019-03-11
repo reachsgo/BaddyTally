@@ -12,6 +12,7 @@ import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -62,6 +63,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     private boolean mNewRoundFlag;
     private boolean mTournaFlag;
     private String mActToStart;
+    private Handler mMainHandler;
 
 
     private void killActivity(){
@@ -82,6 +84,8 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         mGroupRadioGroup = findViewById(R.id.gamegroup_radiogroup);
         mNewRoundFlag = false;
         mTournaFlag = false;
+        mMainHandler = new Handler();
+
         Intent thisIntent = getIntent(); // gets the previously created intent
         String tType = thisIntent.getStringExtra(Constants.TOURNATYPE);
         if(null!=tType && !tType.isEmpty()) {
@@ -205,8 +209,8 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
 
     //TODO: This DB fetch is done every time data is entered. This could be optimized to
     //reduce number of DB reads.
-    private void fetchInitialData(){
-        Log.w(TAG, "fetchInitialData: " + mClub );
+    private void fetchInitialData() {
+        Log.w(TAG, "fetchInitialData: " + mClub);
         if (!SharedData.getInstance().mMemCode.isEmpty() && !mInitialAttempt) {
             Log.w(TAG, "fetchInitialData: data already populated!");
             SharedData data = SharedData.getInstance();
@@ -217,11 +221,24 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
             return;
         }
 
-        SharedData.getInstance().fetchProfile(LoginActivity.this, LoginActivity.this , mClub);
+        SharedData.getInstance().fetchProfile(LoginActivity.this, LoginActivity.this, mClub);
+
+
+        Toast.makeText(LoginActivity.this,
+                "Looking for network connection...", Toast.LENGTH_SHORT).show();
+        mMainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(LoginActivity.this,
+                        "No connection to internet!", Toast.LENGTH_LONG).show();
+                killActivity();
+            }
+        }, 3000);
     }
 
     //CallbackRoutine Callback after profile is fetched from DB. See SharedData impl of fetchProfile()
     public void profileFetched() {
+        mMainHandler.removeCallbacksAndMessages(null);  //delete the toast runnables posted above
         SharedData data = SharedData.getInstance();
         Log.w(TAG, "profileFetched invoked ...." + data.toString());
         mAdminCode = data.mAdminCode;

@@ -1,5 +1,7 @@
 package com.sg0.baddytally;
 
+import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -41,6 +43,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import static android.content.Context.ACTIVITY_SERVICE;
 import static android.content.Context.MODE_PRIVATE;
 
 public class SharedData {
@@ -285,18 +288,21 @@ public class SharedData {
     }
 
     public SpannableStringBuilder getColorString(CharSequence text, int color) {
+        if(text.length()==0) return new SpannableStringBuilder(text);
         SpannableStringBuilder ssBuilder = new SpannableStringBuilder(text);
         ssBuilder.setSpan(new ForegroundColorSpan(color), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         return ssBuilder;
     }
 
     public SpannableStringBuilder getBgColorString(CharSequence text, int color) {
+        if(text.length()==0) return new SpannableStringBuilder(text);
         SpannableStringBuilder ssBuilder = new SpannableStringBuilder(text);
         ssBuilder.setSpan(new BackgroundColorSpan(color), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         return ssBuilder;
     }
 
     public SpannableStringBuilder getStyleString(CharSequence text, int style) {
+        if(text.length()==0) return new SpannableStringBuilder(text);
         //style=Typeface.ITALIC
         SpannableStringBuilder ssBuilder = new SpannableStringBuilder(text);
         ssBuilder.setSpan(new StyleSpan(style), 0, text.length(), 0);
@@ -304,6 +310,7 @@ public class SharedData {
     }
 
     public SpannableStringBuilder getSizeString(CharSequence text, float proportion) {
+        if(text.length()==0) return new SpannableStringBuilder(text);
         //style=Typeface.ITALIC
         SpannableStringBuilder ssBuilder = new SpannableStringBuilder(text);
         ssBuilder.setSpan(new RelativeSizeSpan(proportion), 0, text.length(), 0);
@@ -311,6 +318,7 @@ public class SharedData {
     }
 
     public SpannableStringBuilder getStrikethroughString(CharSequence text) {
+        if(text.length()==0) return new SpannableStringBuilder(text);
         SpannableStringBuilder ssBuilder = new SpannableStringBuilder(text);
         ssBuilder.setSpan(new StrikethroughSpan(), 0, text.length(), 0);
         return ssBuilder;
@@ -1016,6 +1024,33 @@ public class SharedData {
         }
         if(len>5) retStr += "..";
         return retStr;
+    }
+
+    // Get a MemoryInfo object for the device's current memory status.
+    // Note: This is device's overall memory status, not specific to this app
+    public ActivityManager.MemoryInfo getAvailableMemory(final Activity mActivity) {
+        ActivityManager activityManager = (ActivityManager) mActivity.getSystemService(ACTIVITY_SERVICE);
+        ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
+        activityManager.getMemoryInfo(memoryInfo);
+        Log.v(TAG, "getAvailableMemory: avail=" + memoryInfo.availMem/(1048576)  +
+                "MB thres=" + memoryInfo.threshold/(1048576) +
+                "MB total=" + memoryInfo.totalMem/(1048576));
+        return memoryInfo;
+    }
+
+    public void printHeapUsage(final String msg) {
+        // Get current size of heap in bytes
+        long heapSize = Runtime.getRuntime().totalMemory();
+
+        // Get maximum size of heap in bytes. The heap cannot grow beyond this size.
+        // Any attempt will result in an OutOfMemoryException.
+        long heapMaxSize = Runtime.getRuntime().maxMemory();
+
+        // Get amount of free memory within the heap in bytes. This size will increase // after garbage collection and decrease as new objects are created.
+        long heapFreeSize = Runtime.getRuntime().freeMemory();
+
+        Log.d(TAG, msg + " printHeapUsage: size=" + heapSize/1024 +
+                " max=" + heapMaxSize/1024 + " free=" + heapFreeSize/1024);
     }
 }
 

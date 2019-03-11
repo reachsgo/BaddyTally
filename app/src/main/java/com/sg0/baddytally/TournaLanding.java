@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -42,6 +43,8 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     private ArrayAdapter mTournaLA;
     private ArrayList<String> mTournaList;
 
+    private Handler mMainHandler;
+
     private void killActivity() {
         setResult(RESULT_OK);
         finish();
@@ -55,6 +58,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
         Log.d(TAG, "onCreate: ");
         mTUtil = new TournaUtil(TournaLanding.this, TournaLanding.this);
         mCommon = SharedData.getInstance();
+        mMainHandler = new Handler();
 
         //mCustomDialog = new TournaEditTextDialog(TournaLanding.this, TournaLanding.this);
         mTournaList = new ArrayList<String>();
@@ -80,13 +84,13 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
             @Override
             public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
 
-                if(!mCommon.isRoot()) return false;
+                if (!mCommon.isRoot()) return false;
                 if (i >= mTournaList.size()) return false;
                 mCommon.wakeUpDBConnection_profile();
 
 
-                    Log.d(TAG, "mTournaLV onItemClick: " + mTournaList.get(i));
-                    final String tourna = mTournaList.get(i);
+                Log.d(TAG, "mTournaLV onItemClick: " + mTournaList.get(i));
+                final String tourna = mTournaList.get(i);
 
 
                 Context wrapper = new ContextThemeWrapper(TournaLanding.this, R.style.RedPopup);
@@ -104,7 +108,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
                     public boolean onMenuItemClick(MenuItem menuItem) {
                         Log.v(TAG, "onMenuItemClick:" + menuItem.getTitle().toString());
                         String choice = menuItem.getTitle().toString();
-                        if(choice.equals(DELETE_TOURNA)) deleteTourna(tourna);
+                        if (choice.equals(DELETE_TOURNA)) deleteTourna(tourna);
                         popup.dismiss();
                         return true;
                     }
@@ -124,23 +128,32 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
             }
         });
 
-       refresh();
+        refresh();
     }
 
     private void refresh() {
+
+        mMainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(TournaLanding.this,
+                        "No connection to internet!", Toast.LENGTH_LONG).show();
+                killActivity();
+            }
+        }, 3000);
         mTUtil.fetchActiveTournaments(); //CB_READTOURNA
     }
 
     private Boolean selectActivityForTourna() {
         Log.d(TAG, "selectActivityForTourna: ");
-        if(mCommon.mTournament.isEmpty()) return false;
-        if(null==mCommon.mTournaMap || mCommon.mTournaMap.size()==0) return false;
-        for(Map.Entry<String,String> tourna : mCommon.mTournaMap.entrySet()) {
-            if(tourna.getKey().equals(mCommon.mTournament)) {
-                if(tourna.getValue().equals(Constants.DE) || tourna.getValue().equals(Constants.SE)) {
+        if (mCommon.mTournament.isEmpty()) return false;
+        if (null == mCommon.mTournaMap || mCommon.mTournaMap.size() == 0) return false;
+        for (Map.Entry<String, String> tourna : mCommon.mTournaMap.entrySet()) {
+            if (tourna.getKey().equals(mCommon.mTournament)) {
+                if (tourna.getValue().equals(Constants.DE) || tourna.getValue().equals(Constants.SE)) {
                     Intent myIntent = new Intent(TournaLanding.this, TournaTableLayout.class);
                     TournaLanding.this.startActivity(myIntent);
-                } else if(tourna.getValue().equals(Constants.LEAGUE)) {
+                } else if (tourna.getValue().equals(Constants.LEAGUE)) {
                     Intent myIntent = new Intent(TournaLanding.this, TournaMainActivity.class);
                     TournaLanding.this.startActivity(myIntent);
                 }
@@ -155,7 +168,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
         super.onResume();
         Log.d(TAG, "onResume: ");
 
-        if(mCommon.isDBUpdated()) {
+        if (mCommon.isDBUpdated()) {
             refresh();
             mCommon.setDBUpdated(false);
         }
@@ -175,12 +188,12 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     }
 
     public void alertResult(final String in, final Boolean ok, final Boolean ko) {
-        if(in.contains(DELETE_TOURNA)) {
-            if(ok) {
+        if (in.contains(DELETE_TOURNA)) {
+            if (ok) {
                 String parts[] = in.split(Constants.COLON_DELIM);
-                if(parts.length != 2) {
+                if (parts.length != 2) {
                     Log.v(TAG, "alertResult Internal error:" + parts.length);
-                    mCommon.showToast(TournaLanding.this, "Internal error!" , Toast.LENGTH_SHORT);
+                    mCommon.showToast(TournaLanding.this, "Internal error!", Toast.LENGTH_SHORT);
                     return;
                 }
                 updateDB_deleteTourna(parts[1]);
@@ -191,6 +204,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     public void completed(final String in, final Boolean ok) {
         Log.w(TAG, "completed: " + in + ":" + ok);
         if (in.equals(Constants.CB_READTOURNA)) {
+            mMainHandler.removeCallbacksAndMessages(null);
             if (ok) {
                 Log.d(TAG, "completed: " + mCommon.mTournaMap.size());
                 ArrayList<String> tournaList = new ArrayList<>();
@@ -239,7 +253,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
                 mCommon.clear();
                 Toast.makeText(TournaLanding.this, "Cache cleared!", Toast.LENGTH_SHORT)
                         .show();
-                Intent intent = new Intent(getApplicationContext(), MainSigninActivity.class);
+                Intent intent = new Intent(TournaLanding.this, MainSigninActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 break;
@@ -257,7 +271,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     }
 
     private void deleteTourna(final String tourna) {
-        if(!mCommon.isPermitted(getApplicationContext())) {
+        if (!mCommon.isPermitted(TournaLanding.this)) {
             return;
         }
         Log.v(TAG, "deleteTourna:" + tourna);
@@ -267,7 +281,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     }
 
     private void updateDB_deleteTourna(final String tourna) {
-        if(!mCommon.isDBConnected()) {
+        if (!mCommon.isDBConnected()) {
             Toast.makeText(TournaLanding.this,
                     "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
             return;

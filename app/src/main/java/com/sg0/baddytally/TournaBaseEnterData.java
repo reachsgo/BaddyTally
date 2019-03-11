@@ -153,7 +153,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             }
         });
         mCommon = SharedData.getInstance();
-        if(!mCommon.isPermitted(getApplicationContext())) killActivity();
+        if(!mCommon.isPermitted(TournaBaseEnterData.this)) killActivity();
         mAlertTitle = "";
         mAlertMsg = "";
         mFinishActivity = false;
@@ -946,13 +946,17 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             if(mMatchDBEntry.getExtLinkSrcFlag(0)) {
                 //There is an External Link and this is the source flag. Thus, the external link needs to be
                 //followed and its winner needs to be set to the loser of this match.
-                //EXTERNALLEAF in lower bracket has one team as link and the other as Bye.
+                //EXTERNALLEAF in lower bracket has team1 as link and team2 as Bye.
                 String extLinkLabel = mMatchDBEntry.getExtLinkLabel(0);
                 String extLinkMatchId = mMatchDBEntry.getExtLinkMatchId(0);
                 mDatabase.child(mCommon.mClub).child(Constants.TOURNA)
                         .child(mCommon.mTournament).child(extLinkLabel)
                         .child(extLinkMatchId).child("w")
-                        .setValue(mMatchDBEntry.getLoser(true));
+                        .setValue(mMatchDBEntry.getLoser(true));  //set the winner
+                mDatabase.child(mCommon.mClub).child(Constants.TOURNA)
+                        .child(mCommon.mTournament).child(extLinkLabel)
+                        .child(extLinkMatchId).child("t").child("0")
+                        .setValue(mMatchDBEntry.getLoser(true));  //set team1. team2 is bye
 
                 // fixL 0-4 (winner) -> 1-4 (corresponding team name needs to be updated)
                 propogateTheWinner(extLinkLabel, extLinkMatchId, mMatchDBEntry.getLoser(true));

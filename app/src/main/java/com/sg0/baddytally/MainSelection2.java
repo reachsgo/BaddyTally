@@ -27,7 +27,7 @@ public class MainSelection2 extends AppCompatActivity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main_selection2);
         Log.d(TAG, "onCreate: ");
-        SharedData.getInstance().initData(getApplicationContext());
+        SharedData.getInstance().initData(MainSelection2.this);
         mTournaBtn = findViewById(R.id.tournaments);
         mTournaBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -83,7 +83,7 @@ public class MainSelection2 extends AppCompatActivity {
                 SharedData.getInstance().clear();
                 Toast.makeText(MainSelection2.this, "Cache cleared!", Toast.LENGTH_SHORT)
                         .show();
-                Intent intent = new Intent(getApplicationContext(), MainSigninActivity.class);
+                Intent intent = new Intent(MainSelection2.this, MainSigninActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 break;

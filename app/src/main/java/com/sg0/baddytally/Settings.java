@@ -53,6 +53,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 
 
 class TaskParams {
@@ -123,7 +124,7 @@ public class Settings extends AppCompatActivity {
         mWinPercInfo = "";
         Log.w(TAG, "onCreate :" + mCommon.toString());
 
-        if(!mCommon.isPermitted(getApplicationContext())) return;
+        if(!mCommon.isPermitted(Settings.this)) return;
 
         if (!Constants.ROOT.equals(mCommon.mRole)) {
             //non root user

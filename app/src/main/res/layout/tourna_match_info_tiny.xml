@@ -4,32 +4,38 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
+    <!--
+    Keep the size of this layout to a minimum. This is the layout
+    exported as PDF and creation of bitmap takes a lot of memory for
+    huge layouts.
+    -->
+
     <TextView
         android:id="@+id/team1p_tv"
-        android:layout_width="100dp"
+        android:layout_width="85dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="1dp"
+        android:layout_marginTop="2dp"
         android:layout_gravity="center"
         android:gravity="center"
         android:text="---"
         android:textColor="@android:color/black"
-        android:textSize="11sp" />
+        android:textSize="9sp" />
     <TextView
         android:id="@+id/team2p_tv"
         android:layout_below="@id/team1p_tv"
-        android:layout_width="100dp"
+        android:layout_width="85dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="1dp"
+        android:layout_marginBottom="2dp"
         android:layout_gravity="center"
         android:gravity="center"
         android:text="---"
         android:textColor="@android:color/black"
-        android:textSize="11sp" />
+        android:textSize="9sp" />
 
     <Button
         android:id="@+id/info_btn"
         style="?android:textAppearanceSmall"
-        android:layout_width="100dp"
+        android:layout_width="85dp"
         android:layout_height="30dp"
         android:layout_gravity="center"
         android:background="@android:color/transparent"

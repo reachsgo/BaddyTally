@@ -20,9 +20,9 @@
         android:icon="@drawable/white_autorenew_24px"
         android:title="Refresh"/>
     <item
-        android:id="@+id/action_settings"
+        android:id="@+id/action_export"
         android:orderInCategory="40"
-        android:title="@string/action_settings"
+        android:title="Export pdf"
         app:showAsAction="never" />
     <item
         android:id="@+id/action_logout"
