@@ -33,6 +33,8 @@ public class MainSelection2 extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent myIntent = new Intent(MainSelection2.this, TournaLanding.class);
+                //dont keep this activity in stack. The background image consumes memory
+                myIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 MainSelection2.this.startActivity(myIntent);
             }
         });
@@ -42,6 +44,8 @@ public class MainSelection2 extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent myIntent = new Intent(MainSelection2.this, MainActivity.class);
+                //dont keep this activity in stack. The background image consumes memory
+                myIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 MainSelection2.this.startActivity(myIntent);
             }
         });

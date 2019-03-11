@@ -331,7 +331,11 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         }
 
         if(mActToStart.equals(Constants.INITIAL)) {
-            killActivity();   //finish was not ending the activity here.
+            //start from Main again. There is no history for initial activities, so we cant just do a
+            //killActivity here.
+            Intent intent = new Intent(LoginActivity.this, MainSigninActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
             return;
         }
 

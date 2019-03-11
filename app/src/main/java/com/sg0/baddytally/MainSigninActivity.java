@@ -62,6 +62,8 @@ public class MainSigninActivity extends AppCompatActivity {
         if(SharedData.getInstance().mCount == Constants.EXIT_APPLICATION) killActivity();
         if (!SharedData.getInstance().mClub.isEmpty()) {
             Intent myIntent = new Intent(MainSigninActivity.this, MainSelection2.class);
+            //dont keep this activity in stack. The background image consumes memory
+            myIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             MainSigninActivity.this.startActivity(myIntent);
         }
     }
