@@ -152,13 +152,13 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
             if (tourna.getKey().equals(mCommon.mTournament)) {
                 if (tourna.getValue().equals(Constants.DE) || tourna.getValue().equals(Constants.SE)) {
                     Intent myIntent = new Intent(TournaLanding.this, TournaTableLayout.class);
-                    //dont keep this activity in stack. The background image consumes memory
-                    myIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    //dont keep this activity in stack to reduce heap usage (mainly due to background image)
+                    //history=false set in manifest
                     TournaLanding.this.startActivity(myIntent);
                 } else if (tourna.getValue().equals(Constants.LEAGUE)) {
-                    Intent myIntent = new Intent(TournaLanding.this, TournaMainActivity.class);
-                    //dont keep this activity in stack. The background image consumes memory
-                    myIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    Intent myIntent = new Intent(TournaLanding.this, TournaLeague.class);
+                    //dont keep this activity in stack to reduce heap usage (mainly due to background image)
+                    //history=false set in manifest
                     TournaLanding.this.startActivity(myIntent);
                 }
                 break;
@@ -180,8 +180,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
-        killActivity();
+        mCommon.killApplication();
     }
 
     //CallbackRoutine Callback interfaces

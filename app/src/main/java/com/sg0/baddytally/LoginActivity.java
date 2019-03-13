@@ -2,7 +2,6 @@ package com.sg0.baddytally;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -14,7 +13,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
@@ -25,11 +23,9 @@ import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -414,7 +410,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
                 myIntent.putStringArrayListExtra(Constants.TEAM2PLAYERS, thisIntent.getStringArrayListExtra(Constants.TEAM2PLAYERS));
                 LoginActivity.this.startActivityForResult(myIntent, Constants.ENTERDATA_ACTIVITY);
             } else {
-                Intent myIntent = new Intent(LoginActivity.this, TournaEnterData.class);
+                Intent myIntent = new Intent(LoginActivity.this, TournaLeagueEnterData.class);
                 myIntent.putExtra("gametype", mGameTypeRadioButton.getText());
                 LoginActivity.this.startActivityForResult(myIntent, Constants.ENTERDATA_ACTIVITY);
             }

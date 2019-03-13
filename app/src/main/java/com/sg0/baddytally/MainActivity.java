@@ -282,7 +282,7 @@ public class MainActivity extends AppCompatActivity implements CallbackRoutine {
             /*
             if (SharedData.getInstance().mTournaMode) {
                 //Intent myIntent = new Intent(MainActivity.this, TournaTableLayout.class);
-                Intent myIntent = new Intent(MainActivity.this, TournaMainActivity.class);
+                Intent myIntent = new Intent(MainActivity.this, TournaLeague.class);
                 MainActivity.this.startActivity(myIntent);
                 //SharedData.getInstance().mTournaMode = false; //SGO
                 //TODO: Have to add Settings to tournamode

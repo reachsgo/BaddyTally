@@ -3,17 +3,12 @@ package com.sg0.baddytally;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.Typeface;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
@@ -26,10 +21,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.TableLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
@@ -310,7 +302,7 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
 
 
         mCommon.mTournament = mTourna;
-        Intent myIntent = new Intent(TournaSeeding.this, TournaMainActivity.class);
+        Intent myIntent = new Intent(TournaSeeding.this, TournaLeague.class);
         TournaSeeding.this.startActivity(myIntent);
 
         //killActivity();
@@ -329,7 +321,7 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
         //unitTest(fixMap);
 
         mCommon.mTournament = mTourna;
-        Intent myIntent = new Intent(TournaSeeding.this, TournaMainActivity.class);
+        Intent myIntent = new Intent(TournaSeeding.this, TournaLeague.class);
         TournaSeeding.this.startActivity(myIntent);
 
         //killActivity();

@@ -62,17 +62,16 @@ public class MainSigninActivity extends AppCompatActivity {
         if(SharedData.getInstance().mCount == Constants.EXIT_APPLICATION) killActivity();
         if (!SharedData.getInstance().mClub.isEmpty()) {
             Intent myIntent = new Intent(MainSigninActivity.this, MainSelection2.class);
-            //dont keep this activity in stack. The background image consumes memory
-            myIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            //dont keep this activity in stack to reduce heap usage (mainly due to background image)
+            //history=false set in manifest
             MainSigninActivity.this.startActivity(myIntent);
         }
     }
 
+
     @Override
-    public void onBackPressed()
-    {
-        super.onBackPressed();
-        finish();
+    public void onBackPressed() {
+        SharedData.getInstance().killApplication();
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {

@@ -33,8 +33,9 @@ public class MainSelection2 extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent myIntent = new Intent(MainSelection2.this, TournaLanding.class);
-                //dont keep this activity in stack. The background image consumes memory
-                myIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                //dont keep this activity in stack to reduce heap usage (mainly due to background image)
+                //history=false set in manifest
+                //myIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP); //this wont work as TournaLanding is on top of this activity
                 MainSelection2.this.startActivity(myIntent);
             }
         });
@@ -44,8 +45,8 @@ public class MainSelection2 extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent myIntent = new Intent(MainSelection2.this, MainActivity.class);
-                //dont keep this activity in stack. The background image consumes memory
-                myIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                //dont keep this activity in stack to reduce heap usage (mainly due to background image)
+                //history=false set in manifest
                 MainSelection2.this.startActivity(myIntent);
             }
         });
@@ -61,6 +62,8 @@ public class MainSelection2 extends AppCompatActivity {
             //mClubLeagueBtn.performClick();
         //}
     }
+
+
 
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.basic_menu_main, menu);
@@ -88,7 +91,6 @@ public class MainSelection2 extends AppCompatActivity {
                 Toast.makeText(MainSelection2.this, "Cache cleared!", Toast.LENGTH_SHORT)
                         .show();
                 Intent intent = new Intent(MainSelection2.this, MainSigninActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 break;
             case R.id.action_about:
@@ -109,12 +111,9 @@ public class MainSelection2 extends AppCompatActivity {
         finish();
     }
 
+
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
-        SharedData.getInstance().mCount = Constants.EXIT_APPLICATION;
-        killActivity();
+        SharedData.getInstance().killApplication();
     }
-
-
 }

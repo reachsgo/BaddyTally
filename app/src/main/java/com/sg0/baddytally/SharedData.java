@@ -1052,5 +1052,9 @@ public class SharedData {
         Log.d(TAG, msg + " printHeapUsage: size=" + heapSize/1024 +
                 " max=" + heapMaxSize/1024 + " free=" + heapFreeSize/1024);
     }
+
+    public void killApplication() {
+        android.os.Process.killProcess(android.os.Process.myPid());
+    }
 }
 

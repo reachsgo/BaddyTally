@@ -7,9 +7,6 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.Looper;
-import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -32,104 +29,68 @@ import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 
 public class TournaBaseEnterData extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
 
-    private static final int RESULT_SUCCESS = 0;
-    private static final int RESULT_FAILURE = 1;
-    private static final int MSG_FETCHGAMES = 100;
-    private static final List<Integer> scoreList = new ArrayList<Integer>() {{
-        add(0);
-        add(1);
-        add(2);
-        add(3);
-        add(4);
-        add(5);
-        add(6);
-        add(7);
-        add(8);
-        add(9);
-        add(10);
-        add(11);
-        add(12);
-        add(13);
-        add(14);
-        add(15);
-        add(16);
-        add(17);
-        add(18);
-        add(19);
-        add(20);
-        add(21);
-        add(22);
-        add(23);
-        add(24);
-        add(25);
-        add(26);
-        add(27);
-        add(28);
-        add(29);
+    protected static final List<Integer> scoreList = new ArrayList<Integer>() {{
+        add(0);         add(1);        add(2);
+        add(3);        add(4);        add(5);
+        add(6);        add(7);        add(8);
+        add(9);        add(10);        add(11);
+        add(12);        add(13);        add(14);
+        add(15);        add(16);        add(17);
+        add(18);        add(19);        add(20);
+        add(21);        add(22);        add(23);
+        add(24);        add(25);        add(26);
+        add(27);        add(28);        add(29);
         add(30);
     }};
-    private static final String TAG = "TournaBaseEnterData";
-    private SharedData mCommon;
-    private List<String> mMatches;
-    private String mMatch;
-    private String mGameType;
-    private Integer mNumOfMatches;
-    private Integer mBestOf;
-    private MatchInfo mChosenMatch;
-    private String mSelectedMatch;
-    private ArrayList<GameJournalDBEntry> mGameList;
 
-    private boolean mSingles;
-    private List<String> mT1_players;
-    private List<String> mT2_players;
+    protected static int mBestOf = 3;
+    protected SharedData mCommon;
+    protected Spinner mSpinner_P1;
+    protected Spinner mSpinner_P2;
+    protected Spinner mSpinner_P3;
+    protected Spinner mSpinner_P4;
+    protected Spinner mSpinner_T1_1;
+    protected Spinner mSpinner_T1_2;
+    protected Spinner mSpinner_T1_3;
+    protected Spinner mSpinner_T2_1;
+    protected Spinner mSpinner_T2_2;
+    protected Spinner mSpinner_T2_3;
+    protected String mSpinner_P1_selection;
+    protected String mSpinner_P2_selection;
+    protected String mSpinner_P3_selection;
+    protected String mSpinner_P4_selection;
+    protected Spinner mSpinner_W;   //winner
+    protected String mSpinner_W_selection;
+    protected List<String> mSpinner_Teams;  //list to be displayed on "winner" spinner
+    protected DatabaseReference mDatabase;
+    protected ProgressDialog mProgressDialog;
+    protected List<String> mT1_players;
+    protected List<String> mT2_players;
+    protected ArrayList<GameJournalDBEntry> mGameList;
+    protected boolean mSingles;
+    protected List<String> mTeams;
+    private static final String TAG = "TournaBaseEnterData";
+
     private String mTournaType;
-    private List<String> mTeams;
+
     private String mMatchId;
     private String mFixtureLabel;
     private TournaFixtureDBEntry mMatchDBEntry;
     private Boolean mViewOnly;
-
-    private Spinner mSpinner_P1;
-    private Spinner mSpinner_P2;
-    private Spinner mSpinner_P3;
-    private Spinner mSpinner_P4;
-    private Spinner mSpinner_T1_1;
-    private Spinner mSpinner_T1_2;
-    private Spinner mSpinner_T1_3;
-    private Spinner mSpinner_T2_1;
-    private Spinner mSpinner_T2_2;
-    private Spinner mSpinner_T2_3;
-
-    private String mSpinner_P1_selection;
-    private String mSpinner_P2_selection;
-    private String mSpinner_P3_selection;
-    private String mSpinner_P4_selection;
-
-    private Spinner mSpinner_W;   //winner
-    private String mSpinner_W_selection;
-    private List<String> mSpinner_Teams;  //list to be displayed on "winner" spinner
-
-    private DatabaseReference mDatabase;
-    private ProgressDialog mProgressDialog;
     private String mAlertTitle;
     private String mAlertMsg;
     private Boolean mFinishActivity;
-    private Boolean mUnlockDB;
-    private Boolean mGamesReadFromDB;
-
-    //private HandlerThread mWorker;
-    //private Handler mWorkerHandler;
     private Handler mMainHandler;
     private Integer mDBLockCount;
 
-    private void killActivity() {
+    protected void killActivity() {
+        Log.d(TAG, "killActivity: ");
         setResult(RESULT_OK);
         finish();
     }
@@ -140,125 +101,25 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
         setContentView(R.layout.tourna_activity_enter_data);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
+        Log.d(TAG, "onCreate: ");
         FloatingActionButton fab = findViewById(R.id.fab_cancel);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.d(TAG, "onClick: ");
                 killActivity();
-                //return back to Main Activity and clear all activities before that.
-                /*
-                Intent intent = new Intent(getApplicationContext(), TournaMainActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent); */
             }
         });
         mCommon = SharedData.getInstance();
-        if(!mCommon.isPermitted(TournaBaseEnterData.this)) killActivity();
-        mAlertTitle = "";
-        mAlertMsg = "";
-        mFinishActivity = false;
-        mUnlockDB = false;
-        mDBLockCount = 0;
-        //mClub = mCommon.mClub;
-        //mCommon.mClub = "club1"; //SGO TODO remove!
-
-        Intent thisIntent = getIntent(); // gets the previously created intent
-        mTournaType = thisIntent.getStringExtra(Constants.TOURNATYPE);
-        mMatchId = thisIntent.getStringExtra(Constants.MATCH);
-        mFixtureLabel = thisIntent.getStringExtra(Constants.FIXTURE);
-        mTeams = thisIntent.getStringArrayListExtra(Constants.TEAMS);
-        mT1_players = thisIntent.getStringArrayListExtra(Constants.TEAM1PLAYERS);
-        mT2_players = thisIntent.getStringArrayListExtra(Constants.TEAM2PLAYERS);
-        String extras = thisIntent.getStringExtra(Constants.EXTRAS);
-        mViewOnly = false;
-        if(null!=extras && !extras.isEmpty() && extras.equals(Constants.VIEWONLY)) {
-            mViewOnly = true;
-            Log.d(TAG, "onCreate: mViewOnly");
-        }
-        mSpinner_Teams = new ArrayList<>(mTeams);
-        mSpinner_Teams.add(0, "none");
-
-        Log.w(TAG, "onCreate :" + mTournaType + "/" + mMatchId + "/"
-                + mFixtureLabel + "/" + mTeams + "/"
-                + mT1_players + "/" + mT2_players);
-
-
+        if (!mCommon.isPermitted(TournaBaseEnterData.this)) killActivity();
         mDatabase = FirebaseDatabase.getInstance().getReference();
         mProgressDialog = null;
-        mBestOf = 3;
-        mSingles = false;
 
-        if (mTeams != null && mTeams.size() == 2) {
-            TextView header = findViewById(R.id.enterdata_matchinfo);
-            String title = mTeams.get(0) + " vs " + mTeams.get(1);
-            header.setText(title);
-            ((TextView)findViewById(R.id.team1_tv)).setText(mTeams.get(0));
-            ((TextView)findViewById(R.id.team2_tv)).setText(mTeams.get(1));
-        }
-
-        if(mT1_players.size()==1 || mT1_players.get(1).isEmpty()) {
-            //Only one player in the team. Singles match.
-            findViewById(R.id.spinner_p2_rl).setVisibility(View.GONE);
-            findViewById(R.id.spinner_p4_rl).setVisibility(View.GONE);
-            mSingles = true;
-        }
-
-        //Winner-spinner is set from isMatchDone() invoked from spinner callbacks (onItemSelected).
-        //So, initialize that first.
-        mSpinner_W = findViewById(R.id.winner);
-        mSpinner_W_selection = "";
-        ArrayAdapter<String> winnerAdapter = new ArrayAdapter<>(this,
-                R.layout.small_spinner, mSpinner_Teams);
-        winnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mSpinner_W.setAdapter(winnerAdapter);
-        mSpinner_W.setSelection(0);
-
-
-
-
-
-        //mMainHandler = new Handler(Looper.getMainLooper()) {
-        mMainHandler = new Handler();
-
-        /*
-        mWorker = new HandlerThread("MyHandlerThread");
-        mWorker.start();
-        Looper looper = mWorker.getLooper();
-        mWorkerHandler = new Handler(looper) {
-            @Override
-            public void handleMessage(Message msg) {
-                super.handleMessage(msg);
-                Log.d(TAG, "handleMessage: " + msg.what + " arg1=" + msg.arg1 + " arg2=" + msg.arg2);
-                switch (msg.what) {
-                    case MSG_FETCHGAMES:
-                        fetchGames(mMatchId, true);
-                        break;
-                }
-            }
-        };
-        */
-
-        mGamesReadFromDB = false;
-        if(mMatchId.isEmpty() || mFixtureLabel.isEmpty()) {
-            Toast.makeText(TournaBaseEnterData.this, "Match ID or Label not available!",
-                    Toast.LENGTH_LONG).show();
-        } else {
-            fetchGames(mMatchId, true);
-        }
-
+        onCreateExtra();
     }
 
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        Log.v(TAG, "onStart:" + Thread.currentThread().getId());
-
-        
-    }
-
-    private void prepareForInput() {
-        Log.i(TAG, "prepareForInput tid=" + Thread.currentThread().getId());
+    protected void initializeSpinners() {
+        Log.i(TAG, "initializeSpinners tid=" + Thread.currentThread().getId());
         mCommon.wakeUpDBConnection();
         mSpinner_P1 = findViewById(R.id.spinner_p1);
         mSpinner_P2 = findViewById(R.id.spinner_p2);
@@ -405,26 +266,104 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
         mSpinner_T2_2.setOnItemSelectedListener(this);
         mSpinner_T2_3.setOnItemSelectedListener(this);
 
+        Log.d(TAG, "initializeSpinners: done-----");
+    }
 
-
+    private void prepareForInput() {
+        Log.i(TAG, "prepareForInput tid=" + Thread.currentThread().getId());
+        initializeSpinners();
         populateGamePoints(mGameList);
-        if(mViewOnly) makeItViewOnly();
+        if (mViewOnly) makeItViewOnly();
+    }
+
+    protected void onCreateExtra() {
+        Log.d(TAG, "onCreateExtra: ");
+        mSingles = false;
+        mAlertTitle = "";
+        mAlertMsg = "";
+        mFinishActivity = false;
+        mDBLockCount = 0;
+
+        Intent thisIntent = getIntent(); // gets the previously created intent
+        mTournaType = thisIntent.getStringExtra(Constants.TOURNATYPE);
+        mMatchId = thisIntent.getStringExtra(Constants.MATCH);
+        mFixtureLabel = thisIntent.getStringExtra(Constants.FIXTURE);
+        mTeams = thisIntent.getStringArrayListExtra(Constants.TEAMS);
+        mT1_players = thisIntent.getStringArrayListExtra(Constants.TEAM1PLAYERS);
+        mT2_players = thisIntent.getStringArrayListExtra(Constants.TEAM2PLAYERS);
+        String extras = thisIntent.getStringExtra(Constants.EXTRAS);
+        mViewOnly = false;
+        if (null != extras && !extras.isEmpty() && extras.equals(Constants.VIEWONLY)) {
+            mViewOnly = true;
+            Log.d(TAG, "onCreateExtra: mViewOnly");
+        }
+
+        //Winner-spinner is set from isMatchDone() invoked from spinner callbacks (onItemSelected).
+        //So, initialize that first.
+        mSpinner_W = findViewById(R.id.winner);
+        mSpinner_W_selection = "";
+        mSpinner_Teams = new ArrayList<>(mTeams);
+        mSpinner_Teams.add(0, "none");
+        Log.d(TAG, "initializeSpinners: mSpinner_Teams=" + mSpinner_Teams);
+        ArrayAdapter<String> winnerAdapter = new ArrayAdapter<>(this,
+                R.layout.small_spinner, mSpinner_Teams);
+        winnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mSpinner_W.setAdapter(winnerAdapter);
+        mSpinner_W.setSelection(0);
+
+        if (mTeams != null && mTeams.size() == 2) {
+            TextView header = findViewById(R.id.enterdata_matchinfo);
+            String title = mTeams.get(0) + " vs " + mTeams.get(1);
+            header.setText(title);
+            ((TextView) findViewById(R.id.team1_tv)).setText(mTeams.get(0));
+            ((TextView) findViewById(R.id.team2_tv)).setText(mTeams.get(1));
+        }
+
+        if (mT1_players.size() == 1 || mT1_players.get(1).isEmpty()) {
+            //Only one player in the team. Singles match.
+            findViewById(R.id.spinner_p2_rl).setVisibility(View.GONE);
+            findViewById(R.id.spinner_p4_rl).setVisibility(View.GONE);
+            mSingles = true;
+        }
+
+
+
+        Log.w(TAG, "onCreateExtra :" + mTournaType + "/" + mMatchId + "/"
+                + mFixtureLabel + "/" + mTeams + "/"
+                + mT1_players + "/" + mT2_players);
+
+        mMainHandler = new Handler();
+
+        if (mMatchId.isEmpty() || mFixtureLabel.isEmpty()) {
+            Toast.makeText(TournaBaseEnterData.this, "Match ID or Label not available!",
+                    Toast.LENGTH_LONG).show();
+        } else {
+            Log.d(TAG, "onCreateExtra: invoking fetchGames");
+            fetchGames(mMatchId, true);
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.v(TAG, "onStart:" + Thread.currentThread().getId());
     }
 
     @Override
     public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
         String s = adapterView.getItemAtPosition(position).toString();
-        //Log.d(TAG, "onItemSelected: " + s);
+        Log.d(TAG, "onItemSelected: " + s);
         enterData(true);
     }
 
     @Override
-    public void onNothingSelected(AdapterView<?> adapterView) {}
+    public void onNothingSelected(AdapterView<?> adapterView) {
+    }
 
 
-    private void rearrangeDropdownList(Spinner spinner, ArrayAdapter<String> adapter, List<String> players) {
-        //Log.v(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/"
-        //        + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
+    protected void rearrangeDropdownList(Spinner spinner, ArrayAdapter<String> adapter, List<String> players) {
+        Log.v(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/"
+                + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
         adapter.clear();
         //Collections.sort(players);  //sorted already so that players present on the court comes first.
         adapter.addAll(players);
@@ -449,8 +388,8 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             spinner.setSelection(adapter.getCount() - 1);
             mSpinner_P4_selection = spinner.getItemAtPosition(0).toString();
         }
-        //Log.i(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" +
-        //        mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
+        Log.i(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" +
+                mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
         adapter.notifyDataSetChanged();
     }
 
@@ -465,14 +404,12 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
     //will be invoked in the main thread.
 
     private void fetchGames(final String matchId, final Boolean reinit) {
-        //avoid loop for DE , where DE_FINALS_M2 is read
-        //from fetchGames(DE_FINALS_M1)
-        if(mGamesReadFromDB) return;
 
-        Log.i(TAG, "fetchGames(" + Thread.currentThread().getId() + ")  matchId=" + matchId + " mMatchId=" + mMatchId);
+        Log.i(TAG, "fetchGames(" + Thread.currentThread().getId() + ")  matchId=" +
+                matchId + " mMatchId=" + mMatchId);
         DatabaseReference dbRef = mDatabase.child(mCommon.mClub).child(Constants.TOURNA)
                 .child(mCommon.mTournament).child(Constants.MATCHES).child(mFixtureLabel)
-                .child(matchId);
+                .child(matchId);   //MATCH data
 
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -483,19 +420,13 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
                         };
                 List<GameJournalDBEntry> games = dataSnapshot.getValue(genericTypeIndicator);
                 if (games == null) {
-                    if(reinit) mGameList = new ArrayList<>();
+                    if (reinit) mGameList = new ArrayList<>();
                     isMatchDone(mGameList, true); //reset if the winner was already set
                 } else {
                     mGameList = new ArrayList<>(games);
                     isMatchDone(mGameList, true);
                 }
                 prepareForInput();
-                if(mFixtureLabel.equals(Constants.DE_FINALS)) {
-                    //If there is a second finals game, fetch that
-                    if(matchId.equals(Constants.DE_FINALS_M1)) {
-                        fetchGames(Constants.DE_FINALS_M2, false);
-                    } else mGamesReadFromDB = true;
-                } else mGamesReadFromDB = true;
             }
 
             @Override
@@ -508,35 +439,34 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
         });
 
         dbRef = mDatabase.child(mCommon.mClub).child(Constants.TOURNA)
-                .child(mCommon.mTournament).child(mFixtureLabel).child(matchId);
+                .child(mCommon.mTournament).child(mFixtureLabel)
+                .child(matchId);  //FIXTURE data
 
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 TournaFixtureDBEntry dbEntry = dataSnapshot.getValue(TournaFixtureDBEntry.class);
-                if(dbEntry==null) return;
+                if (dbEntry == null) return;
                 mMatchDBEntry = dbEntry;  //rewrite member data only if a valid match entry.
                 //Incase of DE_FINALS_M2, <tourna>/F-1/2 is created from <tourna>/F-1/1
                 //and hence DE_FINALS_M1 match entry should not be overwritten by null before that.
                 Log.d(TAG, "fetchGames:" + dataSnapshot.getKey() + " " + mMatchDBEntry.toString());
 
                 mMatchId = matchId;  //imp to set DE_FINALS_M2 here, if present in DB
-                if(mMatchDBEntry.isThereAWinner(true)){
-
-                            String winner = mMatchDBEntry.getW();
-                            Log.i(TAG, Thread.currentThread().getId() + " set Winner!");
-                            if(mTeams.get(0).equals(winner)) mSpinner_W.setSelection(1);
-                            else if(mTeams.get(1).equals(winner)) mSpinner_W.setSelection(2);
-                            CheckBox checkbox = findViewById(R.id.completed);
-                            checkbox.setChecked(true);
-                            if(!mCommon.isRoot() && !mViewOnly) {
-                                makeItViewOnly();
-                                Toast.makeText(TournaBaseEnterData.this, "Match already completed!",
-                                        Toast.LENGTH_LONG).show();
-                            }
-                        
+                if (mMatchDBEntry.isThereAWinner(true)) {
+                    String winner = mMatchDBEntry.getW();
+                    Log.i(TAG, Thread.currentThread().getId() + " set Winner!");
+                    if (mTeams.get(0).equals(winner)) mSpinner_W.setSelection(1);
+                    else if (mTeams.get(1).equals(winner)) mSpinner_W.setSelection(2);
+                    CheckBox checkbox = findViewById(R.id.completed);
+                    checkbox.setChecked(true);
+                    if (!mCommon.isRoot() && !mViewOnly) {
+                        makeItViewOnly();
+                        Toast.makeText(TournaBaseEnterData.this, "Match already completed!",
+                                Toast.LENGTH_LONG).show();
                     }
                 }
+            }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
@@ -546,7 +476,6 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             }
         });
     }
-
 
 
     private void populateGamePoints(ArrayList<GameJournalDBEntry> gameList) {
@@ -572,22 +501,10 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             }
             num++;
         }
-        if (mBestOf == 1) {
-            findViewById(R.id.score_t1_2).setEnabled(false);
-            findViewById(R.id.score_t1_3).setEnabled(false);
-            findViewById(R.id.score_t2_2).setEnabled(false);
-            findViewById(R.id.score_t2_3).setEnabled(false);
-        }
-        /*
-        if(isMatchDone(gameList)) {
-            Toast.makeText(TournaBaseEnterData.this, "Match already completed, nothing to update!",
-                    Toast.LENGTH_LONG).show();
-            findViewById(R.id.enter_button).setVisibility(View.GONE);
-        }*/
     }
 
 
-    private Spinner getRespectiveSpinner(final int gameNum, final int teamNum) {
+    protected Spinner getRespectiveSpinner(final int gameNum, final int teamNum) {
         Spinner tmpS = null;
         switch (gameNum) {
             case 1:
@@ -606,7 +523,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
         return tmpS;
     }
 
-    private void setGamePointSpinner(final int gameNum, final int t1Score, final int t2Score) {
+    protected void setGamePointSpinner(final int gameNum, final int t1Score, final int t2Score) {
         //Log.i(TAG, "setGamePointSpinner,case " + gameNum + ": " + t1Score + "/" + t2Score);
         Spinner tmpS = getRespectiveSpinner(gameNum, 1);
         if (tmpS != null) tmpS.setSelection(t1Score);
@@ -614,7 +531,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
         if (tmpS != null) tmpS.setSelection(t2Score);
     }
 
-    private Boolean isMatchDone(final ArrayList<GameJournalDBEntry> newGameList, final Boolean setWinner) {
+    protected Boolean isMatchDone(final ArrayList<GameJournalDBEntry> newGameList, final Boolean setWinner) {
 
         if (newGameList == null || newGameList.size() == 0) {
             //reset the checkbox and winner
@@ -623,12 +540,14 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             checkbox.setChecked(false);
             return false;
         }
-        //Log.i(TAG, "isMatchDone:" + newGameList.size());
+
         final Integer TEAM1_IDX = 1;
         final Integer TEAM2_IDX = 2;
         int winner_team_idx = 0;
         String randomPlayerT1 = mT1_players.get(0);   //we will see if this player has won best-of-N games.
         String randomPlayerT2 = mT2_players.get(0);   //take one from the other team too.
+
+        Log.i(TAG, "isMatchDone:" + randomPlayerT1 + " :" + randomPlayerT2);
 
         int randomPlayerT1_Wins = 0;
         int randomPlayerT2_Wins = 0;
@@ -640,9 +559,9 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             if (jEntry.aWinner(randomPlayerT2)) randomPlayerT2_Wins++;
         }
         if (gamesCompleted == 1) {
-            //Log.i(TAG, "One game completed");
             if (randomPlayerT1_Wins == 1) winner_team_idx = TEAM1_IDX;
             else if (randomPlayerT2_Wins == 1) winner_team_idx = TEAM2_IDX;
+            Log.i(TAG, randomPlayerT1_Wins + ":One game completed:" + randomPlayerT2_Wins);
         } else if (randomPlayerT1_Wins > (mBestOf / 2)) {
             winner_team_idx = TEAM1_IDX;
             //Log.i(TAG, "isMatchDone: " + randomPlayerT1 + "=" + randomPlayerT1_Wins + " > " + mBestOf / 2 + " winner=" + winner_team_idx);
@@ -654,7 +573,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
         if (winner_team_idx > 0) {
             Log.i(TAG, "isMatchDone: YEP:");
 
-            if(mCommon.isRoot()) {
+            if (mCommon.isRoot()) {
                 //change the winner only during initial phase.
                 //root is free to override the winner before clicking enter.
                 if (setWinner) mSpinner_W.setSelection(winner_team_idx);
@@ -664,15 +583,15 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             }
             CheckBox checkbox = findViewById(R.id.completed);
 
-            if (gamesCompleted == 1 && mBestOf==1) {
+            if (gamesCompleted == 1 && mBestOf == 1) {
                 //If only 1 game completed, then Tick completed checkbox only if best-of-1
                 //otherwise, its error prone (completed might be checked after completing game1 of best-of-3
                 checkbox.setChecked(true);
-            } else if(gamesCompleted>1)//more than 1 game and there is a clear winner.
+            } else if (gamesCompleted > 1)//more than 1 game and there is a clear winner.
                 checkbox.setChecked(true);
             return true;
         } else {
-            //Log.i(TAG, "isMatchDone: NOPE");
+            Log.i(TAG, "isMatchDone: NOPE");
             mSpinner_W.setSelection(0);
             CheckBox checkbox = findViewById(R.id.completed);
             checkbox.setChecked(false);
@@ -681,8 +600,8 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
         return false;
     }
 
-    private boolean enterData(boolean dry_run) {
-        if(null==mGameList) return false;
+    protected boolean enterData(boolean dry_run) {
+        if (null == mGameList) return false;
 
         String p1 = mSpinner_P1.getSelectedItem().toString();
         String p3 = mSpinner_P3.getSelectedItem().toString();
@@ -750,24 +669,26 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             }
 
             //Log.d(TAG, "enterData: " + winners);
-            if(winners.equals(losers)) {
+            if (winners.equals(losers)) {
                 Toast.makeText(TournaBaseEnterData.this, "Players configured with same names: " + winners,
                         Toast.LENGTH_SHORT).show();
                 return false;
             }
             if ((winningScore < 21) || s1.equals(s2)) {
-                if (!dry_run) Toast.makeText(TournaBaseEnterData.this, "Game" + gameNum + ": Bad data!", Toast.LENGTH_SHORT).show();
+                if (!dry_run)
+                    Toast.makeText(TournaBaseEnterData.this, "Game" + gameNum + ": Bad data!", Toast.LENGTH_SHORT).show();
                 return false;
             }
 
-            if(!mCommon.isDBConnected()) {
-                if (!dry_run) Toast.makeText(TournaBaseEnterData.this, "Stale DB connection, retry.", Toast.LENGTH_SHORT).show();
+            if (!mCommon.isDBConnected()) {
+                if (!dry_run)
+                    Toast.makeText(TournaBaseEnterData.this, "Stale DB connection, retry.", Toast.LENGTH_SHORT).show();
                 mCommon.wakeUpDBConnection();
                 return false;
             }
             String dateStr = SharedData.getInstance().createNewRoundName(false, null);
             GameJournalDBEntry jEntry = new GameJournalDBEntry(dateStr, "", mCommon.mUser);
-            jEntry.setResult(dateStr, mGameType, winner1, winner2, loser1, loser2, winningScore, losingScore);
+            jEntry.setResult(dateStr, Constants.DOUBLES, winner1, winner2, loser1, loser2, winningScore, losingScore);
             jEntry.setmGNo(gameNum);
             mGameList.add(jEntry);
 
@@ -777,7 +698,6 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
 
         //Do not proceed to do tha actual DB update, if this is a dry run.
         if (dry_run) return true;
-
 
 
         if (mGameList.size() > 0) {
@@ -802,7 +722,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             //Without lock, inconsistency is seen: missing journal entry or points are not added.
             SharedData.getInstance().acquireDBLock(mCommon.mTournament);
             waitForDBLock();
-        } else finish();
+        } else killActivity();
 
         return true;
     }
@@ -813,7 +733,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
     private void waitForDBLock() {
         if (!mCommon.isDBLocked()) {
             mDBLockCount++;
-            if(mDBLockCount < 20) {  //max of 20s to get DB lock
+            if (mDBLockCount < 20) {  //max of 20s to get DB lock
                 mMainHandler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -827,7 +747,6 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
                 mAlertMsg = "DB not accessible, please refresh and try again later...";
                 mFinishActivity = true;
                 mCommon.setDBUpdated(true);
-                mUnlockDB = true;
                 releaseLockAndCleanup();
             }
         } else {
@@ -854,7 +773,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             //SGO: If a null pointer exception happens while holding the DB lock,
             //DBlock will remain in the DB. Example: if mMatchDBEntry is null here.
             //Thus max DB lock period of 3 mins was implemented (refer SharedData.mDBLockedTime)
-            if(null==mMatchDBEntry) {
+            if (null == mMatchDBEntry) {
                 Log.e(TAG, "workToUpdateDB: mMatchDBEntry=null, mMatchId=" + mMatchId);
                 releaseLockAndCleanup();
                 return;
@@ -869,21 +788,14 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
                     .child(mCommon.mTournament).child(mFixtureLabel).child(mMatchId)
                     .setValue(mMatchDBEntry);
 
-            if(mFixtureLabel.equals(Constants.DE_FINALS)) {  //DE Finals
+            if (mFixtureLabel.equals(Constants.DE_FINALS)) {  //DE Finals
                 //DE Finals: Check if team1 (from UB) lost. If yes, then there is one more set of games
-                if(!mMatchId.equals(Constants.DE_FINALS_M2) && winner.equals(mTeams.get(1))){
+                if (!mMatchId.equals(Constants.DE_FINALS_M2) && winner.equals(mTeams.get(1))) {
                     //This is not the second set of finals and the winner is not the UB-winner
                     mAlertTitle = "";
                     mAlertMsg = "";
                     mFinishActivity = false;
-                    mUnlockDB = true;
 
-
-                    //mCommon.showAlert(null, TournaBaseEnterData.this, "",
-                    //        mTeams.get(0) + " lost for the first time in this tournament. Play again!");
-                    //Toast.makeText(TournaBaseEnterData.this,
-                    //        mTeams.get(0) + " lost for the first time in this tournament. Play again!",
-                    //        Toast.LENGTH_LONG).show();
                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaBaseEnterData.this);
                     alertBuilder.setTitle("");
                     alertBuilder.setMessage(mTeams.get(0) + " lost for the first time in this tournament. Play again!");
@@ -892,7 +804,6 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
                         public void onClick(DialogInterface dialogInterface, int i) {
                             mMatchId = Constants.DE_FINALS_M2;
                             mGameList = null;
-                            mGamesReadFromDB = false;
                             TournaFixtureDBEntry dbEntry = new TournaFixtureDBEntry(mMatchDBEntry);
                             dbEntry.setW("");
                             mDatabase.child(mCommon.mClub).child(Constants.TOURNA)
@@ -910,17 +821,16 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
                     mAlertTitle = winner + " won!";
                     mAlertMsg = "";
                     mFinishActivity = true;
-                    mUnlockDB = true;
                     releaseLockAndCleanup();
                     return;
                 }
             }
 
-            //not DE
+            //not the DE final match, but a final match of UB or LB
             mAlertTitle = winner + " won!";
-            if(mMatchDBEntry.isExternalLink(0) && mMatchDBEntry.getF()) {
+            if (mMatchDBEntry.isExternalLink(0) && mMatchDBEntry.getF()) {
                 //This is the final match and there is an external link (DE tournament)
-                //So, this is the upper bracket.
+                //So, this is the upper bracket. Create Final1 fixture.
                 TournaFixtureDBEntry deFinalsDBEntry = new TournaFixtureDBEntry();
                 deFinalsDBEntry.setT1(true, winner);
                 mDatabase.child(mCommon.mClub).child(Constants.TOURNA)
@@ -929,21 +839,24 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
                         .setValue(deFinalsDBEntry);
                 mAlertTitle = "Finals";
                 mAlertMsg =
-                        "'" + winner + "' won this bracket.\n\n"+
-                        "Final of the double elimination tournament should be played between '" + winner +
-                        "' and winner of the lower bracket final match.\n\n" +
-                        "If '" + winner + "' loses in the initial set (best-of-1 or best-of-3), " +
-                        "there should be another final match set between the same teams!";
-            } else if(mMatchDBEntry.getF()) {
+                        "'" + winner + "' won this bracket.\n\n" +
+                                "Final of the double elimination tournament should be played between '" + winner +
+                                "' and winner of the lower bracket final match.\n\n" +
+                                "If '" + winner + "' loses in the initial set (best-of-1 or best-of-3), " +
+                                "there should be another final match set between the same teams!";
+            } else if (mMatchDBEntry.getF()) {
                 //This is the final match and there is an external link (DE tournament)
-                //So, this is the lower bracket.
+                //So, this is the lower bracket. update team2 of DE final1
+                //DB should be read before updating, as the first team is not known here.
+                //Other option was to set the 2nd team using absolute path like <tourna>/F-1/1/t/1
+                //But that is not maintainable code if the structure of MatchDBEntry changes.
                 updateDEFinalsTeam2(mMatchDBEntry, winner);
-                //updateDEFinalsTeam2(mMatchDBEntry.getExtLinkLabel(0), Constants.DE_FINALS, winner);
             }
+
             propogateTheWinner(mFixtureLabel, mMatchId, winner);
 
             //setExternalLink();  //SGO
-            if(mMatchDBEntry.getExtLinkSrcFlag(0)) {
+            if (mMatchDBEntry.getExtLinkSrcFlag(0)) {
                 //There is an External Link and this is the source flag. Thus, the external link needs to be
                 //followed and its winner needs to be set to the loser of this match.
                 //EXTERNALLEAF in lower bracket has team1 as link and team2 as Bye.
@@ -963,19 +876,17 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             }
 
             mFinishActivity = true;
-            mUnlockDB = true;
         } else {
             //Match not completed; no winner yet
             //May be entries for 1 or 2 games were added (out of best-of-3)
             mFinishActivity = true;
-            mUnlockDB = true;
         }
-        mUnlockDB = true;
+
         releaseLockAndCleanup();
     }
 
     private void propogateTheWinner(final String fixLabel, final String matchId, final String winner) {
-        if(fixLabel.equals(Constants.DE_FINALS)) {
+        if (fixLabel.equals(Constants.DE_FINALS)) {
             return;
         }
 
@@ -996,14 +907,14 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
                     TournaFixtureDBEntry dbEntry = entry.getValue();
                     //Check if the previous link is same as the match just completed.
                     //If yes, update the team name in DB
-                    if(matchId.equals(dbEntry.getPr1(true))) {
+                    if (matchId.equals(dbEntry.getPr1(true))) {
                         //prev1 is the match which just completed. Update team1.
                         dbEntry.setW("");  //reset winner; This might be root doing a correction.
                         dbEntry.setT1(true, winner);
                         dbEntry.setWinnerString();  //If one is bye, set the other as winner
                         dbRef.child(mId).setValue(dbEntry);
                         Log.w(TAG, "propogateTheWinner(team1):" + mId + "=" + dbEntry.toString());
-                    } else if(matchId.equals(dbEntry.getPr2(true))) {
+                    } else if (matchId.equals(dbEntry.getPr2(true))) {
                         //prev2 is the match which just completed. Update team2.
                         dbEntry.setW("");  //reset winner; This might be root doing a correction.
                         dbEntry.setT2(true, winner);
@@ -1024,8 +935,6 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
     }
 
     private void updateDEFinalsTeam2(final TournaFixtureDBEntry dbEntry, final String winner) {
-        //updateDEFinalsTeam2(mMatchDBEntry.getExtLinkLabel(0), Constants.DE_FINALS, winner);
-
         final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
                 .child(Constants.TOURNA).child(mCommon.mTournament)
                 .child(Constants.DE_FINALS).child(Constants.DE_FINALS_M1);
@@ -1036,7 +945,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 Log.d(TAG, "updateDEFinalsTeam2: onDataChange: " + dataSnapshot.getKey());
                 TournaFixtureDBEntry deFinalsDBEntry = dataSnapshot.getValue(TournaFixtureDBEntry.class);
-                if(null==deFinalsDBEntry) return;
+                if (null == deFinalsDBEntry) return;
 
                 deFinalsDBEntry.setT2(true, winner);
                 dbRef.setValue(deFinalsDBEntry);
@@ -1051,7 +960,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
         });
     }
 
-    private void releaseLockAndCleanup() {
+    protected void releaseLockAndCleanup() {
         Log.d(TAG, "releaseLockAndCleanup: fin=" + mFinishActivity + ", dbUpd=" + mCommon.isDBUpdated());
         mCommon.releaseDBLock(mCommon.mTournament);
         if (null != mProgressDialog && mProgressDialog.isShowing()) {
@@ -1063,10 +972,10 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
         //it could happen that the user moves this app to background while the background loop is running.
         //In thats case, dialog will fail: "WindowManager$BadTokenException: Unable to add window"
         //So, check if this activity is in foreground before displaying dialogue.
-        if(isFinishing()) return;
-        if(!ScoreTally.isActivityVisible()) return;
+        if (isFinishing()) return;
+        if (!ScoreTally.isActivityVisible()) return;
 
-        if(!mAlertTitle.isEmpty() && mAlertMsg.isEmpty()) {
+        if (!mAlertTitle.isEmpty() && mAlertMsg.isEmpty()) {
             //Show snackbar
             Snackbar.make(findViewById(R.id.enterdata_ll), mAlertTitle, Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
@@ -1075,10 +984,10 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             mMainHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    if (mFinishActivity) finish();
+                    if (mFinishActivity) killActivity();
                 }
             }, 1000);
-        } else if(!mAlertMsg.isEmpty()) {
+        } else if (!mAlertMsg.isEmpty()) {
             //show dialog
             AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaBaseEnterData.this);
             alertBuilder.setTitle(mAlertTitle);
@@ -1087,12 +996,12 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             alertBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
-                    if (mFinishActivity) finish();
+                    if (mFinishActivity) killActivity();
                 }
             });
             alertBuilder.show();
         } else {
-            if (mFinishActivity) finish();
+            if (mFinishActivity) killActivity();
         }
     }
 
@@ -1110,18 +1019,21 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
 
     @Override
     protected void onResume() {
+        Log.d(TAG, "onResume: ");
         super.onResume();
         ScoreTally.activityResumed();
     }
 
     @Override
     protected void onPause() {
+        Log.d(TAG, "onPause: ");
         super.onPause();
         ScoreTally.activityPaused();
     }
 
     @Override
     protected void onDestroy() {
+        Log.d(TAG, "onDestroy: ");
         super.onDestroy();
         //mWorker.quit();
         //mWorker = null;
