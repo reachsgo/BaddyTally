@@ -92,15 +92,23 @@ public class TournaLeague extends AppCompatActivity implements CallbackRoutine {
     @Override
     protected void onResume() {
         super.onResume();
+        Log.d(TAG, "onResume: ");
         mCommon.wakeUpDBConnection_profile();
         //If this is return from other activities, show data of the already chosen tournament
         //mTUtil.fetchActiveTournaments();
         selectActivityForTourna();
     }
 
+    protected void killActivity() {
+        Log.d(TAG, "killActivity: ");
+        setResult(RESULT_OK);
+        finish();
+    }
+
     @Override
     public void onBackPressed() {
         Log.d(TAG, "onBackPressed: ");
+        SharedData.getInstance().killActivity(this, RESULT_OK);
         Intent myIntent = new Intent(TournaLeague.this, TournaLanding.class);
         myIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         TournaLeague.this.startActivity(myIntent);

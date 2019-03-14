@@ -10,7 +10,7 @@
         android:layout_height="match_parent"
         android:layout_margin="10dp"
         android:layout_gravity="center_horizontal"
-        android:background="@drawable/birdie"
+        android:background="@drawable/birdie_close"
         android:orientation="vertical" >
 
         <ListView

@@ -89,12 +89,6 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
     private Handler mMainHandler;
     private Integer mDBLockCount;
 
-    protected void killActivity() {
-        Log.d(TAG, "killActivity: ");
-        setResult(RESULT_OK);
-        finish();
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -107,11 +101,12 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             @Override
             public void onClick(View view) {
                 Log.d(TAG, "onClick: ");
-                killActivity();
+                mCommon.killActivity(TournaBaseEnterData.this, RESULT_OK);
             }
         });
         mCommon = SharedData.getInstance();
-        if (!mCommon.isPermitted(TournaBaseEnterData.this)) killActivity();
+        if (!mCommon.isPermitted(TournaBaseEnterData.this))
+            mCommon.killActivity(TournaBaseEnterData.this, RESULT_OK);
         mDatabase = FirebaseDatabase.getInstance().getReference();
         mProgressDialog = null;
 
@@ -162,14 +157,6 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
 
         Log.w(TAG, "T1 players:" + mT1_players.toString());
         Log.w(TAG, "T2 players:" + mT2_players.toString());
-
-        /*
-        if (mT1_players.size() < 2 || mT2_players.size() < 2) {
-            //only doubles allowed now.
-            Toast.makeText(TournaBaseEnterData.this, "Not enough players added to teams to play doubles!", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }*/
 
         List<String> p1List = new ArrayList<>(mT1_players);
         ArrayAdapter<String> dataAdapterP1 = new ArrayAdapter<>(this,
@@ -434,7 +421,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
                 Toast.makeText(TournaBaseEnterData.this, "DB error while fetching games: "
                                 + databaseError.toString(),
                         Toast.LENGTH_LONG).show();
-                killActivity();
+                mCommon.killActivity(TournaBaseEnterData.this, RESULT_OK);
             }
         });
 
@@ -472,7 +459,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             public void onCancelled(@NonNull DatabaseError databaseError) {
                 Toast.makeText(TournaBaseEnterData.this, "DB error while fetching games: " + databaseError.toString(),
                         Toast.LENGTH_LONG).show();
-                killActivity();
+                mCommon.killActivity(TournaBaseEnterData.this, RESULT_OK);
             }
         });
     }
@@ -722,7 +709,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             //Without lock, inconsistency is seen: missing journal entry or points are not added.
             SharedData.getInstance().acquireDBLock(mCommon.mTournament);
             waitForDBLock();
-        } else killActivity();
+        } else mCommon.killActivity(TournaBaseEnterData.this, RESULT_OK);
 
         return true;
     }
@@ -984,7 +971,7 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             mMainHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    if (mFinishActivity) killActivity();
+                    if (mFinishActivity) mCommon.killActivity(TournaBaseEnterData.this, RESULT_OK);
                 }
             }, 1000);
         } else if (!mAlertMsg.isEmpty()) {
@@ -996,12 +983,12 @@ public class TournaBaseEnterData extends AppCompatActivity implements AdapterVie
             alertBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
-                    if (mFinishActivity) killActivity();
+                    if (mFinishActivity) mCommon.killActivity(TournaBaseEnterData.this, RESULT_OK);
                 }
             });
             alertBuilder.show();
         } else {
-            if (mFinishActivity) killActivity();
+            if (mFinishActivity) mCommon.killActivity(TournaBaseEnterData.this, RESULT_OK);
         }
     }
 

@@ -1710,6 +1710,7 @@ public class TournaTableLayout extends AppCompatActivity {
                 mCommon.clear();
                 Toast.makeText(TournaTableLayout.this, "Cache cleared!", Toast.LENGTH_SHORT)
                         .show();
+                SharedData.getInstance().killActivity(this, RESULT_OK);
                 Intent intent = new Intent(TournaTableLayout.this, MainSigninActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
@@ -1912,6 +1913,7 @@ public class TournaTableLayout extends AppCompatActivity {
         if (null != mUpperTable) mUpperTable.onDestroy();
 
         //we could be here from TournaSeeding as well.
+        SharedData.getInstance().killActivity(this, RESULT_OK);
         Intent intent = new Intent(TournaTableLayout.this, TournaLanding.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);

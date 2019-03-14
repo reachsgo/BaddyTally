@@ -1,0 +1,26 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_refresh"
+        android:orderInCategory="90"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/white_autorenew_24px"
+        android:title="Refresh"/>
+    <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="50"
+        android:title="@string/action_settings"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_logout"
+        android:orderInCategory="99"
+        app:showAsAction="never"
+        android:title="Logout"/>
+
+    <item
+        android:id="@+id/action_about"
+        android:orderInCategory="102"
+        app:showAsAction="never"
+        android:title="About"/>
+</menu>

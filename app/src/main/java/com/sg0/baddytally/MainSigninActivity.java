@@ -8,11 +8,16 @@ import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Html;
+import android.text.SpannableString;
+import android.text.method.LinkMovementMethod;
+import android.text.util.Linkify;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 
@@ -92,7 +97,6 @@ public class MainSigninActivity extends AppCompatActivity {
                 break;
             // action with ID action_settings was selected
             case R.id.action_settings:
-                //create a new club
                 AlertDialog.Builder newclubDialog = new AlertDialog.Builder(MainSigninActivity.this);
                 newclubDialog.setMessage(
                         "You are about to send a request to ScoreTally team to create a new club login for you.\n" +
@@ -111,10 +115,17 @@ public class MainSigninActivity extends AppCompatActivity {
                 break;
             case R.id.action_about:
                 //int versionCode = BuildConfig.VERSION_CODE;
+                final String title = Constants.APPNAME + " " + BuildConfig.VERSION_NAME;
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainSigninActivity.this);
-                builder.setMessage("Version: " + BuildConfig.VERSION_NAME)
-                        .setTitle(SharedData.getInstance().getTitleStr(Constants.APPNAME, MainSigninActivity.this))
-                        .setNeutralButton("Ok", null).show();
+                builder.setMessage(Html.fromHtml(
+                        "<a href=\"https://sites.google.com/view/scoretally/privacy-policy\">privacy policy</a>"))
+                        .setTitle(title)
+                        .setNeutralButton("Ok", null);
+                AlertDialog d = builder.create();
+                d.show();
+                // Make the textview clickable. Must be called after show()
+                ((TextView)d.findViewById(android.R.id.message))
+                        .setMovementMethod(LinkMovementMethod.getInstance());
                 break;
             default:
                 break;

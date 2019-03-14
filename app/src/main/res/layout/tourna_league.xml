@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="10dp"
+    tools:context=".TournaLeague">
+
+
+    <LinearLayout
+        android:id="@+id/outer_ll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/title_tv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/colorPrimaryDark"
+            android:padding="5dp"
+            android:text="Ongoing tournaments"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/header_ll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/black"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="90dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="60"
+                android:gravity="center"
+                android:text="Team"
+                android:textColor="@android:color/white"
+                android:textSize="16sp" />
+
+            <TextView
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="50"
+                android:gravity="start"
+                android:text=""
+                android:textSize="16sp" />
+
+            <LinearLayout
+                android:id="@+id/header_points_ll"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:background="@android:color/background_light">
+
+                <TextView
+                    android:id="@+id/header_points"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/roundedrect"
+                    android:gravity="center_horizontal"
+                    android:text="Points"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/header_wins_ll"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:background="@android:color/background_light">
+
+                <TextView
+                    android:id="@+id/header_wins"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/roundedrect"
+                    android:gravity="center_horizontal"
+                    android:text="Wins"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:id="@+id/tourna_list_ll"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="10dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/tourna_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/birdie_btn"
+                android:backgroundTint="@color/colorGold"
+                android:scrollbars="vertical" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+        <Button
+            android:id="@+id/enter_button"
+            style="?android:textAppearanceSmall"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="35dp"
+            android:layout_gravity="center"
+            android:layout_margin="5dp"
+            android:background="@drawable/roundedrect"
+            android:text="Enter Score"
+            android:textColor="@android:color/white"
+            android:textStyle="bold" />
+        <Button
+            android:id="@+id/summary_button"
+            style="?android:textAppearanceSmall"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="35dp"
+            android:layout_gravity="center"
+            android:layout_margin="5dp"
+            android:background="@drawable/roundedrect"
+            android:text="Match summary"
+            android:textColor="@android:color/white"
+            android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+
+</android.support.design.widget.CoordinatorLayout>

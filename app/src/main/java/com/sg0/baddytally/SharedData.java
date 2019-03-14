@@ -510,6 +510,7 @@ public class SharedData {
         Date c = Calendar.getInstance().getTime();
         SimpleDateFormat df = new SimpleDateFormat("MM-dd", Locale.CANADA);
         final String login_day = df.format(c);
+        final String model_name = ""; //android.os.Build.MODEL might be leading to privacy error from google, not sure.
 
 
         final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub)
@@ -522,7 +523,7 @@ public class SharedData {
                 if (userData == null) return Transaction.success(mutableData);
                 else {
                     Log.w(TAG, "wakeUpDBConnection: update DB for user:" + mUser);
-                    mutableData.setValue(new ActiveUserDBEntry(mRole, android.os.Build.MODEL, login_day, BuildConfig.VERSION_NAME));
+                    mutableData.setValue(new ActiveUserDBEntry(mRole, model_name, login_day, BuildConfig.VERSION_NAME));
                     return Transaction.success(mutableData);
                 }
             }
@@ -546,7 +547,8 @@ public class SharedData {
                         //but the older version never new about INTERNALS/locked. Workaround was to manually create INTERNALS/locked in the DB for that club.
                         //This issue will not happen if the new app is used to create the innings (INTERNALS/locked node iwll be created in DB).
                         Log.w(TAG, "wakeUpDBConnection: onComplete: Error:" + e.getMessage());
-                        dbRef.setValue(new ActiveUserDBEntry(mRole, android.os.Build.MODEL, login_day, BuildConfig.VERSION_NAME));
+                        dbRef.setValue(new ActiveUserDBEntry(mRole, model_name,
+                                login_day, BuildConfig.VERSION_NAME));
                         Log.w(TAG, "New user created in DB:" + mUser);
                     }
 
@@ -1053,7 +1055,14 @@ public class SharedData {
                 " max=" + heapMaxSize/1024 + " free=" + heapFreeSize/1024);
     }
 
+    public void killActivity(final Activity activity, final int res_code) {
+        Log.d(TAG, "killActivity: " + activity.getLocalClassName());
+        activity.setResult(res_code);
+        activity.finish();
+    }
+
     public void killApplication() {
+        Log.w(TAG, "+++++++++++++ killApplication +++++++++++++");
         android.os.Process.killProcess(android.os.Process.myPid());
     }
 }

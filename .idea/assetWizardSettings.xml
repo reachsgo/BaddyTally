@@ -18,12 +18,23 @@
                                 <PersistentState>
                                   <option name="children">
                                     <map>
+                                      <entry key="backgroundImage">
+                                        <value>
+                                          <PersistentState>
+                                            <option name="values">
+                                              <map>
+                                                <entry key="scalingPercent" value="78" />
+                                              </map>
+                                            </option>
+                                          </PersistentState>
+                                        </value>
+                                      </entry>
                                       <entry key="foregroundImage">
                                         <value>
                                           <PersistentState>
                                             <option name="values">
                                               <map>
-                                                <entry key="scalingPercent" value="107" />
+                                                <entry key="scalingPercent" value="73" />
                                               </map>
                                             </option>
                                           </PersistentState>
@@ -33,10 +44,11 @@
                                   </option>
                                   <option name="values">
                                     <map>
-                                      <entry key="backgroundLayerName" value="ic_launcher_background" />
-                                      <entry key="foregroundImage" value="C:\Users\saju_\AndroidStudioProjects\BaddyTally\app\src\main\res\drawable\bg_birdie_portrait.png" />
-                                      <entry key="foregroundLayerName" value="birdie001fg" />
-                                      <entry key="outputName" value="birdie001" />
+                                      <entry key="backgroundImage" value="C:\Users\saju_\AndroidStudioProjects\BaddyTally\app\src\main\res\drawable\birdie001-web2.png" />
+                                      <entry key="backgroundLayerName" value="birdie002bg" />
+                                      <entry key="foregroundImage" value="C:\Users\saju_\AndroidStudioProjects\BaddyTally\app\src\main\res\drawable\birdie02.png" />
+                                      <entry key="foregroundLayerName" value="birdie002fg" />
+                                      <entry key="outputName" value="birdie002" />
                                     </map>
                                   </option>
                                 </PersistentState>

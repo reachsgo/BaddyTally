@@ -180,6 +180,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
 
     @Override
     public void onBackPressed() {
+        Log.d(TAG, "onBackPressed: ");
         mCommon.killApplication();
     }
 
@@ -256,6 +257,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
                 mCommon.clear();
                 Toast.makeText(TournaLanding.this, "Cache cleared!", Toast.LENGTH_SHORT)
                         .show();
+                SharedData.getInstance().killActivity(this, RESULT_OK);
                 Intent intent = new Intent(TournaLanding.this, MainSigninActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);

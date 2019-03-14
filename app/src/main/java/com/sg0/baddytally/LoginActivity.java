@@ -329,6 +329,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         if(mActToStart.equals(Constants.INITIAL)) {
             //start from Main again. There is no history for initial activities, so we cant just do a
             //killActivity here.
+            SharedData.getInstance().killActivity(this, RESULT_OK);
             Intent intent = new Intent(LoginActivity.this, MainSigninActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(intent);

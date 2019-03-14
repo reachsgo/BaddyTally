@@ -57,7 +57,7 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.summary);
+        setContentView(R.layout.activity_clubleague_summary);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
 

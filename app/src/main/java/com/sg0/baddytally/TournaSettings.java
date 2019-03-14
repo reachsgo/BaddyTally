@@ -90,6 +90,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
     @Override
     public void onBackPressed() {
         Log.d(TAG, "onBackPressed: ");
+        SharedData.getInstance().killActivity(this, RESULT_OK);
         Intent myIntent = new Intent(TournaSettings.this, TournaLanding.class);
         myIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         TournaSettings.this.startActivity(myIntent);
@@ -173,6 +174,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                     //though that behavior is very inconsistent. See comments in ScoreTally.java.
                     //setResult(Constants.RESTARTAPP);
                     //killActivity();
+                    SharedData.getInstance().killActivity(TournaSettings.this, RESULT_OK);
                     Intent intent = new Intent(TournaSettings.this, MainSigninActivity.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     startActivity(intent);

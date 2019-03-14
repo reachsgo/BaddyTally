@@ -104,12 +104,6 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
         Menu pMenu = popup.getMenu();
         final String DELIM = " : ";
         final String MATCHSTR = "Match";
-        /*
-        for(int i = 1; i <= mNumOfMatches; i++) {
-                String gameName = String.format(Locale.getDefault(),"%s%s%s%d", matchkey, DELIM, "Match", i);
-                pMenu.add(gameName); //groupId, itemId, order, title
-                Log.v(TAG, "showMatchGames, gameName:" + gameName);
-        }*/
 
         MatchInfo mInfo = TournaUtil.getMatchInfoFromString(matchkey);
         HashMap<String, Boolean> statusMap = mTUtil.mMatchesStatus.get(mInfo.key);
@@ -202,7 +196,7 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
 
         if (mI == null) {
             Log.e(TAG, "readPlayers, Failed to retrieve match info!");
-            killActivity();
+            mCommon.killActivity(TournaLeagueEnterData.this, RESULT_OK);
         }
         mChosenMatch = mI;
         fetchPlayers(1, mChosenMatch.T1);
@@ -241,7 +235,7 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
                 } else {
                     Log.d(TAG, "onDataChange: No players!");
                     mCommon.showToast(TournaLeagueEnterData.this, "No players found for team " + team, Toast.LENGTH_SHORT);
-                    killActivity();
+                    mCommon.killActivity(TournaLeagueEnterData.this, RESULT_OK);
                 }
 
             }
@@ -282,7 +276,7 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
             public void onCancelled(@NonNull DatabaseError databaseError) {
                 Toast.makeText(TournaLeagueEnterData.this, "DB error while fetching games: " + databaseError.toString(),
                         Toast.LENGTH_LONG).show();
-                killActivity();
+                mCommon.killActivity(TournaLeagueEnterData.this, RESULT_OK);
             }
         });
     }
@@ -467,7 +461,7 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
                 }
             }, 2000);
 
-        } else killActivity();
+        } else mCommon.killActivity(TournaLeagueEnterData.this, RESULT_OK);
         return true;
     }
 
@@ -787,7 +781,7 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
             mProgressDialog.dismiss();
             mProgressDialog = null;
         }
-        if (finish) killActivity();
+        if (finish) mCommon.killActivity(TournaLeagueEnterData.this, RESULT_OK);
     }
 
     //CallbackRoutine Callback interfaces
@@ -800,7 +794,7 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
     public void alertResult(final String in, final Boolean ok, final Boolean ko) {
         if (in.equals(Constants.CB_NOMATCHFAOUND)) {
             Log.d(TAG, "alertResult: ");
-            killActivity();
+            mCommon.killActivity(TournaLeagueEnterData.this, RESULT_OK);
         }
     }
 

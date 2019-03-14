@@ -1,7 +1,6 @@
 package com.sg0.baddytally;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
@@ -44,7 +43,7 @@ public class MainSelection2 extends AppCompatActivity {
         mClubLeagueBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent myIntent = new Intent(MainSelection2.this, MainActivity.class);
+                Intent myIntent = new Intent(MainSelection2.this, ClubLeagueActivity.class);
                 //dont keep this activity in stack to reduce heap usage (mainly due to background image)
                 //history=false set in manifest
                 MainSelection2.this.startActivity(myIntent);
