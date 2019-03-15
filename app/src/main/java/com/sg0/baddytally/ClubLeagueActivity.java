@@ -265,7 +265,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
         if (club.isEmpty()) {
             mInitialAttempt = true;
             Log.d(TAG, "onResume: mInitialAttempt=" + mInitialAttempt);
-            Toast.makeText(this, "Click Settings to sign-in to your club ", Toast.LENGTH_LONG)
+            Toast.makeText(this, "Click ClubLeagueSettings to sign-in to your club ", Toast.LENGTH_LONG)
                     .show();
         } else {
             Log.d(TAG, "onResume: mInitialAttempt=" + mInitialAttempt);
@@ -285,7 +285,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 Intent myIntent = new Intent(ClubLeagueActivity.this, TournaLeague.class);
                 ClubLeagueActivity.this.startActivity(myIntent);
                 //SharedData.getInstance().mTournaMode = false; //SGO
-                //TODO: Have to add Settings to tournamode
+                //TODO: Have to add ClubLeagueSettings to tournamode
                 return;
             } else {
                 fetchInnings();
@@ -379,7 +379,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
             case R.id.action_settings:
                 //If DB connection is sleeping, wake it up!
                 SharedData.getInstance().wakeUpDBConnection_profile();
-                Intent myIntent = new Intent(ClubLeagueActivity.this, Settings.class);
+                Intent myIntent = new Intent(ClubLeagueActivity.this, ClubLeagueSettings.class);
                 myIntent.putExtra(Constants.ACTIVITY, Constants.ACTIVITY_SETTINGS);
                 ClubLeagueActivity.this.startActivity(myIntent);
                 break;
@@ -413,7 +413,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 } else {
                     //If DB connection is sleeping, wake it up!
                     SharedData.getInstance().wakeUpDBConnection();
-                    Intent mySumIntent = new Intent(ClubLeagueActivity.this, Summary.class);
+                    Intent mySumIntent = new Intent(ClubLeagueActivity.this, ClubLeagueSummary.class);
                     ClubLeagueActivity.this.startActivityForResult(mySumIntent, Constants.SUMMARY_ACTIVITY);
                 }
                 break;
@@ -528,7 +528,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                                     "No ongoing league innings for this club.", Toast.LENGTH_SHORT)
                                     .show();
                         }
-                    }, 2000);
+                    }, 4000);
                     return Transaction.success(mutableData);
                 }
 
@@ -665,7 +665,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
                 String group = menuItem.getTitle().toString();
-                Log.v(TAG, "showOptions showGroupPopup:" + group);
+                //Log.v(TAG, "showOptions showGroupPopup:" + group);
                 popup.dismiss();
                 showPlayersPopup(group);
                 return true;
@@ -720,7 +720,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
         builder.setMultiChoiceItems(playerNames, checkedItems, new DialogInterface.OnMultiChoiceClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i, boolean b) {
-                Log.v(TAG, "showPlayersPopup onClick:" + i + " :" + b);
+                //Log.v(TAG, "showPlayersPopup onClick:" + i + " :" + b);
                 Set<String> presetPlayerNames = null;  //Players present on this game day
                 switch (group) {
                     case Constants.GOLD:
@@ -736,7 +736,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 if(b) presetPlayerNames.add((String) playerNames[i]);   //Duplicates wont be added for Set data structure.
                 else presetPlayerNames.remove(playerNames[i]);
                 //if(mCheckedItems[i] != b) mCheckedItems[i] = b;
-                Log.v(TAG, "showPlayersPopup onClick: presetPlayerNames=" + presetPlayerNames.toString());
+                //Log.v(TAG, "showPlayersPopup onClick: presetPlayerNames=" + presetPlayerNames.toString());
             }
         });
 

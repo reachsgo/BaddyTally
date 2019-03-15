@@ -353,6 +353,11 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
                     switch (which) {
                         case DialogInterface.BUTTON_POSITIVE:
                             //Yes button clicked
+                            if(SharedData.getInstance().mInningsDBKey == -1) {
+                                Toast.makeText(LoginActivity.this,
+                                        "Go to Settings and create a new innings first.", Toast.LENGTH_LONG).show();
+                                return;
+                            }
                             String roundName = SharedData.getInstance().createNewRoundName(true, LoginActivity.this);
                             FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.INNINGS)
                                     .child(SharedData.getInstance().mInningsDBKey.toString()).child("round").setValue(roundName);
@@ -386,7 +391,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
 
         if(mActToStart.equals(Constants.ACTIVITY_SETTINGS)) {
             SharedData.getInstance().wakeUpDBConnection();
-            Intent settingsIntent = new Intent(LoginActivity.this, Settings.class);
+            Intent settingsIntent = new Intent(LoginActivity.this, ClubLeagueSettings.class);
             LoginActivity.this.startActivityForResult(settingsIntent, Constants.SETTINGS_ACTIVITY);
             return;
         } else if(mActToStart.equals(Constants.ACTIVITY_TOURNA_SETTINGS)) {
@@ -402,7 +407,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
 
             Log.i(TAG, "successfulLogin, tournament mode");
             if(tType.equals(Constants.SE) || tType.equals(Constants.DE)){
-                Intent myIntent = new Intent(LoginActivity.this, TournaBaseEnterData.class);
+                Intent myIntent = new Intent(LoginActivity.this, TournaSEDEEnterData.class);
                 myIntent.putExtra(Constants.TOURNATYPE, tType);
                 myIntent.putExtra(Constants.MATCH, thisIntent.getStringExtra(Constants.MATCH));
                 myIntent.putExtra(Constants.FIXTURE, thisIntent.getStringExtra(Constants.FIXTURE));
@@ -419,7 +424,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         } else {
             String newRoundFlag = "False";
             Log.i(TAG, "successfulLogin, new round flag:" + newRoundFlag);
-            Intent myIntent = new Intent(LoginActivity.this, EnterData.class);
+            Intent myIntent = new Intent(LoginActivity.this, ClubLeagueEnterData.class);
             myIntent.putExtra("gametype", mGameTypeRadioButton.getText());
             myIntent.putExtra("group", mGroupRadioButton.getText());
             myIntent.putExtra("new_round", newRoundFlag);

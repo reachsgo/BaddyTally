@@ -22,6 +22,14 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Accepts URIs that begin with "http://www.scoretally.com” -->
+                <data android:scheme="http"
+                    android:host="www.scoretally.com"/>
+            </intent-filter>
         </activity>
         <activity
             android:name=".MainSelection2"
@@ -37,10 +45,10 @@
             android:label="@string/title_activity_login"
             android:noHistory="true" />
         <activity
-            android:name=".EnterData"
+            android:name=".ClubLeagueEnterData"
             android:noHistory="true" />
-        <activity android:name=".Summary" />
-        <activity android:name=".Settings"
+        <activity android:name=".ClubLeagueSummary" />
+        <activity android:name=".ClubLeagueSettings"
             android:noHistory="true"/>
         <activity
             android:name=".TournaLanding"
@@ -53,7 +61,7 @@
             android:name=".TournaLeagueEnterData"
             android:noHistory="true" />
         <activity
-            android:name=".TournaBaseEnterData"
+            android:name=".TournaSEDEEnterData"
             android:noHistory="true" />
         <activity
             android:name=".TournaSettings"

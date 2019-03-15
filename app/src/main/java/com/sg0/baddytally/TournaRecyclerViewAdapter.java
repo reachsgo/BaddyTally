@@ -71,7 +71,8 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
 
     public void readDBTeam() {
         if (mTourna.isEmpty()) return;
-        final DatabaseReference teamScoreDBRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA)
+        final DatabaseReference teamScoreDBRef = FirebaseDatabase.getInstance().getReference()
+                .child(mCommon.mClub).child(Constants.TOURNA)
                 .child(mTourna).child(Constants.TEAMS);
         teamScoreDBRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override

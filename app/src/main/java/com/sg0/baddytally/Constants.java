@@ -42,7 +42,7 @@ class Constants {
     public static final int EXIT_APPLICATION = -666;
 
     public static final String ACTIVITY = "Activity";
-    public static final String ACTIVITY_SETTINGS = "Settings";
+    public static final String ACTIVITY_SETTINGS = "ClubLeagueSettings";
     public static final String ACTIVITY_TOURNA_SETTINGS = "TournaSettings";
     public static final String INITIAL = "Initial";
     public static final String TOURNA = "tournaments";

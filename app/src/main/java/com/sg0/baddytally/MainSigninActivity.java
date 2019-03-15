@@ -81,15 +81,16 @@ public class MainSigninActivity extends AppCompatActivity {
 
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.basic_menu_main, menu);
-        menu.findItem(R.id.action_logout).setVisible(false);
         menu.findItem(R.id.action_refresh).setVisible(false);
         MenuItem settings = menu.findItem(R.id.action_settings);
         settings.setTitle("New Club");
+        menu.findItem(R.id.action_logout).setTitle("Privacy Policy");
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainSigninActivity.this);
         switch (item.getItemId()) {
             // action with ID action_refresh was selected
             case R.id.action_refresh:
@@ -112,20 +113,21 @@ public class MainSigninActivity extends AppCompatActivity {
                         }).show();
                 break;
             case R.id.action_logout:
-                break;
-            case R.id.action_about:
-                //int versionCode = BuildConfig.VERSION_CODE;
-                final String title = Constants.APPNAME + " " + BuildConfig.VERSION_NAME;
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainSigninActivity.this);
                 builder.setMessage(Html.fromHtml(
                         "<a href=\"https://sites.google.com/view/scoretally/privacy-policy\">privacy policy</a>"))
-                        .setTitle(title)
+                        .setTitle(Constants.APPNAME)
                         .setNeutralButton("Ok", null);
                 AlertDialog d = builder.create();
                 d.show();
                 // Make the textview clickable. Must be called after show()
                 ((TextView)d.findViewById(android.R.id.message))
                         .setMovementMethod(LinkMovementMethod.getInstance());
+                break;
+            case R.id.action_about:
+                String msg = BuildConfig.VERSION_NAME;
+                builder.setMessage(msg)
+                        .setTitle(Constants.APPNAME)
+                        .setNeutralButton("Ok", null).show();
                 break;
             default:
                 break;

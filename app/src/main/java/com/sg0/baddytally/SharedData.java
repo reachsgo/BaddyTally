@@ -410,7 +410,7 @@ public class SharedData {
                                 //win%, Games Won & gamesPlayed are all equal for 2 players.
                                 if (idx == Constants.INNINGS_IDX) {
                                     //If the sorting is on innings, then sort on season points.
-                                    Log.v(TAG, "sortPlayers: ALL equal for INNINGS, now on SEASON for " + p1.getName() + " and " + p2.getName());
+                                    //Log.v(TAG, "sortPlayers: ALL equal for INNINGS, now on SEASON for " + p1.getName() + " and " + p2.getName());
                                     return compare2Players(p1, p2, Constants.SEASON_IDX);
                                 } else {
                                     //If the sorting is on season points, then toss (pick a random winner among the 2 players being compared).
@@ -432,11 +432,10 @@ public class SharedData {
             private int randomPick() {
                 int rand = new Random().nextInt(10);
                 if ((rand % 2) == 0) {
-                    Log.w(TAG, "sortPlayers: Toss: randomPick returning +1");
+                    //Log.w(TAG, "sortPlayers: Toss: randomPick returning +1");
                     return 1;
                 }
-
-                Log.w(TAG, "sortPlayers: Toss: randomPick returning -1");
+                //Log.w(TAG, "sortPlayers: Toss: randomPick returning -1");
                 return -1;
             }
         });
@@ -700,11 +699,11 @@ public class SharedData {
 
 /* In some cases, getting a lock takes more time. See the sequence below.
 03-04 15:57:56.081 23935-23935/com.sg0.baddytally I/SharedData: acquireDBLock: acquiring...0
-03-04 15:57:56.604 23935-23935/com.sg0.baddytally V/TournaBaseEnterData: After DB lock wait...
-03-04 15:57:56.605 23935-23935/com.sg0.baddytally D/TournaBaseEnterData: workToUpdateDB: club1
+03-04 15:57:56.604 23935-23935/com.sg0.baddytally V/BaseEnterData: After DB lock wait...
+03-04 15:57:56.605 23935-23935/com.sg0.baddytally D/BaseEnterData: workToUpdateDB: club1
 03-04 15:57:56.605 23935-23935/com.sg0.baddytally D/SharedData: isDBLocked: false,25862217
-03-04 15:57:56.605 23935-23935/com.sg0.baddytally E/TournaBaseEnterData: workToUpdateDB: Another update is in progress, please refresh and try again later...
-03-04 15:57:57.106 23935-23935/com.sg0.baddytally D/TournaBaseEnterData: releaseLockAndCleanup: fin=true, dbUpd=true
+03-04 15:57:56.605 23935-23935/com.sg0.baddytally E/BaseEnterData: workToUpdateDB: Another update is in progress, please refresh and try again later...
+03-04 15:57:57.106 23935-23935/com.sg0.baddytally D/BaseEnterData: releaseLockAndCleanup: fin=true, dbUpd=true
 03-04 15:57:57.106 23935-23935/com.sg0.baddytally D/SharedData: isDBLocked: false,25862217
 03-04 15:57:57.270 23935-24054/com.sg0.baddytally W/SharedData: wakeUpDBConnection: update DB for user:usr
 03-04 15:57:57.295 23935-24054/com.sg0.baddytally W/SharedData: changeDBLockState:DEMO lock changed to true
@@ -724,7 +723,13 @@ public class SharedData {
         if(mDBLockAcqAttemptTime >0L) {
             Long timeInMins = System.currentTimeMillis() / 60000;
             if ((timeInMins - mDBLockAcqAttemptTime) > 3) {
-                //DB is been locked for ore than 3 mins
+                //DB is been locked for more than 3 mins.
+                //This is mostly a failure to update DB while releasing lock (say the n/w connection was lost
+                //after acquiring lock or app crashed after acquiring lock etc). So, release the lock forcefully.
+                //There is a very rare chance that when a particular user tried to acquire the
+                //lock twice (first attempt when mDBLockAcqAttemptTime was filled and now) and there
+                //other users (could be different ones) holding on to the lock at that very moment.
+                //Even in this case, lock is forcefully released. Could be an issue when the user base increases!
                 Log.w(TAG, "isDBLocked: force release lock: " + (timeInMins - mDBLockAcqAttemptTime) +
                         " timeInMins=" + timeInMins + " mDBLockAcqAttemptTime=" + mDBLockAcqAttemptTime);
                 releaseDBLock(true, tourna);

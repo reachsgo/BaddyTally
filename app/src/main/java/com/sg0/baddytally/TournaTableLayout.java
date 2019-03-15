@@ -1083,7 +1083,7 @@ class TournaTable implements View.OnClickListener {
         return tmpArr;
     }
 
-    public SparseArray<TournaDispMatchEntry> getMatchesForThisRoundFromDispMap(final Integer round) {
+    private SparseArray<TournaDispMatchEntry> getMatchesForThisRoundFromDispMap(final Integer round) {
         SparseArray<TournaDispMatchEntry> tmpArr = new SparseArray<>();
         if (round == 0) return tmpArr;
         for (int i = 0; i < mData.size(); i++) {
@@ -1096,11 +1096,11 @@ class TournaTable implements View.OnClickListener {
                 }
             }
         }
-        Log.d(TAG, round + ":getMatchesForThisRoundFromDispMap: "+ tmpArr.toString());
+        //Log.d(TAG, round + ":getMatchesForThisRoundFromDispMap: "+ tmpArr.toString());
         return tmpArr;
     }
 
-    public TournaDispMatchEntry getTheMatchFromDispMap(final String matchId) {
+    private TournaDispMatchEntry getTheMatchFromDispMap(final String matchId) {
         if (matchId.isEmpty()) return null;
         for (int i = 0; i < mData.size(); i++) {
             ArrayList<TournaDispMatchEntry> rowData = mData.get(i);
@@ -1235,7 +1235,7 @@ class TournaTable implements View.OnClickListener {
 
                     mCommon.wakeUpDBConnection_profile();
                     //Intent myIntent = new Intent(mActivity, LoginActivity.class);
-                    Intent myIntent = new Intent(mActivity, TournaBaseEnterData.class);
+                    Intent myIntent = new Intent(mActivity, TournaSEDEEnterData.class);
                     myIntent.putExtra(Constants.TOURNATYPE, mTournaType);
                     myIntent.putExtra(Constants.MATCH, node.getId());
                     myIntent.putExtra(Constants.FIXTURE, mFixtureLabel);
@@ -1269,7 +1269,7 @@ class TournaTable implements View.OnClickListener {
                     }
 
                     //Intent myIntent = new Intent(TournaTableLayout.this, TournaSeeding.class);
-                    Intent myIntent = new Intent(mActivity, TournaBaseEnterData.class);
+                    Intent myIntent = new Intent(mActivity, TournaSEDEEnterData.class);
                     myIntent.putExtra(Constants.TOURNATYPE, mTournaType);
                     myIntent.putExtra(Constants.MATCH, node.getId());
                     myIntent.putExtra(Constants.FIXTURE, mFixtureLabel);
@@ -1561,7 +1561,7 @@ public class TournaTableLayout extends AppCompatActivity {
 
                 mCommon.wakeUpDBConnection_profile();
                 ArrayList<String> teams = new ArrayList<>(mDeFinalsDBEntry.getT());
-                Intent myIntent = new Intent(TournaTableLayout.this, TournaBaseEnterData.class);
+                Intent myIntent = new Intent(TournaTableLayout.this, TournaSEDEEnterData.class);
                 myIntent.putExtra(Constants.TOURNATYPE, mTournaType);
                 myIntent.putExtra(Constants.FIXTURE, Constants.DE_FINALS);
                 myIntent.putExtra(Constants.MATCH, Constants.DE_FINALS_M1);
@@ -1592,7 +1592,7 @@ public class TournaTableLayout extends AppCompatActivity {
 
                 mCommon.wakeUpDBConnection_profile();
                 ArrayList<String> teams = new ArrayList<>(mDeFinalsDBEntry.getT());
-                Intent myIntent = new Intent(TournaTableLayout.this, TournaBaseEnterData.class);
+                Intent myIntent = new Intent(TournaTableLayout.this, TournaSEDEEnterData.class);
                 myIntent.putExtra(Constants.TOURNATYPE, mTournaType);
                 myIntent.putExtra(Constants.FIXTURE, Constants.DE_FINALS);
                 myIntent.putExtra(Constants.MATCH, Constants.DE_FINALS_M2);
@@ -1877,7 +1877,7 @@ public class TournaTableLayout extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "onResume: ");
-        //Coming back from TournaBaseEnterData, refresh the view, if there was
+        //Coming back from BaseEnterData, refresh the view, if there was
         //a DB update performed.
         if (mCommon.isDBUpdated()) {
             Log.d(TAG, "onResume: DB updated");

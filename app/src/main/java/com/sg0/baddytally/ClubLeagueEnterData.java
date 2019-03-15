@@ -33,66 +33,15 @@ import java.util.List;
 import java.util.Set;
 
 
-public class EnterData extends AppCompatActivity {
-
-    private static final List<Integer> scoreList = new ArrayList<Integer>() {{
-        add(30);
-        add(29);
-        add(28);
-        add(27);
-        add(26);
-        add(25);
-        add(24);
-        add(23);
-        add(22);
-        add(21);
-        add(20);
-        add(19);
-        add(18);
-        add(17);
-        add(16);
-        add(15);
-        add(14);
-        add(13);
-        add(12);
-        add(11);
-        add(10);
-        add(9);
-        add(8);
-        add(7);
-        add(6);
-        add(5);
-        add(4);
-        add(3);
-        add(2);
-        add(1);
-        add(0);
-    }};
-    private static final String TAG = "EnterData";
+public class ClubLeagueEnterData extends BaseEnterData {
+    private static final String TAG = "ClubLeagueEnterData";
     private String mGroup;
     private String mGameType;
     private String mInnings;
     private String mRoundName;
     private String mClub;
     private int mGameNum = 1;
-    private boolean mSingles;
-
-    private Spinner mSpinner_P1;
-    private Spinner mSpinner_P2;
-    private Spinner mSpinner_P3;
-    private Spinner mSpinner_P4;
-    private Spinner mSpinner_T1;
-    private Spinner mSpinner_T2;
-
-    private String mSpinner_P1_selection;
-    private String mSpinner_P2_selection;
-    private String mSpinner_P3_selection;
-    private String mSpinner_P4_selection;
-
-    private DatabaseReference mDatabase;
-    private ProgressDialog mProgressDialog;
-
-
+    private GamePlayers mGamePlayers;
 
     private void killActivity(){
         setResult(RESULT_OK);
@@ -109,7 +58,7 @@ public class EnterData extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                killActivity();
+                mCommon.killActivity(ClubLeagueEnterData.this, RESULT_OK);
             }
         });
 
@@ -121,15 +70,14 @@ public class EnterData extends AppCompatActivity {
         String mNewRoundFlag = myIntent.getStringExtra("new_round");
         Log.w(TAG, "onCreate :" + SharedData.getInstance().toString() + "/" + mGroup + "/" + mGameType + "/" + mNewRoundFlag);
         mSingles = Constants.SINGLES.equals(mGameType);
-        mDatabase = FirebaseDatabase.getInstance().getReference();
-        mProgressDialog = null;
+        mGamePlayers = null;
         mRoundName = "";
         if(!mNewRoundFlag.equals(Constants.NEWROUND)) {
             mRoundName = SharedData.getInstance().mRoundName;  //use the value read from DB
         }
         if(mRoundName.isEmpty()) {
-            //mRoundName = SharedData.getInstance().createNewRoundName(true, EnterData.this);
-            Toast.makeText(EnterData.this, "Create a new round first!",
+            //mRoundName = SharedData.getInstance().createNewRoundName(true, ClubLeagueEnterData.this);
+            Toast.makeText(ClubLeagueEnterData.this, "Create a new round first!",
                     Toast.LENGTH_LONG).show();
             finish();
         }
@@ -148,8 +96,8 @@ public class EnterData extends AppCompatActivity {
         mSpinner_P2 = findViewById(R.id.spinner_p2);
         mSpinner_P3 = findViewById(R.id.spinner_p3);
         mSpinner_P4 = findViewById(R.id.spinner_p4);
-        mSpinner_T1 = findViewById(R.id.score_t1);
-        mSpinner_T2 = findViewById(R.id.score_t2);
+        mSpinner_T1_1 = findViewById(R.id.score_t1);
+        mSpinner_T2_1 = findViewById(R.id.score_t2);
         mSpinner_P1_selection = "";
         mSpinner_P2_selection = "";
         mSpinner_P3_selection = "";
@@ -171,17 +119,17 @@ public class EnterData extends AppCompatActivity {
         }
 
         if(mSingles && players.size()<2){
-            Toast.makeText(EnterData.this, "Not enough players to play Singles in group " + mGroup,
+            Toast.makeText(ClubLeagueEnterData.this, "Not enough players to play Singles in group " + mGroup,
                     Toast.LENGTH_LONG).show();
             killActivity();
         } else if(!mSingles && players.size()<4){
-            Toast.makeText(EnterData.this, "Not enough players to play Doubles in group " + mGroup,
+            Toast.makeText(ClubLeagueEnterData.this, "Not enough players to play Doubles in group " + mGroup,
                     Toast.LENGTH_LONG).show();
             killActivity();
         }
 
         if(SharedData.getInstance().mInningsDBKey == -1) {
-            Toast.makeText(EnterData.this, "No current innings, Create innings first!",
+            Toast.makeText(ClubLeagueEnterData.this, "No current innings, Create innings first!",
                     Toast.LENGTH_LONG).show();
             killActivity();
         }
@@ -191,15 +139,17 @@ public class EnterData extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if(mSpinner_P1_selection.isEmpty() || mSpinner_P3_selection.isEmpty()) {
-                    Toast.makeText(EnterData.this, "Enter both players...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ClubLeagueEnterData.this, "Enter both players...", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 if(!mSingles && (mSpinner_P2_selection.isEmpty() || mSpinner_P4_selection.isEmpty())) {
-                    Toast.makeText(EnterData.this, "Enter all 4 players...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ClubLeagueEnterData.this, "Enter all 4 players...", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 if(!SharedData.getInstance().isDBConnected()) {
-                    Toast.makeText(EnterData.this, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ClubLeagueEnterData.this,
+                            "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
+                    mCommon.wakeUpDBConnection_profile();
                     return;
                 }
                 fetchGames();
@@ -209,8 +159,8 @@ public class EnterData extends AppCompatActivity {
         summaryButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent myIntent = new Intent(EnterData.this, Summary.class);
-                EnterData.this.startActivityForResult(myIntent, Constants.SUMMARY_ACTIVITY);
+                Intent myIntent = new Intent(ClubLeagueEnterData.this, ClubLeagueSummary.class);
+                ClubLeagueEnterData.this.startActivityForResult(myIntent, Constants.SUMMARY_ACTIVITY);
             }
         });
 
@@ -316,12 +266,13 @@ public class EnterData extends AppCompatActivity {
         ArrayAdapter<Integer> scoreAdapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, scoreList);
         scoreAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mSpinner_T1.setAdapter(scoreAdapter);
-        mSpinner_T2.setAdapter(scoreAdapter);
-        mSpinner_T1.setSelection(9);   //score 21
-        mSpinner_T2.setSelection(15);  //score 15
+        mSpinner_T1_1.setAdapter(scoreAdapter);
+        mSpinner_T2_1.setAdapter(scoreAdapter);
+        mSpinner_T1_1.setSelection(0);
+        mSpinner_T2_1.setSelection(0);
     }
 
+    /*
     private void rearrangeDropdownList(Spinner spinner, ArrayAdapter<String> adapter, List<String> players) {
         Log.v(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
         adapter.clear();
@@ -349,6 +300,7 @@ public class EnterData extends AppCompatActivity {
         Log.i(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
         adapter.notifyDataSetChanged();
     }
+    */
 
     private void fetchGames(){
         mGameNum = 1;
@@ -369,7 +321,7 @@ public class EnterData extends AppCompatActivity {
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                Toast.makeText(EnterData.this, "DB error while fetching games: " + databaseError.toString(),
+                Toast.makeText(ClubLeagueEnterData.this, "DB error while fetching games: " + databaseError.toString(),
                         Toast.LENGTH_LONG).show();
                 killActivity();
             }
@@ -388,7 +340,7 @@ public class EnterData extends AppCompatActivity {
         String p4 = "";
 
         if (p1.isEmpty() || p3.isEmpty()) {
-            Toast.makeText(EnterData.this, "Bad data!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(ClubLeagueEnterData.this, "Bad data!", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -396,7 +348,7 @@ public class EnterData extends AppCompatActivity {
             p2 = mSpinner_P2.getSelectedItem().toString();
             p4 = mSpinner_P4.getSelectedItem().toString();
             if (p2.isEmpty() || p4.isEmpty()) {
-                Toast.makeText(EnterData.this, "Bad data!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(ClubLeagueEnterData.this, "Bad data!", Toast.LENGTH_SHORT).show();
                 return;
             }
         }
@@ -450,7 +402,7 @@ public class EnterData extends AppCompatActivity {
             }
         };
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(EnterData.this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(ClubLeagueEnterData.this);
         builder.setTitle(SharedData.getInstance().getColorString("Really?", Color.RED));
         builder.setMessage(message + "\n\nWould be nice if you can play all combinations in your group, before repeating." +
                 "\n\nYou still want to enter this score?")
@@ -459,11 +411,10 @@ public class EnterData extends AppCompatActivity {
     }
 
 
-
-    private boolean enterData(boolean dry_run) {
-
+    @Override
+    protected boolean enterData(boolean dry_run) {
         if(-1 == SharedData.getInstance().mInningsDBKey) {
-            Toast.makeText(EnterData.this, "No current innings, Create innings first!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(ClubLeagueEnterData.this, "No current innings, Create innings first!", Toast.LENGTH_SHORT).show();
             return false;
         }
         String p1 = mSpinner_P1.getSelectedItem().toString();
@@ -477,8 +428,8 @@ public class EnterData extends AppCompatActivity {
             p4 = mSpinner_P4.getSelectedItem().toString();
         }
 
-        Integer s1 = (Integer) mSpinner_T1.getSelectedItem();
-        Integer s2 = (Integer) mSpinner_T2.getSelectedItem();
+        Integer s1 = (Integer) mSpinner_T1_1.getSelectedItem();
+        Integer s2 = (Integer) mSpinner_T2_1.getSelectedItem();
         String winners, winner1, winner2;
         String losers, loser1, loser2;
         Integer winningScore;
@@ -507,7 +458,7 @@ public class EnterData extends AppCompatActivity {
         }
 
         if ((winningScore < 21) || s1.equals(s2) || winners.equals(losers)) {
-            Toast.makeText(EnterData.this, "Bad data!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(ClubLeagueEnterData.this, "Bad data!", Toast.LENGTH_SHORT).show();
             return false;
         }
 
@@ -515,10 +466,15 @@ public class EnterData extends AppCompatActivity {
         if (dry_run) return true;
 
         Log.i(TAG, "enterData: " + winners + " vs " + losers + " : " + winningScore.toString() + "-" + losingScore.toString());
-        final GamePlayers gamePlayers = new GamePlayers(winner1, winner2, loser1, loser2, winners, winningScore, losingScore);
+        mGamePlayers = null;
+        mGamePlayers = new GamePlayers(winner1, winner2, loser1, loser2, winners, winningScore, losingScore);
+
+
+        lockAndUpdateDB();
+/*
 
         if(null!=mProgressDialog) return false;   //attempt to press Enter button repeatedly
-        mProgressDialog = new ProgressDialog(EnterData.this);
+        mProgressDialog = new ProgressDialog(ClubLeagueEnterData.this);
         mProgressDialog.setMessage("Updating database....");
         mProgressDialog.show();
         //To avoid a conflict when 2 users are entering the same score.
@@ -533,35 +489,29 @@ public class EnterData extends AppCompatActivity {
                 updateDB(gamePlayers);
             }
         }, 2000);
+        */
         return true;
     }
 
-    private void updateDB(final GamePlayers gPlayers){
+    protected void workToUpdateDB() {
+        Log.d(TAG, "workToUpdateDB: " + mCommon.mClub);
 
-        if(!SharedData.getInstance().isDBLocked()) {
-            Toast.makeText(EnterData.this, "Another update is in progress, try again...", Toast.LENGTH_LONG).show();
-            if (null!=mProgressDialog && mProgressDialog.isShowing()) {
-                mProgressDialog.dismiss();
-                mProgressDialog = null;
-            }
-            return;
-        }
-        final String winner1 = gPlayers.winner1;
-        final String winner2 = gPlayers.winner2;
-        final String loser1 = gPlayers.loser1;
-        final String loser2 = gPlayers.loser2;
+        final String winner1 = mGamePlayers.winner1;
+        final String winner2 = mGamePlayers.winner2;
+        final String loser1 = mGamePlayers.loser1;
+        final String loser2 = mGamePlayers.loser2;
 
         if (winner1.isEmpty()) {
-            Toast.makeText(EnterData.this, "winner name is empty!", Toast.LENGTH_LONG).show();
+            Toast.makeText(ClubLeagueEnterData.this, "winner name is empty!", Toast.LENGTH_LONG).show();
             killActivity();
         }
 
-        Snackbar.make(findViewById(R.id.enterdata_ll), gPlayers.winners + " won!", Snackbar.LENGTH_LONG)
+        Snackbar.make(findViewById(R.id.enterdata_ll), mGamePlayers.winners + " won!", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show();
 
         GameJournalDBEntry jEntry = new GameJournalDBEntry(mRoundName, mInnings, SharedData.getInstance().mUser);
-        jEntry.setResult(SharedData.getInstance().createNewRoundName(false, EnterData.this),
-                mGameType, winner1, winner2, loser1, loser2, gPlayers.winningScore, gPlayers.losingScore);
+        jEntry.setResult(SharedData.getInstance().createNewRoundName(false, ClubLeagueEnterData.this),
+                mGameType, winner1, winner2, loser1, loser2, mGamePlayers.winningScore, mGamePlayers.losingScore);
         jEntry.setmGNo(mGameNum);
         DatabaseReference jDBEntryRef = mDatabase.child(mClub).child(Constants.JOURNAL).child(mInnings).child(mRoundName).child(mGroup).push();
         jDBEntryRef.setValue(jEntry);
@@ -573,21 +523,17 @@ public class EnterData extends AppCompatActivity {
 
         DatabaseReference mClubDBRef = mDatabase.child(mClub);
         DatabaseReference dbRef_winner1 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(winner1);
-        dbRef_winner1.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, true, dbRef_winner1, false,true));
+        dbRef_winner1.addListenerForSingleValueEvent(new UpdateScores(ClubLeagueEnterData.this, mSingles, true, dbRef_winner1, false,true));
         DatabaseReference dbRef_loser1 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(loser1);
-        dbRef_loser1.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, false, dbRef_loser1, false,false));
+        dbRef_loser1.addListenerForSingleValueEvent(new UpdateScores(ClubLeagueEnterData.this, mSingles, false, dbRef_loser1, false,false));
         if (!mSingles) {
             DatabaseReference dbRef_winner2 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(winner2);
-            dbRef_winner2.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, true, dbRef_winner2, false,true));
+            dbRef_winner2.addListenerForSingleValueEvent(new UpdateScores(ClubLeagueEnterData.this, mSingles, true, dbRef_winner2, false,true));
             DatabaseReference dbRef_loser2 = mClubDBRef.child(Constants.GROUPS).child(mGroup).child(loser2);
-            dbRef_loser2.addListenerForSingleValueEvent(new UpdateScores(EnterData.this, mSingles, false, dbRef_loser2, false,false));
+            dbRef_loser2.addListenerForSingleValueEvent(new UpdateScores(ClubLeagueEnterData.this, mSingles, false, dbRef_loser2, false,false));
         }
-        SharedData.getInstance().setDBUpdated(true);
-        SharedData.getInstance().releaseDBLock();
-        if (null!=mProgressDialog && mProgressDialog.isShowing()) {
-            mProgressDialog.dismiss();
-            mProgressDialog = null;
-        }
+
+        releaseLockAndCleanup();
     }
 
     class GamePlayers {

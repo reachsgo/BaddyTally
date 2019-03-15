@@ -1,17 +1,14 @@
 package com.sg0.baddytally;
 
-import android.app.ProgressDialog;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
 import android.text.SpannableStringBuilder;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
@@ -19,21 +16,17 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -42,25 +35,33 @@ import java.util.Locale;
 import java.util.Map;
 
 
-public class TournaLeagueEnterData extends TournaBaseEnterData implements CallbackRoutine {
+public class TournaLeagueEnterData extends BaseEnterData implements CallbackRoutine {
 
 
     private static final String TAG = "TournaLeagueEnterData";
-    private List<String> mMatches;
-    private String mMatch;
     private String mGameType;
     private Integer mNumOfMatches;
     private Integer mBestOf;
     private MatchInfo mChosenMatch;
     private String mSelectedMatch;
-
-
     private HashMap<String, PlayerInfo> mDBPlayerData;
     private HashMap<String, TeamScoreDBEntry> mDBTeamScoreData;
     private int mCount;
     private String mWinnerPlayer1;
     private String mWinnerTeam;
     private TournaUtil mTUtil;
+    private ArrayList<GameJournalDBEntry> mNewGameList;
+    private ArrayList<GameJournalDBEntry> mDeltaGameList;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.tourna_activity_enter_data);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
+        Log.d(TAG, "onCreate: ");
+        onCreateBase();
+    }
 
 
     @Override
@@ -71,8 +72,8 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
         mSingles = Constants.SINGLES.equals(mGameType);
         Log.w(TAG, "onCreate :" + mCommon.toString() + "/" + mGameType);
 
-        findViewById(R.id.winner).setVisibility(View.GONE);
-        findViewById(R.id.winner_tv).setVisibility(View.GONE);
+        //findViewById(R.id.winner).setVisibility(View.GONE);
+        //findViewById(R.id.winner_tv).setVisibility(View.GONE);
 
         mDBPlayerData = new HashMap<>();
         mDBTeamScoreData = new HashMap<>();
@@ -80,9 +81,32 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
         mTUtil = new TournaUtil(TournaLeagueEnterData.this, TournaLeagueEnterData.this);
         mTUtil.readDBMatchMeta(mCommon.mTournament, true);
         mTeams = mCommon.mTeams;
+        mNewGameList = null;
+        mDeltaGameList = null;
+
+        mSpinner_W = findViewById(R.id.winner);
+        mSpinner_W_selection = "";
+        mSpinner_Teams = new ArrayList<>(mTeams);
+        mSpinner_Teams.add(0, "none");
+        Log.d(TAG, "onCreateExtra: mSpinner_Teams=" + mSpinner_Teams);
+        ArrayAdapter<String> winnerAdapter = new ArrayAdapter<>(this,
+                R.layout.small_spinner, mSpinner_Teams);
+        winnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mSpinner_W.setAdapter(winnerAdapter);
+        mSpinner_W.setSelection(0);
+
+        //winner spinner and completed checkbox are auto filled
+        //and cannot be over-ridden for league matches.
+        findViewById(R.id.completed).setEnabled(false);
+        findViewById(R.id.winner).setEnabled(false);
 
         Log.w(TAG, "onCreateExtra :" + mTeams + "/"
                 + mT1_players + "/" + mT2_players);
+
+        ((TextView)findViewById(R.id.enterdata_matchinfo)).setText("");
+        //teams not known yet. Fill this in once the match to enter data is chosen.
+
+
     }
 
     private void showMatchGames(final String matchkey) {
@@ -154,38 +178,6 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
 
     }
 
-    private void prepareForInput() {
-        initializeSpinners();
-    }
-
-    protected void rearrangeDropdownList(Spinner spinner, ArrayAdapter<String> adapter, List<String> players) {
-        Log.v(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
-        adapter.clear();
-        //Collections.sort(players);  //sorted already so that players present on the court comes first.
-        adapter.addAll(players);
-        if (spinner == mSpinner_P2) {
-            //if spinner for player 2, remove player 1 selection & set first in the list
-            if (!mSpinner_P1_selection.isEmpty()) adapter.remove(mSpinner_P1_selection);
-            spinner.setSelection(adapter.getCount() - 1);
-            mSpinner_P2_selection = spinner.getItemAtPosition(0).toString();
-        } else if (spinner == mSpinner_P3) {
-            //if spinner for player 3, remove player 1 & 2 selections & set first in the list
-            if (!mSpinner_P1_selection.isEmpty()) adapter.remove(mSpinner_P1_selection);
-            if (!mSpinner_P2_selection.isEmpty()) adapter.remove(mSpinner_P2_selection);
-            spinner.setSelection(adapter.getCount() - 1);
-            mSpinner_P3_selection = spinner.getItemAtPosition(0).toString();
-        } else if (spinner == mSpinner_P4) {
-            //if spinner for player 3, remove player 1 & 2 selections & set first in the list
-            if (!mSpinner_P1_selection.isEmpty()) adapter.remove(mSpinner_P1_selection);
-            if (!mSpinner_P2_selection.isEmpty()) adapter.remove(mSpinner_P2_selection);
-            if (!mSpinner_P3_selection.isEmpty()) adapter.remove(mSpinner_P3_selection);
-            spinner.setSelection(adapter.getCount() - 1);
-            mSpinner_P4_selection = spinner.getItemAtPosition(0).toString();
-        }
-        Log.i(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
-        adapter.notifyDataSetChanged();
-    }
-
     private void readPlayers(final String matchkey) {
         Log.d(TAG, "readPlayers: " + matchkey);
         if (matchkey.isEmpty()) {
@@ -201,13 +193,18 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
         mChosenMatch = mI;
         fetchPlayers(1, mChosenMatch.T1);
         fetchPlayers(2, mChosenMatch.T2);
-        Log.d(TAG, "readPlayers: done");
+        String mInfo = mChosenMatch.T1 + " vs " + mChosenMatch.T2;
+        ((TextView)findViewById(R.id.enterdata_matchinfo)).setText(mInfo);
+        ((TextView) findViewById(R.id.team1_tv)).setText(mChosenMatch.T1);
+        ((TextView) findViewById(R.id.team2_tv)).setText(mChosenMatch.T2);
+        //Log.d(TAG, "readPlayers: done");
     }
 
 
     private void fetchPlayers(final int team_index, final String team) {
-        Log.d(TAG, "fetchPlayers: " + team);
-        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA)
+        //Log.d(TAG, "fetchPlayers: " + team);
+        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                .child(mCommon.mClub).child(Constants.TOURNA)
                 .child(mCommon.mTournament).child(Constants.PLAYERS);
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -216,18 +213,18 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
                 for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
                     final String player_short = childSnapshot.getKey();
                     PlayerInfo pI = childSnapshot.getValue(PlayerInfo.class);
-                    Log.v(TAG, "read from DB: " + pI.toString());
+                    //Log.v(TAG, "read from DB: " + pI.toString());
                     if (pI.T.equals(team)) {
                         String player = player_short + Constants.COLON_DELIM + pI.name;
                         tmpList.add(player);
-                        Log.i(TAG, player + " added to list");
+                        //Log.i(TAG, player + " added to list");
                     }
                 }
                 if (tmpList.size() > 0) {
                     if (team_index == 1) mT1_players = tmpList;
                     else {
                         mT2_players = tmpList;
-                        prepareForInput();
+                        initializeSpinners();
                         fetchGames();
                         Log.d(TAG, "fetchPlayers: mT1_players=" + mT1_players +
                                         " mT2_players=" + mT2_players);
@@ -260,12 +257,12 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.d(TAG, "fetchGames:" + dataSnapshot.getKey());
+                //Log.d(TAG, "fetchGames:" + dataSnapshot.getKey());
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
                     GameJournalDBEntry jEntry = child.getValue(GameJournalDBEntry.class);
                     if (null == jEntry) continue;
                     gameList.add(jEntry);
-                    Log.d(TAG, "fetchGames:" + jEntry.toReadableString());
+                    //Log.d(TAG, "fetchGames:" + jEntry.toReadableString());
                 }
                 populateGamePoints(gameList);
                 Log.d(TAG, "fetchGames onDataChange: " + gameList.size());
@@ -310,7 +307,7 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
             findViewById(R.id.score_t2_2).setEnabled(false);
             findViewById(R.id.score_t2_3).setEnabled(false);
         }
-        if (isMatchDone(gameList)) {
+        if (!mCommon.isRoot() && isMatchDone(gameList)) {
             Toast.makeText(TournaLeagueEnterData.this, "Match already completed, nothing to update!",
                     Toast.LENGTH_LONG).show();
             findViewById(R.id.enter_button).setVisibility(View.GONE);
@@ -341,8 +338,11 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
             p4 = TeamInfo.getShortName(tmp4);
         }
 
-        final ArrayList<GameJournalDBEntry> mNewGameList = new ArrayList<>();
-        final ArrayList<GameJournalDBEntry> mDeltaGameList = new ArrayList<>();
+        if(mNewGameList==null) mNewGameList = new ArrayList<>();
+        if(mDeltaGameList==null) mDeltaGameList = new ArrayList<>();
+        mNewGameList.clear();
+        mDeltaGameList.clear();
+
         Log.d(TAG, "enterData: mBestOf=" + mBestOf);
         for (int gameNum = 1; gameNum <= mBestOf; gameNum++) {
             Integer s1 = 0;
@@ -397,8 +397,10 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
                 losingScore = s1;
             }
 
-            if ((winningScore < 21) || s1.equals(s2) || winners.equals(losers)) {
-                Toast.makeText(TournaLeagueEnterData.this, "Game" + gameNum + ": Bad data!", Toast.LENGTH_SHORT).show();
+            if ((winningScore<21 && losingScore!=0) || s1.equals(s2) || winners.equals(losers)) {
+                if (!dry_run)
+                    Toast.makeText(TournaLeagueEnterData.this, "Game" + gameNum + ": Bad data!",
+                            Toast.LENGTH_SHORT).show();
                 return false;
             }
 
@@ -420,13 +422,16 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
                 mNewGameList.add(jEntry);
             }
 
+            mSpinner_Teams.add(1, winner1 + "/" + winner2);
             CheckBox checkbox = findViewById(R.id.completed);
             if (isMatchDone(mNewGameList)) {
                 Log.d(TAG, "enterData: checkbox is CHECKED");
                 checkbox.setChecked(true);
+                mSpinner_W.setSelection(1);
             } else {
                 checkbox.setChecked(false);
                 Log.d(TAG, "enterData: checkbox is UNCHECKED");
+                mSpinner_W.setSelection(0);
             }
         }
 
@@ -435,6 +440,10 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
 
 
         if (mDeltaGameList.size() > 0) {
+
+            lockAndUpdateDB();
+
+            /*
             if (null != mProgressDialog) return false;   //attempt to press Enter button repeatedly
             mProgressDialog = new ProgressDialog(TournaLeagueEnterData.this);
             mProgressDialog.setMessage("Updating database....");
@@ -456,25 +465,20 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
                 @Override
                 public void run() {
                     Log.v(TAG, "After DB lock wait...");
-                    workToUpdateDB(mDeltaGameList, mNewGameList);
+                    workToUpdateDB();
                     //updateDB(gamePlayers);
                 }
             }, 2000);
-
+*/
         } else mCommon.killActivity(TournaLeagueEnterData.this, RESULT_OK);
         return true;
     }
 
-
-    private void workToUpdateDB(final ArrayList<GameJournalDBEntry> deltaGameList, final ArrayList<GameJournalDBEntry> newGameList) {
+    @Override
+    protected void workToUpdateDB() {
         Log.d(TAG, "workToUpdateDB: ");
-        if (!SharedData.getInstance().isDBLocked()) {
-            Toast.makeText(TournaLeagueEnterData.this, "Another update is in progress, try again later...", Toast.LENGTH_LONG).show();
-            releaseLockAndCleanup(false, false);
-            return;
-        }
 
-        for (GameJournalDBEntry jEntry : deltaGameList) {
+        for (GameJournalDBEntry jEntry : mDeltaGameList) {
             Log.i(TAG, "WRITING jEntry: " + jEntry.toReadableString());
             final DatabaseReference jDBEntryRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA)
                     .child(mCommon.mTournament).child(Constants.MATCHES).child(Constants.DATA).child(mChosenMatch.key).
@@ -488,17 +492,18 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
         //Update team and player points, only when the match is done. This will avoid the extra overhead if the user corrects game points for every button click.
         mWinnerPlayer1 = "";
         mWinnerTeam = "";
-        if (isMatchDone(newGameList)) {
+        if (isMatchDone(mNewGameList)) {
             Log.d(TAG, "workToUpdateDB: isMatchDone=true");
             mDBPlayerData.clear();
             mDBTeamScoreData.clear();
             mCount = 0;
-            collectAndUpdate(newGameList);
+            collectAndUpdate(mNewGameList);
         } else {
             Log.d(TAG, "workToUpdateDB: isMatchDone=false");
-            releaseLockAndCleanup(false, false);
+            mFinishActivity = false;
+            releaseLockAndCleanup();
         }
-        mGameList = newGameList;  //to be done at the end after all DB updates.
+        mGameList = mNewGameList;  //to be done at the end after all DB updates.
     }
 
     private Boolean isMatchDone(final ArrayList<GameJournalDBEntry> newGameList) {
@@ -614,8 +619,7 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
                                     jEntry.getmL1(), jEntry.getmL2())
                     );
             for (final String p : players) {
-                final Handler handler = new Handler();
-                handler.postDelayed(new Runnable() {
+                mMainHandler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         collectPlayerDataFromDB(p);
@@ -634,10 +638,8 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
     }
 
     private void collectAndUpdate(final ArrayList<GameJournalDBEntry> newGameList) {
-
         collectDataFromDB(newGameList);
-        final Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
+        mMainHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 Log.v(TAG, "collectAndUpdate: After wait...");
@@ -648,8 +650,7 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
 
     private void prepForDBUpdate(final ArrayList<GameJournalDBEntry> newGameList) {
         if (!isDBReadDone() && mCount < 5) {
-            final Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
+            mMainHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     Log.v(TAG, "prepForDBUpdate: After wait..." + mCount);
@@ -661,7 +662,8 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
         } else if (mCount >= 5) {
             Log.e(TAG, "Failed to read DB");
             mCommon.showToast(TournaLeagueEnterData.this, "Failed to read DB!", Toast.LENGTH_SHORT);
-            releaseLockAndCleanup(true, false);
+            mFinishActivity = true;
+            releaseLockAndCleanup();
             return;
         }
         for (GameJournalDBEntry jEntry : newGameList) {
@@ -677,7 +679,8 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
     }
 
     //private void updateDB_player(final String player, final Boolean won, final Boolean updateTeamScore, final ArrayList<GameJournalDBEntry> gameList) {
-    private void prepData_player(final String player, final Boolean won, final Boolean updateTeamScore, final int winningScore, final int loosingScore) {
+    private void prepData_player(final String player, final Boolean won, final Boolean updateTeamScore,
+                                 final int winningScore, final int loosingScore) {
         Log.i(TAG, "updateDB_player Got:" + player + "/" + won + "/" + updateTeamScore);
         PlayerInfo pI = mDBPlayerData.get(player);
         if (pI == null) return;
@@ -688,8 +691,10 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
         if (updateTeamScore) prepData_TeamScore_game(player, pI.T, won, winningScore, loosingScore);
     }
 
-    private void prepData_TeamScore_game(final String player, final String team, final Boolean won, final int winningScore, final int loosingScore) {
-        Log.i(TAG, "updateDB_TeamScore Got games for " + player + "/" + team + " w:" + won + " WS:" + winningScore + " LS:" + loosingScore);
+    private void prepData_TeamScore_game(final String player, final String team, final Boolean won,
+                                         final int winningScore, final int loosingScore) {
+        Log.i(TAG, "updateDB_TeamScore Got games for " + player + "/" + team + " w:" + won + " WS:" +
+                winningScore + " LS:" + loosingScore);
         TeamScoreDBEntry score = mDBTeamScoreData.get(team);
         if (score == null) return;
         Log.i(TAG, "updateDB_TeamScore old data:" + score.toString());
@@ -736,7 +741,9 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
         metaDBRef.setValue(true);
 
         auditIfAllMatchesInASetCompleted();  //its ok to do this in background even when DB lock is being released
-        releaseLockAndCleanup(true, true);
+        mCommon.setDBUpdated(true);
+        mFinishActivity = true;
+        releaseLockAndCleanup();
     }
 
     private void auditIfAllMatchesInASetCompleted() {
@@ -773,6 +780,7 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
     }
 
 
+    /*
     protected void releaseLockAndCleanup(final Boolean finish, final Boolean dbUpdated) {
         Log.d(TAG, "releaseLockAndCleanup: ");
         if (dbUpdated) SharedData.getInstance().setDBUpdated(true);
@@ -783,6 +791,7 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
         }
         if (finish) mCommon.killActivity(TournaLeagueEnterData.this, RESULT_OK);
     }
+    */
 
     //CallbackRoutine Callback interfaces
     public void profileFetched() {
@@ -814,9 +823,8 @@ public class TournaLeagueEnterData extends TournaBaseEnterData implements Callba
         } else if (in.equals(Constants.CB_SHOWMATCHES)) {
             //callback after reading DB for meta data
             if (ok) {
-                mMatch = mTUtil.mMSStr_chosen;
-                showMatchGames(mMatch);
-                Log.w(TAG, "completed: " + in + ":" + mMatch);
+                showMatchGames(mTUtil.mMSStr_chosen);
+                //Log.w(TAG, "completed: " + in + ":" + mTUtil.mMSStr_chosen);
             }
         }
     }

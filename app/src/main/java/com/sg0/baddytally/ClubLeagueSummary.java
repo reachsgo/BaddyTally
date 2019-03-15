@@ -38,8 +38,8 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 
 
-public class Summary extends AppCompatActivity {
-    private static final String TAG = "Summary";
+public class ClubLeagueSummary extends AppCompatActivity {
+    private static final String TAG = "ClubLeagueSummary";
 
     private RecyclerView mRecyclerGoldView;
     private RecyclerView.Adapter mGoldAdapter;
@@ -66,7 +66,7 @@ public class Summary extends AppCompatActivity {
     private void setTitle(String round) {
         if (!TextUtils.isEmpty(round)) {
             round = SharedData.getInstance().getShortRoundName(round);
-            final String title = Constants.APPSHORT + "  Summary";
+            final String title = Constants.APPSHORT + "  ClubLeagueSummary";
             String tempString = title + "\n";
             if(!SharedData.getInstance().mInnings.isEmpty()) tempString += SharedData.getInstance().mInnings;
             tempString += "/" + round;
@@ -152,7 +152,7 @@ public class Summary extends AppCompatActivity {
         mRecyclerGoldView.setHasFixedSize(true);
         if (Build.VERSION.SDK_INT >= 21) {
             //set the background image (smashing silhouette) tint to gold, only supported for API21+
-            mRecyclerGoldView.setBackgroundTintList(ContextCompat.getColorStateList(Summary.this, R.color.colorGold));
+            mRecyclerGoldView.setBackgroundTintList(ContextCompat.getColorStateList(ClubLeagueSummary.this, R.color.colorGold));
         }
         // use a linear layout manager
         LinearLayout parent = findViewById(R.id.gold_parentview);
@@ -172,14 +172,14 @@ public class Summary extends AppCompatActivity {
                     goldGameList.add(jEntry);
                     //Log.w(TAG, "gold fetchGames:" + child.getKey() + " data=" + jEntry.toReadableString());
                 }
-                mGoldAdapter = new SummaryRecyclerViewAdapter(Summary.this, Constants.GOLD, goldGameListKeys, goldGameList);
+                mGoldAdapter = new SummaryRecyclerViewAdapter(ClubLeagueSummary.this, Constants.GOLD, goldGameListKeys, goldGameList);
                 mRecyclerGoldView.setAdapter(mGoldAdapter);
                 mGoldAdapter.notifyDataSetChanged();
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                Toast.makeText(Summary.this, "DB error while fetching gold games:" + databaseError.getMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(ClubLeagueSummary.this, "DB error while fetching gold games:" + databaseError.getMessage(), Toast.LENGTH_LONG).show();
                 killActivity();
             }
         });
@@ -211,14 +211,14 @@ public class Summary extends AppCompatActivity {
                         silverGameList.add(jEntry);
                         //Log.w(TAG, "silver fetchGames:" + child.getKey() + " data=" + jEntry.toReadableString());
                     }
-                    mSilverAdapter = new SummaryRecyclerViewAdapter(Summary.this, Constants.SILVER, silverGameListKeys, silverGameList);
+                    mSilverAdapter = new SummaryRecyclerViewAdapter(ClubLeagueSummary.this, Constants.SILVER, silverGameListKeys, silverGameList);
                     mRecyclerSilverView.setAdapter(mSilverAdapter);
                     mSilverAdapter.notifyDataSetChanged();
                 }
 
                 @Override
                 public void onCancelled(@NonNull DatabaseError databaseError) {
-                    Toast.makeText(Summary.this, "DB error while fetching silver games:" + databaseError.getMessage(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(ClubLeagueSummary.this, "DB error while fetching silver games:" + databaseError.getMessage(), Toast.LENGTH_LONG).show();
                     killActivity();
                 }
             });
@@ -244,13 +244,13 @@ public class Summary extends AppCompatActivity {
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
                 Log.w(TAG, "fetchAllRounds: dberror" + databaseError.getMessage());
-                Toast.makeText(Summary.this, "DB error while fetching innings" + databaseError.getMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(ClubLeagueSummary.this, "DB error while fetching innings" + databaseError.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
     }
 
     private void showOptions(final View view) {
-        Context wrapper = new ContextThemeWrapper(Summary.this, R.style.RegularPopup);
+        Context wrapper = new ContextThemeWrapper(ClubLeagueSummary.this, R.style.RegularPopup);
         final PopupMenu popup = new PopupMenu(wrapper, view);
         popup.getMenuInflater().inflate(R.menu.summary_popup_menu, popup.getMenu());
         popup.getMenu().clear();
