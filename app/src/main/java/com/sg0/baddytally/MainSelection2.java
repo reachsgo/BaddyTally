@@ -6,11 +6,14 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
+import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 
@@ -92,6 +95,18 @@ public class MainSelection2 extends AppCompatActivity {
                 Intent intent = new Intent(MainSelection2.this, MainSigninActivity.class);
                 startActivity(intent);
                 break;
+            case R.id.action_help:
+                AlertDialog.Builder hBuilder = new AlertDialog.Builder(MainSelection2.this);
+                hBuilder.setMessage(Html.fromHtml(
+                        "<a href=\"https://sites.google.com/view/scoretally/user-guide\">User Guide link</a>"))
+                        .setTitle(Constants.APPNAME)
+                        .setNeutralButton("Ok", null);
+                AlertDialog help = hBuilder.create();
+                help.show();
+                // Make the textview clickable. Must be called after show()
+                ((TextView)help.findViewById(android.R.id.message))
+                        .setMovementMethod(LinkMovementMethod.getInstance());
+                break;
             case R.id.action_about:
                 //int versionCode = BuildConfig.VERSION_CODE;
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainSelection2.this);
@@ -113,6 +128,6 @@ public class MainSelection2 extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        SharedData.getInstance().killApplication();
+        SharedData.getInstance().killApplication(MainSelection2.this);
     }
 }

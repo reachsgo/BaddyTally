@@ -300,12 +300,11 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
         writeFixtureToDB(fixMap, Constants.FIXTURE_UPPER);
         //unitTest(fixMap);
 
-
         mCommon.mTournament = mTourna;
+        mCommon.killActivity(this, RESULT_OK);
         Intent myIntent = new Intent(TournaSeeding.this, TournaLeague.class);
+        myIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         TournaSeeding.this.startActivity(myIntent);
-
-        //killActivity();
     }
 
     public void doubleElimination() {
@@ -321,10 +320,10 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
         //unitTest(fixMap);
 
         mCommon.mTournament = mTourna;
+        mCommon.killActivity(this, RESULT_OK);
         Intent myIntent = new Intent(TournaSeeding.this, TournaLeague.class);
+        myIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         TournaSeeding.this.startActivity(myIntent);
-
-        //killActivity();
     }
     
     void isFixtureInDB(final String fixLabel) {

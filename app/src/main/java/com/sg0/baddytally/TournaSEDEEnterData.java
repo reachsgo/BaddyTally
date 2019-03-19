@@ -28,7 +28,6 @@ import java.util.Map;
 //EnterData for Single Elimination & Double Elimination tournaments
 public class TournaSEDEEnterData extends BaseEnterData {
     private static final String TAG = "TournaSEDEEnterData";
-    private String mTournaType;
     private String mMatchId;
     private String mFixtureLabel;
     private TournaFixtureDBEntry mMatchDBEntry;
@@ -40,7 +39,6 @@ public class TournaSEDEEnterData extends BaseEnterData {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.tourna_activity_enter_data);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-
         Log.d(TAG, "onCreate: ");
         onCreateBase();
     }
@@ -61,7 +59,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
 
 
         Intent thisIntent = getIntent(); // gets the previously created intent
-        mTournaType = thisIntent.getStringExtra(Constants.TOURNATYPE);
+        mType = thisIntent.getStringExtra(Constants.TOURNATYPE);
         mMatchId = thisIntent.getStringExtra(Constants.MATCH);
         mFixtureLabel = thisIntent.getStringExtra(Constants.FIXTURE);
         mTeams = thisIntent.getStringArrayListExtra(Constants.TEAMS);
@@ -104,7 +102,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
 
 
 
-        Log.w(TAG, "onCreateExtra :" + mTournaType + "/" + mMatchId + "/"
+        Log.w(TAG, "onCreateExtra :" + mType + "/" + mMatchId + "/"
                 + mFixtureLabel + "/" + mTeams + "/"
                 + mT1_players + "/" + mT2_players);
 
@@ -239,8 +237,9 @@ public class TournaSEDEEnterData extends BaseEnterData {
         });
     }
 
+
     private void populateGamePoints(ArrayList<GameJournalDBEntry> gameList) {
-        //Log.i(TAG, "populateGamePoints tid=" + Thread.currentThread().getId());
+        Log.i(TAG, "populateGamePoints tid=" + Thread.currentThread().getId());
         if (gameList == null) return;
         int num = 1;
         for (GameJournalDBEntry g : gameList) {
@@ -248,20 +247,23 @@ public class TournaSEDEEnterData extends BaseEnterData {
             //Don't have to check if playerInvolved(), as the match is added in DB for the players taken from DB.
             //Check if T1 is the winning team or losing team
             for (String p : mT1_players) {
-                //Log.d(TAG, "populateGamePoints: " + g.toReadableString() + " T1 player=" + p);
+                Log.d(TAG, "populateGamePoints: " + g.toReadableString() + " T1 player=" + p);
                 if (g.aWinner(p)) {
                     //get Winner's score as T1's score
                     setGamePointSpinner(g.getmGNo(), g.getmWS(), g.getmLS());
+                    setPlayersSpinner(g.getmW1(), g.getmW2(), g.getmL1(), g.getmL2());
                     break;
                 } else if (g.aLoser(p)) {
                     //get Winner's score as T1's score
                     setGamePointSpinner(g.getmGNo(), g.getmLS(), g.getmWS());
+                    setPlayersSpinner(g.getmL1(), g.getmL2(), g.getmW1(), g.getmW2());
                     break;
                 }
 
             }
             num++;
         }
+        super.populateGamePoints(); //done with populating layout with data from DB
     }
 
 
@@ -278,21 +280,36 @@ public class TournaSEDEEnterData extends BaseEnterData {
         final Integer TEAM1_IDX = 1;
         final Integer TEAM2_IDX = 2;
         int winner_team_idx = 0;
-        String randomPlayerT1 = mT1_players.get(0);   //we will see if this player has won best-of-N games.
-        String randomPlayerT2 = mT2_players.get(0);   //take one from the other team too.
+
+        //always choose the player from the most current gamelist.
+        //This could be different from mT1_players.get(0) as user could have changed
+        //the player after read from DB.
+        String randomPlayerT1 = newGameList.get(0).getmW1();   //we will see if this player has won best-of-N games.
+        String randomPlayerT2 = newGameList.get(0).getmL1();   //take one from the other team too.
+        if(mT2_players.contains(newGameList.get(0).getmW1())) {
+            //we got it the other way! T2 are the winners
+            randomPlayerT2 = newGameList.get(0).getmW1();
+            randomPlayerT1 = newGameList.get(0).getmL1();
+        }
 
         Log.i(TAG, "isMatchDone:" + randomPlayerT1 + " :" + randomPlayerT2);
+        Log.i(TAG, "isMatchDone:" + newGameList.size());
 
         int randomPlayerT1_Wins = 0;
         int randomPlayerT2_Wins = 0;
         int gamesCompleted = 0;
+        int gamesPlayed = 0;
         for (GameJournalDBEntry jEntry : newGameList) {
+            if (jEntry.getmWS() > 0) gamesPlayed++;
             if (jEntry.getmWS() < 21) continue;
             if (jEntry.getmWS() >= 21) gamesCompleted++;
             if (jEntry.aWinner(randomPlayerT1)) randomPlayerT1_Wins++;
             if (jEntry.aWinner(randomPlayerT2)) randomPlayerT2_Wins++;
         }
-        if (gamesCompleted == 1) {
+
+        Log.d(TAG, "isMatchDone: " + String.format("wins=%s,%s Games=%s/%s", randomPlayerT1_Wins, randomPlayerT2_Wins,
+                gamesCompleted, gamesPlayed));
+        if (gamesCompleted==1 && gamesPlayed==1) {
             if (randomPlayerT1_Wins == 1) winner_team_idx = TEAM1_IDX;
             else if (randomPlayerT2_Wins == 1) winner_team_idx = TEAM2_IDX;
             Log.i(TAG, randomPlayerT1_Wins + ":One game completed:" + randomPlayerT2_Wins);
@@ -336,7 +353,13 @@ public class TournaSEDEEnterData extends BaseEnterData {
 
     @Override
     protected boolean enterData(boolean dry_run) {
-        if (null == mGameList) return false;
+        Log.d(TAG, "enterData: ");
+        if (null == mGameList) {
+            Toast.makeText(TournaSEDEEnterData.this, "Stale data, start over.",
+                    Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "enterData: mGameList is null");
+            return false;
+        }
 
         String p1 = mSpinner_P1.getSelectedItem().toString();
         String p3 = mSpinner_P3.getSelectedItem().toString();
@@ -357,7 +380,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
             if (tmpS != null) s1 = (Integer) tmpS.getSelectedItem();
             tmpS = getRespectiveSpinner(gameNum, 2);
             if (tmpS != null) s2 = (Integer) tmpS.getSelectedItem();
-            //Log.d(TAG, "enterData: " + gameNum + " " + s1 + "-" + s2);
+            Log.d(TAG, "enterData: " + gameNum + " " + s1 + "-" + s2);
             if (s1 == 0 && s2 == 0) continue;
 
             String winners, winner1, winner2;
@@ -403,23 +426,25 @@ public class TournaSEDEEnterData extends BaseEnterData {
                 losingScore = s1;
             }
 
-            //Log.d(TAG, "enterData: " + winners);
+            Log.d(TAG, "enterData: " + winners);
             if (winners.equals(losers)) {
                 Toast.makeText(TournaSEDEEnterData.this, "Players configured with same names: " + winners,
                         Toast.LENGTH_SHORT).show();
-                return false;
+                //return false;
             }
             if ((winningScore<21 && losingScore!=0) || s1.equals(s2)) {
-                if (!dry_run)
+                if (!dry_run) {
                     Toast.makeText(TournaSEDEEnterData.this, "Game" + gameNum + ": Bad data!", Toast.LENGTH_SHORT).show();
-                return false;
+                    return false;
+                }
             }
 
             if (!mCommon.isDBConnected()) {
-                if (!dry_run)
+                if (!dry_run) {
                     Toast.makeText(TournaSEDEEnterData.this, "Stale DB connection, retry.", Toast.LENGTH_SHORT).show();
-                mCommon.wakeUpDBConnection();
-                return false;
+                    mCommon.wakeUpDBConnection();
+                    return false;
+                }
             }
             String dateStr = SharedData.getInstance().createNewRoundName(false, null);
             GameJournalDBEntry jEntry = new GameJournalDBEntry(dateStr, "", mCommon.mUser);
@@ -429,6 +454,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
 
         }
 
+        Log.d(TAG, "enterData: " + mGameList.size());
         isMatchDone(mGameList, dry_run);  //override Winner only for dry_run, for root user.
 
         //Do not proceed to do tha actual DB update, if this is a dry run.

@@ -285,12 +285,12 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
                 return;
             }
             final String team = strList.get(0);
-            final String pShort = strList.get(1).toUpperCase();
+            final String pShort = strList.get(1);
             final String pLong = strList.get(2);
             Log.d(TAG, "callback: got back:" + team+ pShort + pLong);
             Boolean errVal = false;
-            if(!pShort.matches("[A-Z0-9]+")) errVal = true;
-            if(!pLong.matches("[A-Za-z0-9 ]+")) errVal = true;
+            if(!pShort.matches("[A-Za-z0-9-_]+")) errVal = true;
+            if(!pLong.matches("[A-Za-z0-9 -_]+")) errVal = true;
             if(errVal) {
                 Toast.makeText(mContext, "Bad Input! Enter only alphanumeric values", Toast.LENGTH_SHORT)
                         .show();

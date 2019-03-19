@@ -22,10 +22,12 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.telephony.PhoneNumberUtils;
+import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
+import android.text.method.LinkMovementMethod;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.text.style.SuperscriptSpan;
@@ -305,14 +307,23 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
         }
     }
 
+
     @Override
     public void onBackPressed() {
+        //killActivity is required here. If not, pressing back from MainSelection2
+        //will take us back to this activity.
         SharedData.getInstance().killActivity(this, RESULT_OK);
         Intent intent = new Intent(ClubLeagueActivity.this, MainSelection2.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
     }
 
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy: ");
+    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -419,6 +430,18 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 break;
             case R.id.action_rules:
                 showRules();
+                break;
+            case R.id.action_help:
+                AlertDialog.Builder hBuilder = new AlertDialog.Builder(ClubLeagueActivity.this);
+                hBuilder.setMessage(Html.fromHtml(
+                        "<a href=\"https://sites.google.com/view/scoretally/user-guide\">User Guide link</a>"))
+                        .setTitle(Constants.APPNAME)
+                        .setNeutralButton("Ok", null);
+                AlertDialog help = hBuilder.create();
+                help.show();
+                // Make the textview clickable. Must be called after show()
+                ((TextView)help.findViewById(android.R.id.message))
+                        .setMovementMethod(LinkMovementMethod.getInstance());
                 break;
             case R.id.action_about:
                 //int versionCode = BuildConfig.VERSION_CODE;

@@ -31,9 +31,11 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
+import android.text.method.LinkMovementMethod;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
@@ -323,6 +325,10 @@ class TournaTable implements View.OnClickListener {
                 Map<String, TournaFixtureDBEntry> map = dataSnapshot.getValue(genericTypeIndicator);
                 if (null == map) {
                     ((TournaTableLayout) mActivity).stopProgressDialog(false);
+                    Snackbar.make(mActivity.findViewById(R.id.upper_header),
+                            "No fixture to display! Go back to Settings and create one.",
+                            Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
                     return;
                 }
                 mMaxRounds = 0;
@@ -857,7 +863,9 @@ class TournaTable implements View.OnClickListener {
                             team1SB.setLength(0);  //no need ot the team name
                             for (int x = 0; x < team1DBEntry.getP().size(); x++) {
                                 team1SB.append(SharedData.truncate(team1DBEntry.getP().get(x), NAMELENGTH));
-                                if (x < team1DBEntry.getP().size() - 1) team1SB.append("/");
+                                //Just display 2 players, even if the team has more players
+                                if (x<1 && team1DBEntry.getP().size()>1) team1SB.append("/");
+                                if (x==1) break;
                             }
                         }
                     }
@@ -869,7 +877,9 @@ class TournaTable implements View.OnClickListener {
                             team2SB.setLength(0);  //no need ot the team name
                             for (int x = 0; x < team2DBEntry.getP().size(); x++) {
                                 team2SB.append(SharedData.truncate(team2DBEntry.getP().get(x), NAMELENGTH));
-                                if (x < team2DBEntry.getP().size() - 1) team2SB.append("/");
+                                //Just display 2 players, even if the team has more players
+                                if (x<1 && team2DBEntry.getP().size()>1) team2SB.append("/");
+                                if (x==1) break;
                             }
                         }
                     }
@@ -901,7 +911,9 @@ class TournaTable implements View.OnClickListener {
                                 winSB.setLength(0);  //no need ot the team name
                                 for (int x = 0; x < winDBEntry.getP().size(); x++) {
                                     winSB.append(SharedData.truncate(winDBEntry.getP().get(x), NAMELENGTH));
-                                    if (x < winDBEntry.getP().size() - 1) winSB.append("/");
+                                    //Just display 2 players, even if the team has more players
+                                    if (x<1 && winDBEntry.getP().size()>1) winSB.append("/");
+                                    if (x==1) break;
                                 }
                             }
                             ((TextView) v.findViewById(R.id.team1p_tv)).setText(
@@ -1312,7 +1324,7 @@ class TournaTable implements View.OnClickListener {
     }
 
     public void onResume() {
-        Log.e(TAG, "  ----------- onResume ------------ ");
+        Log.d(TAG, "  ----------- onResume ------------ ");
         ((TableLayout) mActivity.findViewById(mTableResId)).removeAllViews();
         readDB();
     }
@@ -1358,7 +1370,7 @@ class TournaTable implements View.OnClickListener {
             super.onCreate(savedInstanceState);
             requestWindowFeature(Window.FEATURE_NO_TITLE);
             setContentView(R.layout.tourna_match_info);
-            Log.d("CustomDialogClass", "onCreate: ");
+            //Log.d("CustomDialogClass", "onCreate: ");
 
             Button btn = findViewById(R.id.ok_button);
             btn.setOnClickListener(this);
@@ -1367,7 +1379,7 @@ class TournaTable implements View.OnClickListener {
         @Override
         protected void onStart() {
             super.onStart();
-            Log.d("CustomDialogClass", "onStart: ");
+            //Log.d("CustomDialogClass", "onStart: ");
 
             //nullify old data
             ((TextView) findViewById(R.id.team1_tv)).setText("--");
@@ -1480,7 +1492,7 @@ public class TournaTableLayout extends AppCompatActivity {
 
     private void setTitle(String tourna) {
         if (!TextUtils.isEmpty(tourna)) {
-            Log.d(TAG, "setTitle: " + tourna);
+            //Log.d(TAG, "setTitle: " + tourna);
             String tempString = Constants.APPNAME + "  " + tourna;
             SpannableString spanString = new SpannableString(tempString);
             spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPNAME.length(), 0);
@@ -1710,10 +1722,22 @@ public class TournaTableLayout extends AppCompatActivity {
                 mCommon.clear();
                 Toast.makeText(TournaTableLayout.this, "Cache cleared!", Toast.LENGTH_SHORT)
                         .show();
-                SharedData.getInstance().killActivity(this, RESULT_OK);
+                mCommon.killActivity(this, RESULT_OK);
                 Intent intent = new Intent(TournaTableLayout.this, MainSigninActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
+                break;
+            case R.id.action_help:
+                AlertDialog.Builder hBuilder = new AlertDialog.Builder(TournaTableLayout.this);
+                hBuilder.setMessage(Html.fromHtml(
+                        "<a href=\"https://sites.google.com/view/scoretally/user-guide\">User Guide link</a>"))
+                        .setTitle(Constants.APPNAME)
+                        .setNeutralButton("Ok", null);
+                AlertDialog help = hBuilder.create();
+                help.show();
+                // Make the textview clickable. Must be called after show()
+                ((TextView)help.findViewById(android.R.id.message))
+                        .setMovementMethod(LinkMovementMethod.getInstance());
                 break;
             case R.id.action_about:
                 //int versionCode = BuildConfig.VERSION_CODE;
@@ -1913,12 +1937,29 @@ public class TournaTableLayout extends AppCompatActivity {
         if (null != mUpperTable) mUpperTable.onDestroy();
 
         //we could be here from TournaSeeding as well.
-        SharedData.getInstance().killActivity(this, RESULT_OK);
+        mCommon.killActivity(this, RESULT_OK);
         Intent intent = new Intent(TournaTableLayout.this, TournaLanding.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
     }
 
+
+    public void exportPDF_work_wrapper() {
+        startProgressDialog("Export PDF", "Adding page...");
+        mWorkerHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if(mUpperTable!=null) {
+                    final Boolean ubPdf = exportPDF_work(R.id.tourna_table_upper);
+                    successPDFToast(ubPdf, "Upper");
+                }
+                if(mLowerTable!=null) {
+                    final Boolean lbPdf = exportPDF_work(R.id.tourna_table_lower);
+                    successPDFToast(lbPdf, "Lower");
+                }
+            }
+        });
+    }
 
     /**
      * Prints the contents on the screen to a PDF file,
@@ -1951,25 +1992,33 @@ public class TournaTableLayout extends AppCompatActivity {
             return;
         }
 
-        if (isExternalStorageWritable()) {
-            startProgressDialog("Export PDF", "Adding page...");
-            mWorkerHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if(mUpperTable!=null) {
-                        final Boolean ubPdf = exportPDF_work(R.id.tourna_table_upper);
-                        successPDFToast(ubPdf, "Upper");
-                    }
-                    if(mLowerTable!=null) {
-                        final Boolean lbPdf = exportPDF_work(R.id.tourna_table_lower);
-                        successPDFToast(lbPdf, "Lower");
-                    }
-                }
-            });
+        if (mCommon.isExternalStorageWritable(TournaTableLayout.this)) {
+            exportPDF_work_wrapper();
         } else {
             Toast.makeText(TournaTableLayout.this,
                     "External storage not writable!\nGive 'storage' app permission and try again.",
-                    Toast.LENGTH_LONG).show();
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case SharedData.STORAGE_PERMISSION_CODE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+                    //Log.d(TAG, "onRequestPermissionsResult: granted");
+                    exportPDF_work_wrapper();
+                } else {
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                    //Log.e(TAG, "onRequestPermissionsResult: denied");
+                }
+            }
         }
     }
 
@@ -1989,55 +2038,26 @@ public class TournaTableLayout extends AppCompatActivity {
         });
     }
 
-    /**
-     * Checks if external storage is available for read and write
-     *
-     * @return boolean
-     */
-    private boolean isExternalStorageWritable() {
-        if (isStoragePermissionGranted()) {
-            String state = Environment.getExternalStorageState();
-            if (Environment.MEDIA_MOUNTED.equals(state)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
-    public boolean isStoragePermissionGranted() {
-        if (Build.VERSION.SDK_INT >= 23) {
-            if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    == PackageManager.PERMISSION_GRANTED) {
-                //Log.v(TAG,"Permission is granted");
-                return true;
-            } else {
-                //Log.v(TAG,"Permission is revoked:" +Build.VERSION.SDK_INT);
-                mMainHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        //give time for the error toast to show up
-                        if (Build.VERSION.SDK_INT >= 23) {
-                            requestPermissions(new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
-                        }
-                    }
-                }, 2000);
-
-                return false;
-            }
-        } else { //permission is automatically granted on sdk<23 upon installation
-            //Log.v(TAG,"Permission is granted:" +Build.VERSION.SDK_INT);
-            return true;
-        }
-    }
 
 
     // ----- Below functions are invoked on a different worker thread ------
 
     public Boolean exportPDF_work(final Integer tableid) {
         String filename = getFileName(tableid);
-        File dir = getAlbumStorageDir("ScoreTally");
+        File dir = mCommon.getAlbumStorageDir();
         Boolean retVal = false;
-        if (null == dir) return retVal;
+        if (null == dir) {
+            mMainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(TournaTableLayout.this,
+                            "File could not be created in " + mCommon.getAlbumStorageDirStr(),
+                            Toast.LENGTH_LONG).show();
+                }
+            });
+            return retVal;
+        }
         File file = new File(dir, filename);
         try {
             FileOutputStream outputStream = new FileOutputStream(file);
@@ -2265,6 +2285,9 @@ public class TournaTableLayout extends AppCompatActivity {
         canvas.drawText(watermark,  w/5, h/6, paint);
         canvas.drawText(watermark,  w/5, h/2, paint);
         canvas.drawText(watermark,  w/5, h - h/6, paint);
+        canvas.drawText(watermark,  w-w/5, h/6, paint);
+        canvas.drawText(watermark,  w-w/5, h/2, paint);
+        canvas.drawText(watermark,  w-w/5, h - h/6, paint);
         return result;
     }
 
@@ -2275,33 +2298,6 @@ public class TournaTableLayout extends AppCompatActivity {
         PrintAttributes printAttributes = builder.build();
         return printAttributes;
     }
-
-
-    private File getAlbumStorageDir(String albumName) {
-        // Get the directory for the user's public pictures directory.
-        File file = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_DOCUMENTS), albumName);
-        if (!file.mkdirs()) {
-            if (file.isDirectory()) {
-                Log.d(TAG, "getAlbumStorageDir: Directory has already been created:" +
-                        file.getAbsolutePath());
-            } else {
-                Log.d(TAG, "getAlbumStorageDir: Directory could not be created:" +
-                        file.getAbsolutePath());
-                mMainHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(TournaTableLayout.this,
-                                "File could not be created in " + Environment.DIRECTORY_DOCUMENTS,
-                                Toast.LENGTH_LONG).show();
-                    }
-                });
-                return null;
-            }
-        }
-        return file;
-    }
-
 
     void makeOtherBracketVisible() {
         if (mTournaType.equals(Constants.SE)) return;

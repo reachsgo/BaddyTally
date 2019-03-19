@@ -103,7 +103,7 @@
         android:orientation="horizontal">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="150dp"
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:layout_marginStart="10dp"
@@ -135,22 +135,20 @@
         android:orientation="horizontal">
 
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_margin="1dp"
             android:text="How many matches in a set (ex: 1 for a team of 2 players)?"
-            android:layout_weight="3"
             android:textColor="@android:color/black"
             android:textSize="15sp"
             android:textStyle="bold" />
 
         <Spinner
             android:id="@+id/mNum_spinner"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
             android:layout_gravity="end"
-            android:layout_weight="2"
             android:layout_marginEnd="20dp"
             android:layout_marginStart="15dp"
             android:theme="@style/ThemeOverlay.AppCompat.Light" />
@@ -173,23 +171,21 @@
         android:orientation="horizontal">
 
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_margin="1dp"
             android:text="How many games in a match (best-of-1 or best-of-3)?"
             android:maxLines="2"
-            android:layout_weight="3"
             android:textColor="@android:color/black"
             android:textSize="15sp"
             android:textStyle="bold" />
 
         <Spinner
             android:id="@+id/bestOf_spinner"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_width="100dp"
+            android:layout_height="match_parent"
             android:layout_gravity="end"
-            android:layout_weight="2"
             android:layout_marginStart="15dp"
             android:layout_marginEnd="20dp"
             android:theme="@style/ThemeOverlay.AppCompat.Light" />
@@ -198,6 +194,39 @@
 
     <View
         android:id="@+id/league_bestof_line"
+        android:layout_marginTop="3dp"
+        android:layout_width="match_parent"
+        android:layout_height="2dip"
+        android:background="@color/colorWhite" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="1dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="1dp"
+            android:text="Upload team and player data from a file"
+            android:maxLines="2"
+            android:layout_weight="5"
+            android:textColor="@android:color/black"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <CheckBox
+            android:id="@+id/tourna_datafile_cb"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+    <View
         android:layout_marginTop="3dp"
         android:layout_width="match_parent"
         android:layout_height="2dip"

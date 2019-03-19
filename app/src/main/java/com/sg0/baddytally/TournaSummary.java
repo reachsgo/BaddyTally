@@ -75,7 +75,8 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                killActivity();
+                Log.d(TAG, "onClick: ");
+                recreate();
             }
         });
 
@@ -100,6 +101,7 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
 
     @Override
     protected void onStart() {
+        Log.d(TAG, "onStart: ");
         super.onStart();
         //drawViews(SharedData.getInstance().mRoundName);
         mTUtil = null;
@@ -152,19 +154,6 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
             }
         }
     }
-
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        killActivity();
-    }
-
-
-
-
-
-
 }
 
 

@@ -58,7 +58,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
         super.onCreate(savedInstanceState);
         setContentView(R.layout.tourna_activity_enter_data);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-
+        mType = Constants.LEAGUE;
         Log.d(TAG, "onCreate: ");
         onCreateBase();
     }
@@ -278,8 +278,9 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
         });
     }
 
+
     private void populateGamePoints(ArrayList<GameJournalDBEntry> gameList) {
-        Log.d(TAG, "populateGamePoints: ");
+        Log.d(TAG, "populateGamePoints: " + gameList.size());
         int num = 1;
         for (GameJournalDBEntry g : gameList) {
             if (g.getmWS() == 0) continue;
@@ -291,10 +292,12 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
                 if (g.aWinner(p_nick)) {
                     //get Winner's score as T1's score
                     setGamePointSpinner(g.getmGNo(), g.getmWS(), g.getmLS());
+                    setPlayersSpinner(g.getmW1(), g.getmW2(), g.getmL1(), g.getmL2());
                     break;
                 } else if (g.aLoser(p_nick)) {
                     //get Winner's score as T1's score
                     setGamePointSpinner(g.getmGNo(), g.getmLS(), g.getmWS());
+                    setPlayersSpinner(g.getmL1(), g.getmL2(), g.getmW1(), g.getmW2());
                     break;
                 }
 
@@ -313,6 +316,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
             findViewById(R.id.enter_button).setVisibility(View.GONE);
         }
         Log.d(TAG, "populateGamePoints: done");
+        super.populateGamePoints(); //done with populating layout with data from DB
     }
 
     @Override
@@ -511,6 +515,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
         if (newGameList.size() == 0) return false;
         String randomPlayerT1 = newGameList.get(0).getmW1();   //we will see if this player has won best-of-N games.
         String randomPlayerT2 = newGameList.get(0).getmL1();   //take one from the other team too.
+
         int randomPlayerT1_Wins = 0;
         int randomPlayerT2_Wins = 0;
         int gamesCompleted = 0;

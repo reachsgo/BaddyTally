@@ -86,7 +86,7 @@
                             android:imeActionLabel="@string/action_sign_in_short"
                             android:imeOptions="actionUnspecified"
                             android:inputType="text"
-                            android:maxLength="3"
+                            android:maxLength="5"
                             android:maxLines="1"
                             android:singleLine="true" />
 

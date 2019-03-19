@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -19,6 +20,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.IOException;
 
 
 public class MainSigninActivity extends AppCompatActivity {
@@ -48,11 +51,6 @@ public class MainSigninActivity extends AppCompatActivity {
         //Maintain DB connection state
         SharedData.getInstance().setUpDBConnectionListener();
         SharedData.getInstance().wakeUpDBConnection_profile();
-
-        //login once when the app is started
-        //Intent myIntent = new Intent(MainSigninActivity.this, LoginActivity.class);
-        //myIntent.putExtra(Constants.ACTIVITY, Constants.INITIAL);
-        //MainSigninActivity.this.startActivity(myIntent);
     }
 
     private void killActivity() {
@@ -76,7 +74,7 @@ public class MainSigninActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        SharedData.getInstance().killApplication();
+        SharedData.getInstance().killApplication(MainSigninActivity.this);
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -121,6 +119,17 @@ public class MainSigninActivity extends AppCompatActivity {
                 d.show();
                 // Make the textview clickable. Must be called after show()
                 ((TextView)d.findViewById(android.R.id.message))
+                        .setMovementMethod(LinkMovementMethod.getInstance());
+                break;
+            case R.id.action_help:
+                builder.setMessage(Html.fromHtml(
+                        "<a href=\"https://sites.google.com/view/scoretally/user-guide\">User Guide link</a>"))
+                        .setTitle(Constants.APPNAME)
+                        .setNeutralButton("Ok", null);
+                AlertDialog help = builder.create();
+                help.show();
+                // Make the textview clickable. Must be called after show()
+                ((TextView)help.findViewById(android.R.id.message))
                         .setMovementMethod(LinkMovementMethod.getInstance());
                 break;
             case R.id.action_about:

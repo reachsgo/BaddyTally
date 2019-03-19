@@ -5,8 +5,13 @@ import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.res.ResourcesCompat;
@@ -28,6 +33,11 @@ import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -42,6 +52,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+
+import jxl.Cell;
+import jxl.Sheet;
+import jxl.Workbook;
+import jxl.read.biff.BiffException;
 
 import static android.content.Context.ACTIVITY_SERVICE;
 import static android.content.Context.MODE_PRIVATE;
@@ -61,19 +76,19 @@ public class SharedData {
     // all the write will happen on volatile sSoleInstance before any read of sSoleInstance variable
     private static volatile SharedData sSoleInstance;
 
-    public Integer mNumOfGroups;
-    public String mUser;
+    Integer mNumOfGroups;
+    String mUser;
     public String mClub;
-    public String mRole;
-    public String mInnings;
-    public String mRoundName;
-    public String mAdminCode;
-    public String mMemCode;
-    public String mRootCode;
-    public ArrayList<PlayerData> mGoldPlayers;
-    public ArrayList<PlayerData> mSilverPlayers;
-    public Integer mInningsDBKey;
-    public Integer mWinPercNum;
+    String mRole;
+    String mInnings;
+    String mRoundName;
+    String mAdminCode;
+    String mMemCode;
+    String mRootCode;
+    ArrayList<PlayerData> mGoldPlayers;
+    ArrayList<PlayerData> mSilverPlayers;
+    Integer mInningsDBKey;
+    Integer mWinPercNum;
     private boolean mDBUpdated;
     private boolean mUserNotifyEnabled;
     private boolean mDBConnected;
@@ -81,17 +96,17 @@ public class SharedData {
     private Long mDBLockAcqAttemptTime;
     private String mStoreHistory;
     private ValueEventListener mDBConnectListener;
-    public ArrayList<ActiveUserDBEntry> mActiveUsers;
-    public Set<String> mGoldPresentPlayerNames;
-    public Set<String> mSilverPresentPlayerNames;
+    ArrayList<ActiveUserDBEntry> mActiveUsers;
+    Set<String> mGoldPresentPlayerNames;
+    Set<String> mSilverPresentPlayerNames;
     //public boolean mTournaMode;
-    public HashMap<String, String> mTournaMap;
+    HashMap<String, String> mTournaMap;
     public String mTournament;
-    public List<String> mTeams;
-    public HashMap<String, TeamInfo> mTeamInfoMap;
-    public String mTournaType;
-    public int mTable_view_resid;
-    public int mCount;   //general purpose count
+    List<String> mTeams;
+    HashMap<String, TeamInfo> mTeamInfoMap;
+    String mTournaType;
+    int mTable_view_resid;
+    int mCount;   //general purpose count
 
 
     public List<String> getTeamPlayers(String team) {
@@ -1066,9 +1081,203 @@ public class SharedData {
         activity.finish();
     }
 
-    public void killApplication() {
-        Log.w(TAG, "+++++++++++++ killApplication +++++++++++++");
-        android.os.Process.killProcess(android.os.Process.myPid());
+    public void killApplication(final Activity activity) {
+        if (Build.VERSION.SDK_INT >= 21) {
+            Log.w(TAG, "+++++++++++++ killApplication(finishAndRemoveTask) +++++++++++++");
+            activity.finishAndRemoveTask();
+        } else {
+            Log.w(TAG, "+++++++++++++ killApplication(exit) +++++++++++++");
+            activity.finishAffinity();
+            //android.os.Process.killProcess(android.os.Process.myPid());
+            //System.exit(0);
+        }
+    }
+
+    public String getAlbumStorageDirStr() {
+        return Environment.DIRECTORY_DOCUMENTS;
+    }
+
+    public File getAlbumStorageDir() {
+        // Get the directory for the user's public pictures directory.
+        File file = new File(Environment.getExternalStoragePublicDirectory(
+                getAlbumStorageDirStr()), Constants.APPNAME);
+        if (!file.mkdirs()) {
+            if (file.isDirectory()) {
+                Log.d(TAG, "getAlbumStorageDir: Directory has already been created:" +
+                        file.getAbsolutePath());
+            } else {
+                Log.d(TAG, "getAlbumStorageDir: Directory could not be created:" +
+                        file.getAbsolutePath());
+                return null;
+            }
+        }
+        return file;
+    }
+
+
+    public static final int READ_REQUEST_CODE = 42;
+    public static final int STORAGE_PERMISSION_CODE = 43;
+
+    /**
+     * Checks if external storage is available for read and write
+     *
+     * @return boolean
+     */
+    public boolean isExternalStorageWritable(final Activity activity) {
+        if (isStoragePermissionGranted(activity)) {
+            String state = Environment.getExternalStorageState();
+            if (Environment.MEDIA_MOUNTED.equals(state)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isStoragePermissionGranted(final Activity activity) {
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (activity.checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED) {
+                //Log.v(TAG,"Permission is granted");
+                return true;
+            } else {
+                //Log.v(TAG,"Permission is revoked:" +Build.VERSION.SDK_INT);
+                activity.requestPermissions(new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        STORAGE_PERMISSION_CODE);
+                return false;
+            }
+        } else { //permission is automatically granted on sdk<23 upon installation
+            //Log.v(TAG,"Permission is granted:" +Build.VERSION.SDK_INT);
+            return true;
+        }
+    }
+
+    public void showFileChooser(final Activity activity, final int FILE_SELECT_CODE) {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        //intent.setType("text/plain");
+        Uri uri = Uri.parse(getAlbumStorageDir().getPath());
+        Log.d(TAG, "showFileChooser: " + uri.toString());
+        intent.setDataAndType(uri, "text/csv");
+        try {
+            activity.startActivityForResult(  Intent.createChooser(intent, "Select a File to Upload"),
+                    FILE_SELECT_CODE);
+        } catch (Exception e) {
+            Log.e(TAG, " choose file error "+e.toString());
+        }
+    }
+
+    /**
+     * Fires an intent to spin up the "file chooser" UI and select an image.
+     */
+    public void performFileSearch(final Activity activity) {
+        Log.d(TAG, "performFileSearch: ");
+
+        // ACTION_OPEN_DOCUMENT is the intent to choose a file via the system's file
+        // browser.
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+
+        // Filter to only show results that can be "opened", such as a
+        // file (as opposed to a list of contacts or timezones)
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+        // Filter to show only images, using the image MIME data type.
+        // If one wanted to search for ogg vorbis files, the type would be "audio/ogg".
+        // To search for all documents available via installed storage providers,
+        // it would be "*/*".
+        //intent.setType("text/plain");
+        intent.setType("application/vnd.ms-excel");
+
+        activity.startActivityForResult(intent, READ_REQUEST_CODE);
+    }
+
+    public String readTextFromUri(final Activity activity, Uri uri) throws IOException {
+        InputStream inputStream = activity.getContentResolver().openInputStream(uri);
+        if(null==inputStream) return "";
+        BufferedReader reader = new BufferedReader(new InputStreamReader(
+                inputStream));
+        StringBuilder stringBuilder = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            stringBuilder.append(line);
+        }
+        inputStream.close();
+        reader.close();
+        Log.e(TAG, "readTextFromUri: " + stringBuilder.toString());
+        return stringBuilder.toString();
+    }
+
+    public ArrayList<TeamInfo> readExcel(final Activity activity, Uri uri) {
+        ArrayList<TeamInfo> retList = new ArrayList<>();
+        try
+        {
+            InputStream inputStream = activity.getContentResolver().openInputStream(uri);
+            if(null==inputStream) {
+                Log.e(TAG, "readExcel: null stream");
+                return retList;
+            }
+            Workbook m_workBook = Workbook.getWorkbook(inputStream);
+            //p_sheetNo is excel sheet no which u want to read
+            Sheet sheet = m_workBook.getSheet(0);
+
+            if(!sheet.getCell(0, 0).getContents().contains("TID")) {
+                Log.e(TAG, "readExcel: row=0, col=0: TID not found");
+                return retList;
+            }
+            if(!sheet.getCell(1, 0).getContents().contains("TEAM")) {
+                Log.e(TAG, "readExcel: row=0, col=1: TEAM not found");
+                return retList;
+            }
+            if(!sheet.getCell(2, 0).getContents().contains("PID")) {
+                Log.e(TAG, "readExcel: row=0, col=2: PID not found");
+                return retList;
+            }
+            if(!sheet.getCell(3, 0).getContents().contains("NAME")) {
+                Log.e(TAG, "readExcel: row=0, col=3: NAME not found");
+                return retList;
+            }
+
+            int rowsAdded = 0;
+            for (int row = 1; row < sheet.getRows(); row++)
+            {
+                String errMsg = "";
+                Cell tid = sheet.getCell(0, row);
+                //if(null==tid) continue;
+                Cell teamName = sheet.getCell(1, row);
+                //if(null==teamName) continue;
+                TeamInfo tI = new TeamInfo();
+                tI.name = tid.getContents();
+                tI.desc = teamName.getContents();
+                if(tI.name.isEmpty() || tI.desc.isEmpty()) {
+                    Log.w(TAG, "readExcel: Bad data:" + tI.name + ":" + tI.desc);
+                    continue;
+                }
+
+                for(int col=2 ; col < sheet.getColumns(); col+=2)
+                {
+                    String pid = sheet.getCell(col, row).getContents();
+                    String playerName = sheet.getCell(col+1, row).getContents();
+                    //if(null==pid) tI.p_nicks.add("");
+                    if(pid.isEmpty() && playerName.isEmpty()) continue;
+                    tI.p_nicks.add(pid);
+                    tI.players.add(playerName);
+                }
+                Log.d(TAG, row + " readExcel: Adding " + tI.toString());
+                retList.add(tI);
+                rowsAdded++;
+            }
+        }
+        catch (BiffException e)
+        {
+            Log.e(TAG, "readExcel: " + e.getMessage() );
+            //e.printStackTrace();
+        }
+        catch (IOException e)
+        {
+            Log.e(TAG, "readExcel: " + e.getMessage() );
+            //e.printStackTrace();
+        }
+
+        return  retList;
     }
 }
 

@@ -52,7 +52,6 @@
             android:noHistory="true"/>
         <activity
             android:name=".TournaLanding"
-            android:noHistory="true"
             android:label="ST Active tournaments">
         </activity>
         <activity
@@ -64,8 +63,7 @@
             android:name=".TournaSEDEEnterData"
             android:noHistory="true" />
         <activity
-            android:name=".TournaSettings"
-            android:noHistory="true" />
+            android:name=".TournaSettings" />
         <activity
             android:name=".TournaSummary"
             android:noHistory="false" />

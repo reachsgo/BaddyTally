@@ -10,6 +10,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
+import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.Gravity;
@@ -22,6 +24,7 @@ import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupMenu;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.database.DatabaseReference;
@@ -140,7 +143,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
                         "No connection to internet!", Toast.LENGTH_LONG).show();
                 killActivity();
             }
-        }, 3000);
+        }, 4000);
         mTUtil.fetchActiveTournaments(); //CB_READTOURNA
     }
 
@@ -181,7 +184,16 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     @Override
     public void onBackPressed() {
         Log.d(TAG, "onBackPressed: ");
-        mCommon.killApplication();
+        if (null!=mTournaList && mTournaList.size() > 0) {
+            //If there were tournaments being shown, then kill the application.
+            mCommon.killApplication(TournaLanding.this);
+        } else {
+            //If not, this could be a new club, we have to go back to the start page.
+            SharedData.getInstance().killActivity(this, RESULT_OK);
+            Intent intent = new Intent(TournaLanding.this, MainSelection2.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
+        }
     }
 
     //CallbackRoutine Callback interfaces
@@ -261,6 +273,18 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
                 Intent intent = new Intent(TournaLanding.this, MainSigninActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
+                break;
+            case R.id.action_help:
+                AlertDialog.Builder hBuilder = new AlertDialog.Builder(TournaLanding.this);
+                hBuilder.setMessage(Html.fromHtml(
+                        "<a href=\"https://sites.google.com/view/scoretally/user-guide\">User Guide link</a>"))
+                        .setTitle(Constants.APPNAME)
+                        .setNeutralButton("Ok", null);
+                AlertDialog help = hBuilder.create();
+                help.show();
+                // Make the textview clickable. Must be called after show()
+                ((TextView)help.findViewById(android.R.id.message))
+                        .setMovementMethod(LinkMovementMethod.getInstance());
                 break;
             case R.id.action_about:
                 //int versionCode = BuildConfig.VERSION_CODE;

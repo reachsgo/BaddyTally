@@ -23,7 +23,7 @@
             android:textAllCaps="false"
             android:textStyle="bold"
             android:textSize="20sp"
-            android:textColor="@color/colorTealGreen"
+            android:textColor="@color/colorWhite"
             android:background="@android:color/transparent"/>
 
     </RelativeLayout>
@@ -45,7 +45,7 @@
             android:textAllCaps="false"
             android:textStyle="bold"
             android:textSize="20sp"
-            android:textColor="@color/colorTealGreen"
+            android:textColor="@color/colorWhite"
             android:background="@android:color/transparent"/>
     </RelativeLayout>
 

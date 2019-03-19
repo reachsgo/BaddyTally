@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -20,12 +21,15 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
 import android.text.TextUtils;
+import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,6 +38,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -68,7 +73,9 @@ import java.util.MissingFormatArgumentException;
 
 public class TournaSettings extends AppCompatActivity implements CallbackRoutine{
     private static final String TAG = "TournaSettings";
+    private static final String CREATE_NEW_TOURNA = "Create new tournament";
     private static final String CREATE_NEW_TEAM = "Create new team";
+    private static final String CREATE_NEW_MATCH = "Create new match";
     private DatabaseReference mDatabase;
     private SharedData mCommon;
     private TournaUtil mTUtil;
@@ -76,24 +83,72 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
     private String mTeamShort;
     private String mTeamLong;
     private TournaEditTextDialog mCustomDialog;
+    private Handler mMainHandler;
+    private String mNewTournaType;
+    private String mScenario;
 
     public void killActivity() {
+        Log.d(TAG, "killActivity: ");
         finish();
     }
 
     @Override
     protected void onPause() {
+        Log.d(TAG, "onPause: ");
         super.onPause();
-        killActivity();
+        //killActivity();
     }
 
     @Override
     public void onBackPressed() {
         Log.d(TAG, "onBackPressed: ");
-        SharedData.getInstance().killActivity(this, RESULT_OK);
+        mCommon.killActivity(this, RESULT_OK);
         Intent myIntent = new Intent(TournaSettings.this, TournaLanding.class);
         myIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         TournaSettings.this.startActivity(myIntent);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.basic_menu_main, menu);
+        menu.findItem(R.id.action_logout).setVisible(false);
+        menu.findItem(R.id.action_settings).setVisible(false);
+        return true;
+    }
+
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            // action with ID action_refresh was selected
+            case R.id.action_refresh:
+                recreate();
+                break;
+            case R.id.action_help:
+                AlertDialog.Builder hBuilder = new AlertDialog.Builder(TournaSettings.this);
+                hBuilder.setMessage(Html.fromHtml(
+                        "<a href=\"https://sites.google.com/view/scoretally/user-guide\">User Guide link</a>"))
+                        .setTitle(Constants.APPNAME)
+                        .setNeutralButton("Ok", null);
+                AlertDialog help = hBuilder.create();
+                help.show();
+                // Make the textview clickable. Must be called after show()
+                ((TextView)help.findViewById(android.R.id.message))
+                        .setMovementMethod(LinkMovementMethod.getInstance());
+                break;
+            case R.id.action_about:
+                //int versionCode = BuildConfig.VERSION_CODE;
+                AlertDialog.Builder builder = new AlertDialog.Builder(TournaSettings.this);
+                builder.setMessage("Version: " + BuildConfig.VERSION_NAME)
+                        .setTitle(SharedData.getInstance().getTitleStr(Constants.APPNAME,
+                                TournaSettings.this))
+                        .setNeutralButton("Ok", null).show();
+                break;
+            default:
+                break;
+        }
+        return true;
     }
 
     @Override
@@ -106,7 +161,9 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
         mTUtil = new TournaUtil(TournaSettings.this, TournaSettings.this);
         mCustomDialog = new TournaEditTextDialog(TournaSettings.this, TournaSettings.this);
         Log.w(TAG, "onCreate :" + mCommon.toString());
-
+        mMainHandler = new Handler();
+        mNewTournaType = "";
+        mScenario = "";
 
         Button createNewTournaBtn = findViewById(R.id.createNewTourna_btn);
         createNewTournaBtn.setOnClickListener(new View.OnClickListener() {
@@ -118,6 +175,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                             .show();
                     return;
                 }
+                mScenario = CREATE_NEW_TOURNA;
                 TournaDialogClass customDialog = new TournaDialogClass(TournaSettings.this);
                 customDialog.show();
             }
@@ -133,6 +191,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                             .show();
                     return;
                 }
+                mScenario = CREATE_NEW_TEAM;
                 if(mTUtil!=null) mTUtil.fetchActiveTournaments();
                 //callback is completed()
             }
@@ -149,6 +208,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                             .show();
                     return;
                 }
+                mScenario = CREATE_NEW_MATCH;
                 onClickNewMatch();
             }
         });
@@ -189,8 +249,12 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                 onBackPressed();
             }
         });
+
+        TournaUtil mTUtil = new TournaUtil(TournaSettings.this, TournaSettings.this);
+        mTUtil.fetchActiveTournaments();
     }
 
+    //only for LeagueTournament
     private void onClickNewteam(final String key, final Object inobj) {
 
         //Log.v(TAG, "onClickNewteam... " + key);
@@ -208,15 +272,15 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
         final String tourna = strList.get(0);
         mTeamShort = strList.get(1).toUpperCase();
         mTeamLong = strList.get(2);
-        Log.d(TAG, "callback: got back:" + tourna + mTeamShort + mTeamLong);
+        //Log.d(TAG, "callback: got back:" + tourna + mTeamShort + mTeamLong);
         Boolean errVal = false;
-        Log.i(TAG, "team name: [" + mTeamShort + "] [" + mTeamLong + "]");
+        //Log.i(TAG, "team name: [" + mTeamShort + "] [" + mTeamLong + "]");
         if(!mTeamShort.matches("[A-Z0-9]+")) errVal = true;
         if(!mTeamLong.matches("[A-Za-z0-9 ]+")) errVal = true;
         if(errVal) {
             Toast.makeText(TournaSettings.this, "Bad Input! Enter only alphanumeric values", Toast.LENGTH_SHORT)
                     .show();
-            Log.i(TAG, "Bad Input! Enter only alphanumeric values: [" + mTeamShort + "] [" + mTeamLong + "]");
+            Log.e(TAG, "Bad Input! Enter only alphanumeric values: [" + mTeamShort + "] [" + mTeamLong + "]");
         } else {
             checkIfTeamAlreadyExists(tourna, mTeamShort);
         }
@@ -231,10 +295,9 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                 DataSnapshot ds = dataSnapshot.child(teamShort);
                 Boolean teamStatus = ds.getValue(Boolean.class);
                 if(teamStatus!=null && teamStatus) {
-                    Log.d(TAG, "checkIfTeamAlreadyExists: " + teamShort + " exists in " + tourna);
                     Toast.makeText(TournaSettings.this, "Team name '" + mTeamShort + "' is taken. Use something else.", Toast.LENGTH_SHORT)
                             .show();
-                    Log.i(TAG,  "Team name '" + mTeamShort + "' is taken. Use another short name. [" + mTeamLong + "]");
+                    Log.e(TAG,  "Team name '" + mTeamShort + "' is taken. Use another short name. [" + mTeamLong + "]");
                 } else {
                     Log.d(TAG, "checkIfTeamAlreadyExists: " + teamShort + " will be created in " + tourna);
                     String msg = " You are about to create a new team with:" +
@@ -285,7 +348,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             super.onCreate(savedInstanceState);
             requestWindowFeature(Window.FEATURE_NO_TITLE);
             setContentView(R.layout.tourna_new_tourna_dialog);
-
+            mNewTournaType = "";
             mSpinner0 = findViewById(R.id.tourna_type_spinner);
             mSpinner1 = findViewById(R.id.mNum_spinner);
             mSpinner2 = findViewById(R.id.bestOf_spinner);
@@ -299,7 +362,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             mSpinner0.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                    Log.d(TAG, "mSpinner0:onItemSelected: " + mMatchTypeListLong.get(i));
+                    //Log.d(TAG, "mSpinner0:onItemSelected: " + mMatchTypeListLong.get(i));
                     if(i==0) {
                         mSpinner1.setVisibility(View.VISIBLE);
                         findViewById(R.id.league_mnum_ll).setVisibility(View.VISIBLE);
@@ -358,6 +421,21 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                     break;
                 case R.id.enter_button:
                     createTournament();
+                    mMainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if(((CheckBox)findViewById(R.id.tourna_datafile_cb)).isChecked()) {
+                                //tournament data to be updated from a file
+                                if (mCommon.isExternalStorageWritable(TournaSettings.this)) {
+                                    importData();
+                                } else {
+                                    Toast.makeText(TournaSettings.this,
+                                            "External storage not writable!\nGive 'storage' app permission and try again.",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        }
+                    });
                     break;
                 default:
                     break;
@@ -367,7 +445,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
 
         private void createTournament() {
             int idx =  mSpinner0.getSelectedItemPosition();
-            String type  = mMatchTypeListShort.get(idx);
+            mNewTournaType  = mMatchTypeListShort.get(idx);
             String mNum = "";
             if(View.VISIBLE==mSpinner1.getVisibility()) mNum = mSpinner1.getSelectedItem().toString();
             String bestOf = "";
@@ -375,12 +453,12 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
 
 
             EditText et_tourna = findViewById(R.id.et_newTourna);
-            String tName = et_tourna.getText().toString().toUpperCase();
-            Log.v(TAG, "createTournament: " + type + "," + tName + ": " + mNum + "," + bestOf);
-            if(tName.isEmpty()) {
+            mTourna = et_tourna.getText().toString().toUpperCase();
+            Log.v(TAG, "createTournament: " + mNewTournaType + "," + mTourna + ": " + mNum + "," + bestOf);
+            if(mTourna.isEmpty()) {
                 Log.e(TAG, "createTournament : name is empty");
-                Toast.makeText(TournaSettings.this, "Enter tournament name!", Toast.LENGTH_LONG)
-                        .show();
+                Toast.makeText(TournaSettings.this, "Enter tournament name!",
+                        Toast.LENGTH_LONG).show();
                 return;
             }
             EditText et_tourna_desc = findViewById(R.id.et_newTourna_desc);
@@ -388,30 +466,179 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
 
             final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
                     .child(mCommon.mClub).child(Constants.TOURNA);
-            dbRef.child(Constants.ACTIVE).child(tName).setValue(type);
-            dbRef.child(tName).child(Constants.DESCRIPTION).setValue(desc);
-            dbRef.child(tName).child(Constants.TYPE).setValue(type);
+            dbRef.child(Constants.ACTIVE).child(mTourna).setValue(mNewTournaType);
+            dbRef.child(mTourna).child(Constants.DESCRIPTION).setValue(desc);
+            dbRef.child(mTourna).child(Constants.TYPE).setValue(mNewTournaType);
             if(!mNum.isEmpty()) {
-                dbRef.child(tName).child(Constants.MATCHES).child(Constants.META)
+                dbRef.child(mTourna).child(Constants.MATCHES).child(Constants.META)
                         .child(Constants.INFO).child(Constants.NUM_OF_MATCHES)
                         .setValue(Integer.valueOf(mNum));
             }
             if(!bestOf.isEmpty()) {
-                dbRef.child(tName).child(Constants.MATCHES).child(Constants.META)
+                dbRef.child(mTourna).child(Constants.MATCHES).child(Constants.META)
                         .child(Constants.INFO).child(Constants.NUM_OF_GAMES)
                         .setValue(Integer.valueOf(bestOf));
             }
-            mCommon.createDBLock(tName);
+            mCommon.createDBLock(mTourna);
             mCommon.setDBUpdated(true);
-            Toast.makeText(TournaSettings.this, "Tournament '" + tName +"' created.", Toast.LENGTH_LONG)
-                    .show();
+            Toast.makeText(TournaSettings.this, "Tournament '" + mTourna +"' created.",
+                    Toast.LENGTH_SHORT).show();
 
         }
     } //end of TournaDialogClass
 
+    private void importData() {
+        Log.d(TAG, "importData: ");
+        mCommon.performFileSearch(TournaSettings.this);
+        Toast.makeText(TournaSettings.this,
+                "Choose the excel file to import team and player data",
+                Snackbar.LENGTH_LONG).show();
+    }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode,
+                                 Intent resultData) {
+        Log.d(TAG, "onActivityResult: " + requestCode);
 
+        // The ACTION_OPEN_DOCUMENT intent was sent with the request code
+        // READ_REQUEST_CODE. If the request code seen here doesn't match, it's the
+        // response to some other intent, and the code below shouldn't run at all.
 
+        if (requestCode == SharedData.READ_REQUEST_CODE && resultCode == RESULT_OK) {
+            // The document selected by the user won't be returned in the intent.
+            // Instead, a URI to that document will be contained in the return intent
+            // provided to this method as a parameter.
+            // Pull that URI using resultData.getData().
+            Uri uri = null;
+            if (resultData != null) {
+                uri = resultData.getData();
+                if(null == uri) return;
+                Log.i(TAG, "Uri: " + uri.toString());
+
+                ArrayList<TeamInfo> teamList = SharedData.getInstance().readExcel(this, uri);
+
+                if(teamList.size()>0) {
+                    Log.i(TAG, "onActivityResult: " + teamList.size() + " teams added to " + mTourna);
+                    Toast.makeText(TournaSettings.this,
+                            teamList.size() + " teams added to " + mTourna,
+                            Toast.LENGTH_SHORT).show();
+                } else return;
+
+                if(mNewTournaType.equals(Constants.LEAGUE)) {
+                    createLeagueTeamData(teamList);
+                } else {
+                    createSEDETeamData(teamList);
+                }
+
+            }
+        }
+    }
+
+    private boolean isValidLeagueTeamData(final ArrayList<TeamInfo> teamList) {
+        Log.v(TAG, "isValidLeagueTeamData: " + teamList.toString());
+        for (TeamInfo tI: teamList) {
+            for (TeamInfo otherTI: teamList) {
+                if(tI.equals(otherTI)) continue;
+                if(tI.name.equals(otherTI.name)) {
+                    Toast.makeText(TournaSettings.this, "Duplicate team name '" + tI.name +"'.",
+                            Toast.LENGTH_SHORT).show();
+                    return false;
+                }
+                if(tI.desc.equals(otherTI.desc)) {
+                    Toast.makeText(TournaSettings.this, "Duplicate team name '" + tI.desc +"'.",
+                            Toast.LENGTH_SHORT).show();
+                    return false;
+                }
+                for(String nick1 : tI.p_nicks){
+                    for(String nick2 : otherTI.p_nicks){
+                        if(nick1.equals(nick2)) {
+                            Toast.makeText(TournaSettings.this, "Duplicate player name '" +
+                                            nick1 +"'.",
+                                    Toast.LENGTH_SHORT).show();
+                            return false;
+                        }
+                    }
+                }
+
+                for(String name1 : tI.players){
+                    for(String name2 : otherTI.players){
+                        if(name1.equals(name2)) {
+                            Toast.makeText(TournaSettings.this, "Duplicate player name '" +
+                                            name1 +"'.",
+                                    Toast.LENGTH_SHORT).show();
+                            return false;
+                        }
+                    }
+                }
+            }
+
+        }
+        return true;
+    }
+
+    private void createLeagueTeamData(final ArrayList<TeamInfo> teamList) {
+
+        if(!isValidLeagueTeamData(teamList)) return;
+        //Log.v(TAG, "createLeagueTeamData: " + teamList.toString());
+        for (TeamInfo tI: teamList) {
+            final String teamShortName = tI.name;
+            final String teamLongName = tI.desc;
+            if(teamShortName.isEmpty() || teamLongName.isEmpty()) continue;
+
+            if(tI.p_nicks.size() != tI.players.size()) {
+                Toast.makeText(TournaSettings.this, "Bad data for team '" + teamShortName +"'.",
+                        Toast.LENGTH_SHORT).show();
+                continue;
+            }
+
+            DatabaseReference teamDBRef = FirebaseDatabase.getInstance().getReference()
+                    .child(mCommon.mClub).child(Constants.TOURNA)
+                    .child(mTourna).child(Constants.TEAMS).child(teamShortName);
+            teamDBRef.child(Constants.SCORE).setValue(new TeamScoreDBEntry());
+            teamDBRef.child(Constants.DESCRIPTION).setValue(teamLongName);
+            FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
+                    .child(Constants.TOURNA).child(mTourna)
+                    .child(Constants.TEAMS_SUMMARY)
+                    .child(teamShortName).setValue(true);
+            Log.d(TAG, "createLeagueTeamData: Team created:" + teamShortName + ":" + teamLongName);
+
+            for(int i=0; i < tI.p_nicks.size(); i++) {
+                final String playerShortName = tI.p_nicks.get(i);
+                final String playerLongName = tI.players.get(i);
+                if(playerShortName.isEmpty() || playerLongName.isEmpty()) continue;
+                PlayerInfo pInfo = new PlayerInfo();
+                pInfo.T = teamShortName;
+                pInfo.name = playerLongName;
+                //Log.i(TAG, "createLeagueTeamData Adding player:" + playerShortName +
+                //        " info:" + pInfo.toString());
+                DatabaseReference teamsDBRef = FirebaseDatabase.getInstance().getReference()
+                        .child(mCommon.mClub).child(Constants.TOURNA)
+                        .child(mTourna).child(Constants.PLAYERS);
+                teamsDBRef.child(playerShortName).setValue(pInfo);
+            }
+        }
+        mCommon.setDBUpdated(true); //notify Main to refresh view
+        mCommon.killActivity(TournaSettings.this, RESULT_OK);
+    }
+
+    private void createSEDETeamData(final ArrayList<TeamInfo> teamList) {
+        //Log.v(TAG, "createSEDETeamData: " + teamList.toString());
+        List<TeamDBEntry> dbTeamList = new ArrayList<>();
+        for (TeamInfo tI:teamList) {
+            TeamDBEntry teamDBEntry = new TeamDBEntry();
+            teamDBEntry.setId(tI.name);
+            teamDBEntry.setP(tI.players);
+            dbTeamList.add(teamDBEntry);
+            //Log.d(TAG, "createSEDETeamData: Adding:" + teamDBEntry.toString());
+        }
+        if(dbTeamList.size()==0) return;
+        FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
+                .child(Constants.TOURNA).child(mTourna).child(Constants.TEAMS)
+                .setValue(dbTeamList);
+        Log.i(TAG, "createSEDETeamData: created " + teamList.size() + " teams");
+        mCommon.setDBUpdated(true); //notify Main to refresh view
+        mCommon.killActivity(TournaSettings.this, RESULT_OK);
+    }
 
     private void onClickNewMatch() {
         Context wrapper = new ContextThemeWrapper(TournaSettings.this, R.style.WhitePopup);
@@ -428,7 +655,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
         popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
-                Log.v(TAG, "onMenuItemClick[" + menuItem.getItemId()+ "] :" + menuItem.getTitle().toString());
+                //Log.v(TAG, "onMenuItemClick[" + menuItem.getItemId()+ "] :" + menuItem.getTitle().toString());
                 mTourna = menuItem.getTitle().toString();
                 mCommon.readDBTeam(mTourna,TournaSettings.this, TournaSettings.this);
                 //callback is completed()
@@ -442,12 +669,12 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
     private void getMatchInputs(final String tourna) {
 
         if(mCommon.isLeagueTournament(tourna)) {
-            Log.v(TAG, "getMatchInputs: " + tourna);
+            //Log.v(TAG, "getMatchInputs: " + tourna);
             MatchDialogClass customDialog = new MatchDialogClass(TournaSettings.this);
             customDialog.setTourna(tourna);
             customDialog.show();
         } else if (mCommon.isEliminationTournament(tourna)) {
-            Log.d(TAG, "EliminationTournament: to create fixture");
+            //Log.d(TAG, "EliminationTournament: to create fixture");
             Intent myIntent = new Intent(TournaSettings.this, TournaSeeding.class);
             myIntent.putExtra(Constants.TOURNA, tourna);
             TournaSettings.this.startActivity(myIntent);
@@ -458,7 +685,6 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
     public void profileFetched() { }
     public void callback(final String key, final Object inobj) {
         if(key.equals(CREATE_NEW_TEAM)) {
-            //callback for ADD_PLAYER
             onClickNewteam(key, inobj);
         }
     }
@@ -470,9 +696,10 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
         }
     }
     public void completed (final String in, final Boolean ok) {
+        if(mScenario.isEmpty()) return;
         Log.w(TAG, "completed: " + in + ":" + ok);
         if(in.equals(Constants.CB_READTOURNA)) {
-            //if(ok) showTournaments();
+            //Callback from add new team
             if(ok) mTUtil.showTournaments(findViewById(R.id.addNewTeam_btn), findViewById(R.id.settings_ll));
         } else if(in.equals(Constants.CB_SHOWTOURNA)) {
             if(ok) {
@@ -500,17 +727,21 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
         }
     }
 
+    //only for LeagueTournament
     private void updateDB_newteam(final String short_name, final String long_name) {
         if(mCommon.mTeams.contains(short_name)) {
-            Toast.makeText(TournaSettings.this, "Team " + short_name + " already exists!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(TournaSettings.this, "Team " + short_name + " already exists!",
+                    Toast.LENGTH_SHORT).show();
             return;
         }
         if(!mCommon.isDBConnected()) {
-            Toast.makeText(TournaSettings.this, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(TournaSettings.this, "DB connection is stale, refresh and retry...",
+                    Toast.LENGTH_SHORT).show();
             return;
         }
         Log.i(TAG, "updateDB_newteam:[" + short_name + ":" + long_name + "]");
-        DatabaseReference teamDBRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA)
+        DatabaseReference teamDBRef = FirebaseDatabase.getInstance().getReference()
+                .child(mCommon.mClub).child(Constants.TOURNA)
                 .child(mTourna).child(Constants.TEAMS).child(short_name);
         teamDBRef.child(Constants.SCORE).setValue(new TeamScoreDBEntry());
         teamDBRef.child(Constants.DESCRIPTION).setValue(long_name);
@@ -704,7 +935,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
 
                     final ArrayList<TeamDBEntry> mTeams = new ArrayList<> (teamList);
                     Log.v(TAG, "createTeam: " + mTeams.toString());
-                    Boolean replaceFlag = false;
+                    boolean replaceFlag = false;
                     for (int i=0; i < teamList.size(); i++) {
                         TeamDBEntry dbEntry = teamList.get(i);
                         if(dbEntry.getId().equals(teamDBEntry.getId())) {
@@ -745,7 +976,6 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 mDialogueDone = true; //stop the background loop waiting to dismiss the dialogue window
-                                return;
                             }
                         });
                         alertBuilder.show();
@@ -790,7 +1020,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             setContentView(R.layout.tourna_new_match_dialog);
 
             String tStr = "Add new match to " + mTourna;
-            TextView titleTV = findViewById(R.id.newMatch_tv);
+            TextView titleTV = findViewById(R.id.title_tv);
             titleTV.setText(tStr);
 
             mSpinner_T1 = findViewById(R.id.t1_spinner);

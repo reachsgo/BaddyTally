@@ -70,15 +70,10 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     protected Boolean mFinishActivity;
     protected Handler mMainHandler;
     protected Integer mDBLockCount;
-
+    protected String mType;
+    protected boolean mGamesReadFromDB;
 
     private static final String TAG = "BaseEnterData";
-    private String mTournaType;
-    private String mMatchId;
-    private String mFixtureLabel;
-    private TournaFixtureDBEntry mMatchDBEntry;
-    private Boolean mViewOnly;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,6 +92,8 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         mAlertMsg = "";
         mFinishActivity = false;
         mDBLockCount = 0;
+        mType = "";
+        mGamesReadFromDB = false;
     }
 
     //OnCreate() is expected to be implemented in the derived class.
@@ -117,6 +114,12 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     protected void initializeSpinners() {
 
         mCommon.wakeUpDBConnection_profile();
+
+        if(mT1_players.size()==1 || mT2_players.size()==1) mSingles = true;
+        else {
+            mT1_players.add("");
+            mT2_players.add("");
+        }
 
         mSpinner_P1 = findViewById(R.id.spinner_p1);
         mSpinner_P2 = findViewById(R.id.spinner_p2);
@@ -143,12 +146,31 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         enterButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.d(TAG, "enterButton.onClick: " +
+                        String.format("%s,%s vs %s,%s", mSpinner_P1_selection, mSpinner_P2_selection,
+                                mSpinner_P3_selection, mSpinner_P4_selection));
                 if (mSpinner_P1_selection.isEmpty() || mSpinner_P3_selection.isEmpty()) {
                     Toast.makeText(BaseEnterData.this, "Enter both players...", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                if (!mSingles && (mSpinner_P2_selection.isEmpty() || mSpinner_P4_selection.isEmpty())) {
-                    Toast.makeText(BaseEnterData.this, "Enter all 4 players...", Toast.LENGTH_SHORT).show();
+
+                if (mSpinner_P1_selection.equals(mSpinner_P2_selection)) {
+                    Toast.makeText(BaseEnterData.this, "Bad data: duplicate entries:" + mSpinner_P1_selection,
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                if (mSpinner_P3_selection.equals(mSpinner_P4_selection)) {
+                    Toast.makeText(BaseEnterData.this, "Bad data: duplicate entries:" + mSpinner_P3_selection,
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                //If P2 is entered, then P4 should also be entered.
+                //enterButton.onClick: player 22s,player 22s vs player 2g,
+                if ((!mSpinner_P2_selection.isEmpty() && mSpinner_P4_selection.isEmpty()) ||
+                        (mSpinner_P2_selection.isEmpty() && !mSpinner_P4_selection.isEmpty())) {
+                    Toast.makeText(BaseEnterData.this, "Enter all 4 players or just 2!", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 mCommon.wakeUpDBConnection();
@@ -195,6 +217,12 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
                 mSpinner_P1_selection = (String) adapterView.getItemAtPosition(position);
                 // Notify the selected item text
                 Log.v(TAG, "mSpinner_P1 onItemSelected mSpinner_P1_selection:" + mSpinner_P1_selection);
+
+
+                //If there are games read from DB, then dont rearrange the players.
+                //We just want to show what is read from DB.
+                if(mGamesReadFromDB) return;
+
                 mSpinner_P2_selection = "";
                 //When P1 is selected, re-arrange P2/3/4 lists to remove P1 selection.
                 if (!mSingles) rearrangeDropdownList(mSpinner_P2, dataAdapterP2, mT1_players);
@@ -225,6 +253,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
                 mSpinner_P3_selection = (String) adapterView.getItemAtPosition(position);
                 Log.v(TAG, "mSpinner_P3 onItemSelected mSpinner_P3_selection:" + mSpinner_P3_selection);
+                if(mGamesReadFromDB) return;
                 mSpinner_P4_selection = "";
                 if (!mSingles) rearrangeDropdownList(mSpinner_P4, dataAdapterP4, mT2_players);
             }
@@ -234,6 +263,17 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
             }
         });
 
+        mSpinner_P4.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
+                mSpinner_P4_selection = (String) adapterView.getItemAtPosition(position);
+                Log.v(TAG, "mSpinner_P4 onItemSelected mSpinner_P4_selection:" + mSpinner_P4_selection);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+            }
+        });
 
         ArrayAdapter<Integer> scoreAdapter = new ArrayAdapter<>(this,
                 R.layout.small_spinner, scoreList);
@@ -282,28 +322,42 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
 
 
     protected void rearrangeDropdownList(Spinner spinner, ArrayAdapter<String> adapter, List<String> players) {
+
         Log.v(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/"
                 + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
         adapter.clear();
         //Collections.sort(players);  //sorted already so that players present on the court comes first.
         adapter.addAll(players);
+
+        //For ClubLeague, the player list is the same for all players.
+        //For tournament games, p1/p2 are from first team and p2/p4 are from second team.
+        boolean singlePool = false;
+        if(mType.equals(Constants.CLUBLEAGUE)) singlePool = true;
+
         if (spinner == mSpinner_P2) {
             //if spinner for player 2, remove player 1 selection & set first in the list
             if (!mSpinner_P1_selection.isEmpty()) adapter.remove(mSpinner_P1_selection);
-            spinner.setSelection(adapter.getCount() - 1);
+            //spinner.setSelection(adapter.getCount() - 1);
+            spinner.setSelection(0);
             mSpinner_P2_selection = spinner.getItemAtPosition(0).toString();
         } else if (spinner == mSpinner_P3) {
-            //if spinner for player 3, remove player 1 & 2 selections & set first in the list
-            if (!mSpinner_P1_selection.isEmpty()) adapter.remove(mSpinner_P1_selection);
-            if (!mSpinner_P2_selection.isEmpty()) adapter.remove(mSpinner_P2_selection);
-            spinner.setSelection(adapter.getCount() - 1);
-            mSpinner_P3_selection = spinner.getItemAtPosition(0).toString();
+            if(singlePool) {
+                //if spinner for player 3, remove player 1 & 2 selections & set first in the list
+                if (!mSpinner_P1_selection.isEmpty()) adapter.remove(mSpinner_P1_selection);
+                if (!mSpinner_P2_selection.isEmpty()) adapter.remove(mSpinner_P2_selection);
+                //spinner.setSelection(adapter.getCount() - 1);
+                spinner.setSelection(0);
+                mSpinner_P3_selection = spinner.getItemAtPosition(0).toString();
+            }
         } else if (spinner == mSpinner_P4) {
-            //if spinner for player 3, remove player 1 & 2 selections & set first in the list
-            if (!mSpinner_P1_selection.isEmpty()) adapter.remove(mSpinner_P1_selection);
-            if (!mSpinner_P2_selection.isEmpty()) adapter.remove(mSpinner_P2_selection);
+            if(singlePool) {
+                //if spinner for player 3, remove player 1 & 2 selections & set first in the list
+                if (!mSpinner_P1_selection.isEmpty()) adapter.remove(mSpinner_P1_selection);
+                if (!mSpinner_P2_selection.isEmpty()) adapter.remove(mSpinner_P2_selection);
+            }
             if (!mSpinner_P3_selection.isEmpty()) adapter.remove(mSpinner_P3_selection);
-            spinner.setSelection(adapter.getCount() - 1);
+            //spinner.setSelection(adapter.getCount() - 1);
+            spinner.setSelection(0);
             mSpinner_P4_selection = spinner.getItemAtPosition(0).toString();
         }
         Log.i(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" +
@@ -336,6 +390,42 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         if (tmpS != null) tmpS.setSelection(t1Score);
         tmpS = getRespectiveSpinner(gameNum, 2);
         if (tmpS != null) tmpS.setSelection(t2Score);
+        mGamesReadFromDB = true; //Data read from DB is set in the spinners.
+    }
+
+    protected void setPlayersSpinner(final String t1P1, final String t1P2, final String t2P1, final String t2P2) {
+        Log.d(TAG, "setPlayersSpinner: " + String.format("T1=%s,%s T2=%s,%s", t1P1, t1P2, t2P1, t2P2));
+        Log.d(TAG, "setPlayersSpinner: " + String.format("mT1=%s mT2=%s", mT1_players, mT2_players));
+        for(int pos=0; pos < mT1_players.size(); pos++) {
+            if(mT1_players.get(pos).equals(t1P1)) {
+                mSpinner_P1.setSelection(pos);
+                Log.d(TAG, "setPlayersSpinner: mSpinner_P1.setSelection" + pos);
+            }
+            else if(mT1_players.get(pos).equals(t1P2)) {
+                mSpinner_P2.setSelection(pos);
+                Log.d(TAG, "setPlayersSpinner: mSpinner_P2.setSelection" + pos);
+            }
+        }
+        for(int pos=0; pos < mT2_players.size(); pos++) {
+            if(mT2_players.get(pos).equals(t2P1)) mSpinner_P3.setSelection(pos);
+            else if(mT2_players.get(pos).equals(t2P2)) mSpinner_P4.setSelection(pos);
+        }
+    }
+
+    //
+    protected void populateGamePoints() {
+       //This needs to be invoked after the derived class does it stuff
+       //to populate data from DB. this is needed so that, user can make changes
+       //to data read from DB and that will cause auto-rearrangement.
+        //flag is reset after a delay so that the UI thread has enough time to
+        //complete the ongoing callbacks (onItemSelected -> rearrangeDropdownList)
+        mMainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mGamesReadFromDB = false;
+            }
+        }, 1000);
+
     }
 
     protected boolean enterData(boolean dry_run) {

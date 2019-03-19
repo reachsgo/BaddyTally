@@ -51,6 +51,7 @@ public class ClubLeagueEnterData extends BaseEnterData {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mType = Constants.CLUBLEAGUE;
         setContentView(R.layout.activity_clubleague_enter_data);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
