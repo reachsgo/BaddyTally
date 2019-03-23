@@ -88,7 +88,7 @@ public class MainSelection2 extends AppCompatActivity {
                 SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
                 SharedPreferences.Editor editor = prefs.edit();
                 editor.clear();
-                editor.commit();
+                editor.commit();  //using commit instead of apply for immediate write
                 SharedData.getInstance().clear();
                 Toast.makeText(MainSelection2.this, "Cache cleared!", Toast.LENGTH_SHORT)
                         .show();

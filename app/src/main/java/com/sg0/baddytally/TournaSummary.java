@@ -128,30 +128,34 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
     public void callback(final String key, final Object inobj) {}
     public void completed (final String in, final Boolean ok) {
         Log.w(TAG, "completed: " + in + ":" + ok);
-        if(in.equals(Constants.CB_SHOWTOURNA)) {
-            //callback after reading DB for meta data
-            if(ok) {
-                mTourna = mTUtil.mTourna;
-                mTUtil.readDBMatchMeta(mTourna, false);
-                setTitle(mTourna);
-            }
-        } else if(in.equals(Constants.CB_READMATCHMETA)) {
-            //callback after reading DB for meta data
-            if(ok) mTUtil.showMatches(findViewById(R.id.header));
-        } else if(in.equals(Constants.CB_SHOWMATCHES)) {
-            //callback after reading DB for meta data
-            if(ok) {
-                MatchInfo mInfo = TournaUtil.getMatchInfoFromString(mTUtil.mMSStr_chosen);
-                if(mInfo!=null && mTUtil.mMSInfoMap !=null)
-                    mSelectedMatch = mTUtil.mMSInfoMap.get(mInfo.key);
-                String matchDesc =  mSelectedMatch.T1 + Constants.TEAM_DELIM2 + mSelectedMatch.T2;
-                if(mSelectedMatch!=null && !mSelectedMatch.desc.isEmpty())
-                    matchDesc += "\n" + mSelectedMatch.desc;
-                Log.w(TAG, "completed: " + in + ":" + mSelectedMatch.toString());
-                TextView mHeader = findViewById(R.id.silver_group);
-                mHeader.setText(matchDesc);
-                mAdapter.setMatch(mTourna, mSelectedMatch);
-            }
+        switch (in) {
+            case Constants.CB_SHOWTOURNA:
+                //callback after reading DB for meta data
+                if (ok) {
+                    mTourna = mTUtil.mTourna;
+                    mTUtil.readDBMatchMeta(mTourna, false);
+                    setTitle(mTourna);
+                }
+                break;
+            case Constants.CB_READMATCHMETA:
+                //callback after reading DB for meta data
+                if (ok) mTUtil.showMatches(findViewById(R.id.header));
+                break;
+            case Constants.CB_SHOWMATCHES:
+                //callback after reading DB for meta data
+                if (ok) {
+                    MatchInfo mInfo = TournaUtil.getMatchInfoFromString(mTUtil.mMSStr_chosen);
+                    if (mInfo != null && mTUtil.mMSInfoMap != null)
+                        mSelectedMatch = mTUtil.mMSInfoMap.get(mInfo.key);
+                    String matchDesc = mSelectedMatch.T1 + Constants.TEAM_DELIM2 + mSelectedMatch.T2;
+                    if (mSelectedMatch != null && !mSelectedMatch.desc.isEmpty())
+                        matchDesc += "\n" + mSelectedMatch.desc;
+                    Log.w(TAG, "completed: " + in + ":" + mSelectedMatch.toString());
+                    TextView mHeader = findViewById(R.id.silver_group);
+                    mHeader.setText(matchDesc);
+                    mAdapter.setMatch(mTourna, mSelectedMatch);
+                }
+                break;
         }
     }
 }

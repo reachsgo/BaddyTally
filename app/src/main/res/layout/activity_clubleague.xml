@@ -207,6 +207,7 @@
 
             <ImageButton
                 android:id="@+id/send_msg"
+                android:contentDescription="send sms to non-android users"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:background="@drawable/roundbtn"
@@ -225,6 +226,7 @@
 
             <ImageButton
                 android:id="@+id/suggestions"
+                android:contentDescription="suggested games for the day"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:background="@drawable/roundbtn"

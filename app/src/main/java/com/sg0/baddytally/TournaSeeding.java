@@ -99,9 +99,9 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
 
         mTeamLV = this.findViewById(R.id.team_list);
         mSeedLV = this.findViewById(R.id.seed_list);
-        mTeamLA = new ArrayAdapter<String>(
+        mTeamLA = new ArrayAdapter<>(
                 this, R.layout.listitem_blackbold, mTeams);
-        mSeedLA = new ArrayAdapter<String>(
+        mSeedLA = new ArrayAdapter<>(
                 this, R.layout.listitem_greenbold, mSeededTeams);
         mTeamLV.setAdapter(mTeamLA);
         mSeedLV.setAdapter(mSeedLA);

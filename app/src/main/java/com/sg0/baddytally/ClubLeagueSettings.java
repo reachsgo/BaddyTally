@@ -652,7 +652,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
         spinnerArray.add(3);
         spinnerArray.add(4);
         spinnerArray.add(5);
-        ArrayAdapter<Integer> adapter = new ArrayAdapter<Integer>(
+        ArrayAdapter<Integer> adapter = new ArrayAdapter<>(
                 ClubLeagueSettings.this,
                 android.R.layout.simple_spinner_item,
                 spinnerArray
@@ -874,7 +874,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
         if (dry_run) {
             mWinPercInfo = "";
             //create a win% list with no duplicates
-            LinkedHashSet<Integer> winPercSet = new LinkedHashSet();
+            LinkedHashSet<Integer> winPercSet = new LinkedHashSet<>();
             for (PlayerData pd : fullPL) {
                 winPercSet.add(Integer.valueOf(pd.getWinPercentage_innings()));   //descending order
             }

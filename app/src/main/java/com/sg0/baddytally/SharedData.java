@@ -8,7 +8,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -463,10 +462,11 @@ public class SharedData {
     }
 
     public boolean isDBConnected() {
-        return mDBConnected == true;
+        return mDBConnected;
     }
 
     public void setUpDBConnectionListener() {
+        Log.i(TAG, "--------- setUpDBConnectionListener -----------");
         DatabaseReference connectedRef = FirebaseDatabase.getInstance().getReference(".info/connected");
         if (null != mDBConnectListener) connectedRef.removeEventListener(mDBConnectListener);
         /*
@@ -521,14 +521,17 @@ public class SharedData {
         Instead of simply doing a mock write to wakeup DB connection, lets keep tab of the last login from this user.
         */
         if(mClub.isEmpty() || mUser.isEmpty()) return;
+
+        if (null == mDBConnectListener) setUpDBConnectionListener();
+
         Date c = Calendar.getInstance().getTime();
         SimpleDateFormat df = new SimpleDateFormat("MM-dd", Locale.CANADA);
         final String login_day = df.format(c);
-        final String model_name = ""; //android.os.Build.MODEL might be leading to privacy error from google, not sure.
-
+        final String model_name = android.os.Build.MODEL; // might be leading to privacy error from google, not sure.
+        final String id = mUser + "-" + model_name;
 
         final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub)
-                .child(Constants.ACTIVE_USERS).child(mUser);
+                .child(Constants.ACTIVE_USERS).child(id);
         dbRef.runTransaction(new Transaction.Handler() {
             @NonNull
             @Override
@@ -536,8 +539,9 @@ public class SharedData {
                 ActiveUserDBEntry userData = mutableData.getValue(ActiveUserDBEntry.class);
                 if (userData == null) return Transaction.success(mutableData);
                 else {
-                    Log.w(TAG, "wakeUpDBConnection: update DB for user:" + mUser);
-                    mutableData.setValue(new ActiveUserDBEntry(mRole, model_name, login_day, BuildConfig.VERSION_NAME));
+                    Log.w(TAG, "wakeUpDBConnection: update DB for user:" + id);
+                    mutableData.setValue(new ActiveUserDBEntry(mRole, model_name,
+                            login_day, BuildConfig.VERSION_NAME));
                     return Transaction.success(mutableData);
                 }
             }
@@ -563,7 +567,7 @@ public class SharedData {
                         Log.w(TAG, "wakeUpDBConnection: onComplete: Error:" + e.getMessage());
                         dbRef.setValue(new ActiveUserDBEntry(mRole, model_name,
                                 login_day, BuildConfig.VERSION_NAME));
-                        Log.w(TAG, "New user created in DB:" + mUser);
+                        Log.w(TAG, "New user created in DB:" + id);
                     }
 
                 }
@@ -572,6 +576,9 @@ public class SharedData {
     }
 
     public void wakeUpDBConnection_profile() {
+
+        if (null == mDBConnectListener) setUpDBConnectionListener();
+
         // Do a mock transaction to wake up the database connection.
         final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
                 .child(mClub).child(Constants.PROFILE);
@@ -581,7 +588,7 @@ public class SharedData {
             @Override
             public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
 
-                //Log.w(TAG, "wakeUpDBConnection_profile: onDataChange");
+                Log.v(TAG, "wakeUpDBConnection_profile: onDataChange");
                 for (MutableData child : mutableData.getChildren()) {
                     if(null==child) continue;
                     switch (child.getKey()) {
@@ -605,7 +612,7 @@ public class SharedData {
                             break;
                     } //switch case
                 }
-                Log.w(TAG, "wakeUpDBConnection_profile: onDataChange:" + mAdminCode + "/" + mRootCode);
+                //Log.w(TAG, "wakeUpDBConnection_profile: onDataChange:" + mAdminCode + "/" + mRootCode);
                 return Transaction.success(mutableData);
             }
 
@@ -873,10 +880,7 @@ public class SharedData {
         if(tournaType.isEmpty()) return false;
 
         Log.i(TAG, "isLeagueTournament:" + tourna + "," + tournaType);
-        if(tournaType.equals(Constants.LEAGUE)) {
-            return true;
-        }
-        return false;
+        return tournaType.equals(Constants.LEAGUE);
     }
 
     public Boolean isEliminationTournament(final String tourna) {
@@ -884,10 +888,7 @@ public class SharedData {
         if(tournaType.isEmpty()) return false;
 
         Log.i(TAG, "isEliminationTournament:" + tourna + "," + tournaType);
-        if(tournaType.equals(Constants.SE) || tournaType.equals(Constants.DE)) {
-            return true;
-        }
-        return false;
+        return tournaType.equals(Constants.SE) || tournaType.equals(Constants.DE);
     }
 
     public Boolean isSETournament(final String tourna) {
@@ -1004,11 +1005,11 @@ public class SharedData {
                 TeamInfo tInfo2 = getTeamInfo(team2);
                 int value1 = Integer.valueOf(tInfo2.score.getPts()).compareTo(tInfo1.score.getPts()); //descending
                 if (value1 == 0) {
-                    int value2 = Integer.valueOf(tInfo2.score.getmW()).compareTo(tInfo1.score.getmW());
+                    int value2 = Integer.compare(tInfo2.score.getmW(), tInfo1.score.getmW());
                     if (value2 == 0) {
-                        int value3 = Integer.valueOf(tInfo2.score.getgW()).compareTo(tInfo1.score.getgW());
+                        int value3 = Integer.compare(tInfo2.score.getgW(), tInfo1.score.getgW());
                         if (value3 == 0) {
-                            return Integer.valueOf(tInfo2.score.getgPts()).compareTo(tInfo1.score.getgPts());
+                            return Integer.compare(tInfo2.score.getgPts(), tInfo1.score.getgPts());
                         } else return value3;
                     } else return value2;
                 }
@@ -1126,9 +1127,7 @@ public class SharedData {
     public boolean isExternalStorageWritable(final Activity activity) {
         if (isStoragePermissionGranted(activity)) {
             String state = Environment.getExternalStorageState();
-            if (Environment.MEDIA_MOUNTED.equals(state)) {
-                return true;
-            }
+            return Environment.MEDIA_MOUNTED.equals(state);
         }
         return false;
     }

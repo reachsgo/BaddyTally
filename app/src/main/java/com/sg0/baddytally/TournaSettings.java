@@ -4,15 +4,12 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
-import android.graphics.Color;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -22,32 +19,24 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
-import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.PopupMenu;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.Switch;
-import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -56,20 +45,13 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
-import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
-import java.util.MissingFormatArgumentException;
 
 public class TournaSettings extends AppCompatActivity implements CallbackRoutine{
     private static final String TAG = "TournaSettings";
@@ -262,6 +244,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             Log.d(TAG, "callback: null");
             return;
         }
+        //noinspection unchecked
         ArrayList<String> strList = (ArrayList<String>)inobj;
         if(strList.size()!=3) {
             Log.e(TAG, "callback: unexpected input! " + strList.size());
@@ -388,7 +371,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             });
 
 
-            List<Integer> matchNumList = new ArrayList<Integer>(Arrays.asList(1,2,3,4));
+            List<Integer> matchNumList = new ArrayList<>(Arrays.asList(1, 2, 3, 4));
             final ArrayAdapter<Integer> dataAdapter1 = new ArrayAdapter<>(parentActivity,
                     android.R.layout.simple_spinner_item, matchNumList);
             dataAdapter1.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -396,7 +379,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             mSpinner1.setAdapter(dataAdapter1);
 
 
-            List<Integer> bestOfList = new ArrayList<Integer>(Arrays.asList(1,3));
+            List<Integer> bestOfList = new ArrayList<>(Arrays.asList(1, 3));
             final ArrayAdapter<Integer> dataAdapter2 = new ArrayAdapter<>(parentActivity,
                     android.R.layout.simple_spinner_item, bestOfList);
             dataAdapter2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -999,13 +982,14 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
 
         public Activity parentActivity;
         public Dialog d;
-        public Button enter, cancel;
+        public Button enter, cancel, auto;
         private Spinner mSpinner_T1;
         private Spinner mSpinner_T2;
         private SharedData mCommon;
         private Integer mNumOfMatches;
         private Integer mNextKey;
         private String mTourna;
+        private String AUTO_GEN = "auto-generate";
 
         public MatchDialogClass(Activity a) {
             super(a);
@@ -1045,6 +1029,9 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             cancel = findViewById(R.id.cancel_button);
             cancel.setOnClickListener(this);
 
+            auto = findViewById(R.id.auto_button);
+            auto.setOnClickListener(this);
+
         }
 
         public void setTourna(final String tourna) {
@@ -1061,6 +1048,12 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                     parentActivity.finish();
                     break;
                 case R.id.enter_button:
+                    if(!team1.isEmpty() && !team2.isEmpty()) {
+                        readDB(team1, team2);
+                    }
+                    break;
+                case R.id.auto_button:
+                    team1 = AUTO_GEN;
                     readDB(team1, team2);
                     break;
                 default:
@@ -1098,10 +1091,12 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                     }
                     mNextKey++;
                     if(mNumOfMatches>0) {
-                        createMatch(team1, team2, mNextKey, mNumOfMatches);
+                        EditText et_desc = findViewById(R.id.et_newMatch);
+                        createMatch(team1, team2, mNextKey, mNumOfMatches,
+                                et_desc.getText().toString(), false);
                     }
                     else {
-                        mCommon.showToast(parentActivity, "No scheduled matches!", Toast.LENGTH_SHORT);
+                        mCommon.showToast(parentActivity, "Number of matches not configured!", Toast.LENGTH_SHORT);
                         finish();
                     }
                 }
@@ -1114,8 +1109,64 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             });
         }
 
-        private void createMatch(final String team1, final String team2, Integer nextKey, Integer numMatches) {
+        private void autoGenerate(Integer numMatches) {
+            Log.v(TAG, "autoGenerate: numMatches=" + numMatches);
+            if(numMatches <= 0) {
+                return;
+            }
+            if(null==mCommon.mTeams || mCommon.mTeams.size() < 2) {
+                return;
+            }
+
+            Integer nextKey = 1;
+            List<String> teamList = new ArrayList<>(mCommon.mTeams);
+
+            StringBuilder matchesStr = new StringBuilder();
+            for (int i = 0; i < mCommon.mTeams.size(); i++) {
+                for (int j = i+1; j < mCommon.mTeams.size(); j++) {
+                    matchesStr.append("Match" + nextKey + ": " +
+                            mCommon.mTeams.get(i) + " vs " + mCommon.mTeams.get(j) + "\n");
+                    nextKey++;
+                }
+            }
+
+            if(matchesStr.length()>0) {
+                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(parentActivity);
+                alertBuilder.setTitle("Following matches to be scheduled?");
+                alertBuilder.setMessage(matchesStr.toString());
+                alertBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int idx) {
+                        Integer nextKey = 1;
+                        for (int i = 0; i < mCommon.mTeams.size(); i++) {
+                            for (int j = i+1; j < mCommon.mTeams.size(); j++) {
+                                createMatch(mCommon.mTeams.get(i), mCommon.mTeams.get(j), nextKey,
+                                        mNumOfMatches, ("Match" + nextKey),
+                                        false);
+                                nextKey++;
+                            }
+                        }
+                        mCommon.showToast(parentActivity,
+                                String.format(Locale.getDefault(),"%d matches scheduled in '%s' tournament", nextKey-1, mTourna),
+                                Toast.LENGTH_LONG);
+                    }
+                });
+                alertBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                    }
+                });
+                alertBuilder.show();
+            }
+        }
+
+        private void createMatch(final String team1, final String team2, Integer nextKey,
+                                 Integer numMatches, final String desc, final Boolean toast) {
             Log.v(TAG, "createMatch: " + team1 + ":" + team2 + " nextkey=" + nextKey.toString() + " numMatches=" + numMatches);
+            if(team1.equals(AUTO_GEN)) {
+                autoGenerate(numMatches);
+                return;
+            }
             if(team1.equals(team2)) {
                 mCommon.showToast(parentActivity, "Bad input! Select different teams.", Toast.LENGTH_LONG);
                 return;
@@ -1125,8 +1176,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             MatchInfo mInfo = new MatchInfo();
             mInfo.T1 = team1;
             mInfo.T2 = team2;
-            EditText et_desc = findViewById(R.id.et_newMatch);
-            mInfo.desc = et_desc.getText().toString();
+            mInfo.desc = desc;
             mInfo.done = false;
             mInfo.key = nextKey.toString();
             dbRef.child(Constants.INFO).setValue(mInfo);
@@ -1138,7 +1188,8 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                 Log.v(TAG, "createMatch: MX set:" + matchNum);
             }
 
-            mCommon.showToast(parentActivity, "Match scheduled in tournament '" + mTourna + "'", Toast.LENGTH_LONG);
+            if(toast)  mCommon.showToast(parentActivity, "Match scheduled in tournament '" +
+                    mTourna + "'", Toast.LENGTH_LONG);
         }
     }
 }

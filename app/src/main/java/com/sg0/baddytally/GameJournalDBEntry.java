@@ -204,13 +204,11 @@ class GameJournalDBEntry {
     }
 
     public boolean exactlyEqual(GameJournalDBEntry o) {
-        if (this.mW1.equals(o.mW1) && this.mW2.equals(o.mW2) &&
+        return this.mW1.equals(o.mW1) && this.mW2.equals(o.mW2) &&
                 this.mL1.equals(o.mL1) && this.mL2.equals(o.mL2) &&
                 this.mWS == o.mWS && this.mLS == o.mLS &&
-                this.mGNo == o.mGNo)
-            return true;
+                this.mGNo == o.mGNo;
 
-        return false;
     }
 
     @Override
@@ -223,10 +221,7 @@ class GameJournalDBEntry {
         String p2 = getPlayerPartner(that.getmW1());  //get that.W1's partner
         String op2 = getPlayerPartner(that.getmL1());  //get opposite team's partner
         if(p2.isEmpty() || op2.isEmpty()) return false; //if they are not found, this game involves different players
-        if(p2.equals(that.getmW2()) && op2.equals(that.getmL2())) {
-            return true;
-        }
-        return false;
+        return p2.equals(that.getmW2()) && op2.equals(that.getmL2());
         //return playersInvolved4(that.getmW1(), that.getmW2(), that.getmL1(), that.getmL2());
     }
 
@@ -269,10 +264,8 @@ class GameJournalDBEntry {
     public String toPlayersString() {
         String winner = mW1;
         String loser = mL1;
-        if (Constants.DOUBLES.equals(mGT)) {
-            winner += "/" + mW2;
-            loser += "/" + mL2;
-        }
+        if(!mW2.isEmpty()) winner += "/" + mW2;
+        if(!mL2.isEmpty()) loser += "/" + mL2;
 
         return  winner + "  vs  " + loser + "\n";
     }
@@ -282,17 +275,13 @@ class GameJournalDBEntry {
         if(aWinner(p1)) {
             team1 = mW1;
             team2 = mL1;
-            if (Constants.DOUBLES.equals(mGT)) {
-                team1 += "/" + mW2;
-                team2 += "/" + mL2;
-            }
+            if(!mW2.isEmpty()) team1 += "/" + mW2;
+            if(!mL2.isEmpty()) team2 += "/" + mL2;
         } else {
             team1 = mL1;
             team2 = mW1;
-            if (Constants.DOUBLES.equals(mGT)) {
-                team1 += "/" + mL2;
-                team2 += "/" + mW2;
-            }
+            if(!mL2.isEmpty()) team1 += "/" + mL2;
+            if(!mW2.isEmpty()) team2 += "/" + mW2;
         }
         return  team1 + "  vs  " + team2 + "\n";
     }

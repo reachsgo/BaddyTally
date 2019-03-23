@@ -3,11 +3,9 @@ package com.sg0.baddytally;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.Build;
 import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
 import android.support.v7.widget.RecyclerView;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -22,7 +20,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
@@ -36,7 +33,6 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 
@@ -224,21 +220,27 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
                     public boolean onMenuItemClick(MenuItem menuItem) {
                         Log.v(TAG, "onMenuItemClick:" + menuItem.getTitle().toString());
                         String choice = menuItem.getTitle().toString();
-                        if(choice.equals(ADD_PLAYER)) {
-                            mCustomDialog.setContents(team, NEWPLAYER_TITLE,
-                                    mTourna+ "\nAdd new player to " + team,
-                                    "Nick name", "  JACK  ",   //8 chars
-                                    "Full name", "  Jack Daniels  ");
-                            //mCustomDialog.setTitle(mTourna);
-                            if(null!=mCustomDialog.getWindow()) {
-                                mCustomDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-                            }
+                        switch (choice) {
+                            case ADD_PLAYER:
+                                mCustomDialog.setContents(team, NEWPLAYER_TITLE,
+                                        mTourna + "\nAdd new player to " + team,
+                                        "Nick name", "  JACK  ",   //8 chars
+                                        "Full name", "  Jack Daniels  ");
+                                //mCustomDialog.setTitle(mTourna);
+                                if (null != mCustomDialog.getWindow()) {
+                                    mCustomDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+                                }
 
-                            mCustomDialog.show();
-                            //Callback from TournaEditTextDialog is handled by addPlayerToTeam();
+                                mCustomDialog.show();
+                                //Callback from TournaEditTextDialog is handled by addPlayerToTeam();
+                                break;
+                            case REMOVE_PLAYER:
+                                removePlayerFromTeam(team);
+                                break;
+                            case DELETE_TEAM:
+                                deleteTeam(team);
+                                break;
                         }
-                        else if(choice.equals(REMOVE_PLAYER)) removePlayerFromTeam(team);
-                        else if(choice.equals(DELETE_TEAM)) deleteTeam(team);
                         popup.dismiss();
                         return true;
                     }
@@ -276,6 +278,7 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
         if(inobj==null) {
             Log.d(TAG, "callback: null");
         } else {
+            //noinspection unchecked: we know it is List of String
             ArrayList<String> strList = (ArrayList<String>)inobj;
             if(strList.size()!=3) {
                 Log.e(TAG, "callback: unexpected input! " + strList.size());

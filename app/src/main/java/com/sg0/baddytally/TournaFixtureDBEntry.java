@@ -1,15 +1,10 @@
 package com.sg0.baddytally;
 
-import android.text.Spannable;
-import android.text.SpannableString;
-import android.text.style.RelativeSizeSpan;
 import android.util.Log;
 
 import com.google.firebase.database.IgnoreExtraProperties;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 class ExternalLink {
@@ -226,9 +221,7 @@ class TournaFixtureDBEntry {
 
     public Boolean validTeams() {
        if(T==null) return false;
-       if(T.size()!=2) return false;
-
-       return true;
+        return T.size() == 2;
     }
 
     public List<String> getT() {
@@ -380,25 +373,21 @@ class TournaFixtureDBEntry {
         //If this is a BYE LEAF NODE, team1 will be set as Bye and team2 will be empty
 
         if(null!=getW() && getW().equals(Constants.BYE)) return true;
-        if(getT1(true).equals(Constants.BYE) && getT2(true).equals(Constants.BYE)) return true;
+        return getT1(true).equals(Constants.BYE) && getT2(true).equals(Constants.BYE);
         //if(getTeam(TEAM1_IDX).equals(Constants.BYE) && getTeam(TEAM2_IDX).isEmpty())
         //    return true;
 
-        return false;
     }
 
     //public Boolean isBye() ==> adds "bye" to firebase DB
     public Boolean oneTeamGettingABye(final boolean junk) {
         //If this is a BYE NODE, one of the teams will be BYE
-        if(getTeam(TEAM1_IDX).equals(Constants.BYE) || getTeam(TEAM2_IDX).equals(Constants.BYE))
-            return true;
-        return false;
+        return getTeam(TEAM1_IDX).equals(Constants.BYE) || getTeam(TEAM2_IDX).equals(Constants.BYE);
     }
 
     public Boolean isExternalLink(final int junk) {
         if(E==null) return false;
-        if(E.size()>0) return true;
-        return false;
+        return E.size() > 0;
     }
 
     Boolean isThereAWinner(Boolean junk) {
@@ -407,8 +396,7 @@ class TournaFixtureDBEntry {
 
     Boolean isEmpty(final String s) {
         if(null==s) return true;
-        if(s.isEmpty()) return true;
-        return false;
+        return s.isEmpty();
     }
 
     @Override

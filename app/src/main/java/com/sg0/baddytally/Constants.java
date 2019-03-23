@@ -27,6 +27,8 @@ class Constants {
     static final String DATA_ROLE = "role";
     static final String DATA_PHNUMS = "phnums";
     static final String DATA_TMODE = "tmode";
+    static final String DATA_LOCKED = "locked";
+    static final int DATA_LOCKED_COUNT_MAX = 5;
     static final Integer NUM_OF_GROUPS = 2;
     static final int SEASON_IDX = 0;
     static final int INNINGS_IDX = 1;

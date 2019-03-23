@@ -147,6 +147,7 @@
         android:layout_weight="1" />
 
     <ImageView
+        android:contentDescription="@string/st_image_desc"
         android:layout_gravity="center"
         android:layout_width="50dp"
         android:layout_height="50dp"

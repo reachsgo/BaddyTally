@@ -180,8 +180,7 @@ public class TournaMatchNode {
     }
 
     public Boolean isNull() {
-        if(t1==null || t2==null) return true;
-        return false;
+        return t1 == null || t2 == null;
     }
 
     public Boolean isBye() {

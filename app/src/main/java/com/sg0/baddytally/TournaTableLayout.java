@@ -1,5 +1,6 @@
 package com.sg0.baddytally;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
@@ -829,10 +830,11 @@ class TournaTable implements View.OnClickListener {
                 //empty.setText("E");
                 row.addView(empty);
             } else if (dE.getVertLineCell()) {
+                @SuppressLint("InflateParams")
                 View v = LayoutInflater.from(mActivity).inflate(R.layout.vertical_line_layout, null);
                 row.addView(v);
             } else if (dE.getVertLineCentre()) {
-
+                @SuppressLint("InflateParams")
                 View v = LayoutInflater.from(mActivity).inflate(R.layout.vertical_line_centre_layout, null);
                 row.addView(v);
             } else {
@@ -1219,85 +1221,93 @@ class TournaTable implements View.OnClickListener {
                 popup.dismiss();
                 String choice = menuItem.getTitle().toString();
                 //SharedData.getInstance().showToast(TournaTableLayout.this, node.getId() + " selection:" + choice, Toast.LENGTH_SHORT);
-                if (choice.equals(MATCH_INFO)) showMatchInfo(node);
-                else if (choice.equals(ENTER_SCORE)) {
-                    //not checking for winner here. root should be able to override the current DB values. So, keep going even if there is a winner.
-                    ArrayList<String> teams = new ArrayList<>();
-                    teams.add(node.getT1(true));
-                    teams.add(node.getT2(true));
+                switch (choice) {
+                    case MATCH_INFO:
+                        showMatchInfo(node);
+                        break;
+                    case ENTER_SCORE: {
+                        //not checking for winner here. root should be able to override the current DB values. So, keep going even if there is a winner.
+                        ArrayList<String> teams = new ArrayList<>();
+                        teams.add(node.getT1(true));
+                        teams.add(node.getT2(true));
 
-                    TeamDBEntry team1DBEntry = getTeam(node.getT1(true));
-                    TeamDBEntry team2DBEntry = getTeam(node.getT2(true));
-                    if (null == team1DBEntry || null == team2DBEntry) {
-                        Log.e(TAG, "showOptions:onMenuItemClick: team1DBEntry null:" + node.toString());
-                        Toast.makeText(mActivity, "It's a bye or Teams not known yet!",
-                                Toast.LENGTH_LONG).show();
-                        return true;
-                    }
-
-                    ArrayList<String> team1Players = new ArrayList<>(team1DBEntry.getP());
-                    ArrayList<String> team2Players = new ArrayList<>(team2DBEntry.getP());
-
-                    if (node.isBye(true)) {
-                        Log.w(TAG, "showOptions:onMenuItemClick: BYE: " + node.toString());
-                        Toast.makeText(mActivity, "Winner has got a bye!",
-                                Toast.LENGTH_LONG).show();
-                        return true;
-                    }
-
-                    mCommon.wakeUpDBConnection_profile();
-                    //Intent myIntent = new Intent(mActivity, LoginActivity.class);
-                    Intent myIntent = new Intent(mActivity, TournaSEDEEnterData.class);
-                    myIntent.putExtra(Constants.TOURNATYPE, mTournaType);
-                    myIntent.putExtra(Constants.MATCH, node.getId());
-                    myIntent.putExtra(Constants.FIXTURE, mFixtureLabel);
-                    myIntent.putStringArrayListExtra(Constants.TEAMS, teams);
-                    myIntent.putStringArrayListExtra(Constants.TEAM1PLAYERS, team1Players);
-                    myIntent.putStringArrayListExtra(Constants.TEAM2PLAYERS, team2Players);
-                    mActivity.startActivity(myIntent);
-                } else if (choice.equals(VIEW_SCORE)) {
-                    //not checking for winner here. root should be able to override the current DB values. So, keep going even if there is a winner.
-                    ArrayList<String> teams = new ArrayList<>();
-                    teams.add(node.getT1(true));
-                    teams.add(node.getT2(true));
-
-                    TeamDBEntry team1DBEntry = getTeam(node.getT1(true));
-                    TeamDBEntry team2DBEntry = getTeam(node.getT2(true));
-                    if (null == team1DBEntry || null == team2DBEntry) {
-                        Log.e(TAG, "showOptions:onMenuItemClick: team1DBEntry null:" + node.toString());
-                        Toast.makeText(mActivity, "It's a bye or Teams not known yet!",
-                                Toast.LENGTH_LONG).show();
-                        return true;
-                    }
-
-                    ArrayList<String> team1Players = new ArrayList<>(team1DBEntry.getP());
-                    ArrayList<String> team2Players = new ArrayList<>(team2DBEntry.getP());
-
-                    if (node.isBye(true)) {
-                        Log.w(TAG, "showOptions:onMenuItemClick: BYE: " + node.toString());
-                        Toast.makeText(mActivity, "Winner has got a bye!",
-                                Toast.LENGTH_LONG).show();
-                        return true;
-                    }
-
-                    //Intent myIntent = new Intent(TournaTableLayout.this, TournaSeeding.class);
-                    Intent myIntent = new Intent(mActivity, TournaSEDEEnterData.class);
-                    myIntent.putExtra(Constants.TOURNATYPE, mTournaType);
-                    myIntent.putExtra(Constants.MATCH, node.getId());
-                    myIntent.putExtra(Constants.FIXTURE, mFixtureLabel);
-                    myIntent.putStringArrayListExtra(Constants.TEAMS, teams);
-                    myIntent.putStringArrayListExtra(Constants.TEAM1PLAYERS, team1Players);
-                    myIntent.putStringArrayListExtra(Constants.TEAM2PLAYERS, team2Players);
-                    myIntent.putExtra(Constants.EXTRAS, Constants.VIEWONLY);
-                    mActivity.startActivity(myIntent);
-                } else if (choice.equals(ENTER_WINNER)) {
-                    //not checking for winner here. root should be able to override the current DB values. So, keep going even if there is a winner.
-                    mMainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            updatewinner(v, node);
+                        TeamDBEntry team1DBEntry = getTeam(node.getT1(true));
+                        TeamDBEntry team2DBEntry = getTeam(node.getT2(true));
+                        if (null == team1DBEntry || null == team2DBEntry) {
+                            Log.e(TAG, "showOptions:onMenuItemClick: team1DBEntry null:" + node.toString());
+                            Toast.makeText(mActivity, "It's a bye or Teams not known yet!",
+                                    Toast.LENGTH_LONG).show();
+                            return true;
                         }
-                    });
+
+                        ArrayList<String> team1Players = new ArrayList<>(team1DBEntry.getP());
+                        ArrayList<String> team2Players = new ArrayList<>(team2DBEntry.getP());
+
+                        if (node.isBye(true)) {
+                            Log.w(TAG, "showOptions:onMenuItemClick: BYE: " + node.toString());
+                            Toast.makeText(mActivity, "Winner has got a bye!",
+                                    Toast.LENGTH_LONG).show();
+                            return true;
+                        }
+
+                        mCommon.wakeUpDBConnection_profile();
+                        //Intent myIntent = new Intent(mActivity, LoginActivity.class);
+                        Intent myIntent = new Intent(mActivity, TournaSEDEEnterData.class);
+                        myIntent.putExtra(Constants.TOURNATYPE, mTournaType);
+                        myIntent.putExtra(Constants.MATCH, node.getId());
+                        myIntent.putExtra(Constants.FIXTURE, mFixtureLabel);
+                        myIntent.putStringArrayListExtra(Constants.TEAMS, teams);
+                        myIntent.putStringArrayListExtra(Constants.TEAM1PLAYERS, team1Players);
+                        myIntent.putStringArrayListExtra(Constants.TEAM2PLAYERS, team2Players);
+                        mActivity.startActivity(myIntent);
+                        break;
+                    }
+                    case VIEW_SCORE: {
+                        //not checking for winner here. root should be able to override the current DB values. So, keep going even if there is a winner.
+                        ArrayList<String> teams = new ArrayList<>();
+                        teams.add(node.getT1(true));
+                        teams.add(node.getT2(true));
+
+                        TeamDBEntry team1DBEntry = getTeam(node.getT1(true));
+                        TeamDBEntry team2DBEntry = getTeam(node.getT2(true));
+                        if (null == team1DBEntry || null == team2DBEntry) {
+                            Log.e(TAG, "showOptions:onMenuItemClick: team1DBEntry null:" + node.toString());
+                            Toast.makeText(mActivity, "It's a bye or Teams not known yet!",
+                                    Toast.LENGTH_LONG).show();
+                            return true;
+                        }
+
+                        ArrayList<String> team1Players = new ArrayList<>(team1DBEntry.getP());
+                        ArrayList<String> team2Players = new ArrayList<>(team2DBEntry.getP());
+
+                        if (node.isBye(true)) {
+                            Log.w(TAG, "showOptions:onMenuItemClick: BYE: " + node.toString());
+                            Toast.makeText(mActivity, "Winner has got a bye!",
+                                    Toast.LENGTH_LONG).show();
+                            return true;
+                        }
+
+                        //Intent myIntent = new Intent(TournaTableLayout.this, TournaSeeding.class);
+                        Intent myIntent = new Intent(mActivity, TournaSEDEEnterData.class);
+                        myIntent.putExtra(Constants.TOURNATYPE, mTournaType);
+                        myIntent.putExtra(Constants.MATCH, node.getId());
+                        myIntent.putExtra(Constants.FIXTURE, mFixtureLabel);
+                        myIntent.putStringArrayListExtra(Constants.TEAMS, teams);
+                        myIntent.putStringArrayListExtra(Constants.TEAM1PLAYERS, team1Players);
+                        myIntent.putStringArrayListExtra(Constants.TEAM2PLAYERS, team2Players);
+                        myIntent.putExtra(Constants.EXTRAS, Constants.VIEWONLY);
+                        mActivity.startActivity(myIntent);
+                        break;
+                    }
+                    case ENTER_WINNER:
+                        //not checking for winner here. root should be able to override the current DB values. So, keep going even if there is a winner.
+                        mMainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                updatewinner(v, node);
+                            }
+                        });
+                        break;
                 }
                 return true;
             }
@@ -1718,7 +1728,7 @@ public class TournaTableLayout extends AppCompatActivity {
                 SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
                 SharedPreferences.Editor editor = prefs.edit();
                 editor.clear();
-                editor.commit();
+                editor.commit();  //using commit instead of apply for immediate write
                 mCommon.clear();
                 Toast.makeText(TournaTableLayout.this, "Cache cleared!", Toast.LENGTH_SHORT)
                         .show();
@@ -2339,6 +2349,7 @@ public class TournaTableLayout extends AppCompatActivity {
         mDetector = new GestureDetector(TournaTableLayout.this, new STGestureListener());
 
         findViewById(R.id.tourna_table_upper).setOnTouchListener(new View.OnTouchListener() {
+            @SuppressLint("ClickableViewAccessibility")
             @Override
             public boolean onTouch(final View v, final MotionEvent event) {
                 //Log.d(TAG, "onTouch: ");
@@ -2347,6 +2358,7 @@ public class TournaTableLayout extends AppCompatActivity {
         });
 
         findViewById(R.id.tourna_table_lower).setOnTouchListener(new View.OnTouchListener() {
+            @SuppressLint("ClickableViewAccessibility")
             @Override
             public boolean onTouch(final View v, final MotionEvent event) {
                 //Log.d(TAG, "onTouch: ");

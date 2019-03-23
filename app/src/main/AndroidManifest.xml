@@ -5,6 +5,7 @@
 
     <application
         android:name=".ScoreTally"
+        android:allowBackup="true"
         android:fullBackupContent="@xml/backup_descriptor"
         android:icon="@mipmap/birdie002"
         android:label="@string/app_name"

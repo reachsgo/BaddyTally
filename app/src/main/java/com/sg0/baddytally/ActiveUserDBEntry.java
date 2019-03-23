@@ -1,7 +1,6 @@
 package com.sg0.baddytally;
 
 
-import com.google.firebase.database.Exclude;
 import com.google.firebase.database.IgnoreExtraProperties;
 
 @IgnoreExtraProperties

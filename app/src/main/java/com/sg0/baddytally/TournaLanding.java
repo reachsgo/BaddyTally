@@ -64,8 +64,8 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
         mMainHandler = new Handler();
 
         //mCustomDialog = new TournaEditTextDialog(TournaLanding.this, TournaLanding.this);
-        mTournaList = new ArrayList<String>();
-        mTournaLA = new ArrayAdapter<String>(
+        mTournaList = new ArrayList<>();
+        mTournaLA = new ArrayAdapter<>(
                 this, R.layout.listitem_bigbold,
                 mTournaList);
         mTournaLV = findViewById(R.id.tournaments_lv);
@@ -186,7 +186,11 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
         Log.d(TAG, "onBackPressed: ");
         if (null!=mTournaList && mTournaList.size() > 0) {
             //If there were tournaments being shown, then kill the application.
-            mCommon.killApplication(TournaLanding.this);
+            //mCommon.killApplication(TournaLanding.this);
+            mCommon.killActivity(TournaLanding.this, RESULT_OK);
+            Intent intent = new Intent(TournaLanding.this, MainSelection2.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
         } else {
             //If not, this could be a new club, we have to go back to the start page.
             SharedData.getInstance().killActivity(this, RESULT_OK);
@@ -265,7 +269,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
                 SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
                 SharedPreferences.Editor editor = prefs.edit();
                 editor.clear();
-                editor.commit();
+                editor.commit();  //using commit instead of apply for immediate write
                 mCommon.clear();
                 Toast.makeText(TournaLanding.this, "Cache cleared!", Toast.LENGTH_SHORT)
                         .show();

@@ -60,6 +60,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     private boolean mTournaFlag;
     private String mActToStart;
     private Handler mMainHandler;
+    private SharedData mCommon;
 
 
     private void killActivity(){
@@ -81,6 +82,8 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         mNewRoundFlag = false;
         mTournaFlag = false;
         mMainHandler = new Handler();
+        mCommon = SharedData.getInstance();
+        mCommon.mCount = 0;
 
         Intent thisIntent = getIntent(); // gets the previously created intent
         String tType = thisIntent.getStringExtra(Constants.TOURNATYPE);
@@ -106,7 +109,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
                 inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
         }
 
-        if(SharedData.getInstance().mNumOfGroups==1) {
+        if(mCommon.mNumOfGroups==1) {
             //Only one group exists
             findViewById(R.id.gamegroup_silver).setEnabled(false);
             ((RadioButton)findViewById(R.id.gamegroup_gold)).setChecked(true);
@@ -117,11 +120,10 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
             mPasswordView.setText(secpd);
         }
 
-        SharedData data = SharedData.getInstance();
         Date c = Calendar.getInstance().getTime();
         SimpleDateFormat df = new SimpleDateFormat(Constants.ROUND_DATEFORMAT_SHORT, Locale.CANADA);
         String todaysDate = df.format(c);
-        Log.d(TAG, "onCreate LoginActivity["+ todaysDate + "]: data = " + data.toString());
+        Log.d(TAG, "onCreate LoginActivity["+ todaysDate + "]: data = " + mCommon.toString());
 
         final String club = prefs.getString(Constants.DATA_CLUB, "");
         final String user = prefs.getString(Constants.DATA_USER, "");
@@ -136,11 +138,11 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
             mClubView.setText(club);
             mUserView.setText(user);
             String roundStr =  "Active round: ";
-            if(data.mRoundName.isEmpty()) roundStr += "None";
-            else roundStr += SharedData.getInstance().getShortRoundName(data.mRoundName);
+            if(mCommon.mRoundName.isEmpty()) roundStr += "None";
+            else roundStr += mCommon.getShortRoundName(mCommon.mRoundName);
             ((TextView)findViewById(R.id.current_round)).setText(roundStr);
             ((TextView)findViewById(R.id.time_now)).setText(("Today's date: " + df.format(c)));
-            if (!data.mRoundName.contains(todaysDate)) {
+            if (!mCommon.mRoundName.contains(todaysDate)) {
                 findViewById(R.id.new_round_btn).setBackgroundColor(getResources().getColor(R.color.colorRed));
             }
         }
@@ -196,6 +198,24 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         }
 
 
+        String lockedTimeStr = prefs.getString(Constants.DATA_LOCKED, "");
+        if(!lockedTimeStr.isEmpty()) {
+            Long lockTime = 0L;
+            try {
+                lockTime = Long.parseLong(lockedTimeStr);
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "NumberFormatException: " + lockedTimeStr );
+                lockTime = 0L;
+            }
+            Log.i(TAG, "lockTime: " + lockTime );
+            Long now = System.currentTimeMillis();
+            if((now - lockTime) < 300) {
+            //if((now - lockTime) < 18000000) {   //5 hrs = 5 * 60 * 60000
+                lockedMsg(lockedTimeStr);
+            } else {
+                Log.i(TAG, "onCreate: Unlocking the system now:" + now.toString());
+            }
+        }
     }
 
     private void prepareForLogin(String club, String secpd) {
@@ -207,17 +227,16 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     //reduce number of DB reads.
     private void fetchInitialData() {
         Log.w(TAG, "fetchInitialData: " + mClub);
-        if (!SharedData.getInstance().mMemCode.isEmpty() && !mInitialAttempt) {
+        if (!mCommon.mMemCode.isEmpty() && !mInitialAttempt) {
             Log.w(TAG, "fetchInitialData: data already populated!");
-            SharedData data = SharedData.getInstance();
-            mAdminCode = data.mAdminCode;
-            mMemCode = data.mMemCode;
-            mRootCode = data.mRootCode;
+            mAdminCode = mCommon.mAdminCode;
+            mMemCode = mCommon.mMemCode;
+            mRootCode = mCommon.mRootCode;
             attemptLogin();
             return;
         }
 
-        SharedData.getInstance().fetchProfile(LoginActivity.this, LoginActivity.this, mClub);
+        mCommon.fetchProfile(LoginActivity.this, LoginActivity.this, mClub);
 
 
         Toast.makeText(LoginActivity.this,
@@ -235,11 +254,10 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     //CallbackRoutine Callback after profile is fetched from DB. See SharedData impl of fetchProfile()
     public void profileFetched() {
         mMainHandler.removeCallbacksAndMessages(null);  //delete the toast runnables posted above
-        SharedData data = SharedData.getInstance();
-        Log.w(TAG, "profileFetched invoked ...." + data.toString());
-        mAdminCode = data.mAdminCode;
-        mMemCode = data.mMemCode;
-        mRootCode = data.mRootCode;
+        Log.w(TAG, "profileFetched invoked ...." + mCommon.toString());
+        mAdminCode = mCommon.mAdminCode;
+        mMemCode = mCommon.mMemCode;
+        mRootCode = mCommon.mRootCode;
         attemptLogin();
     }
 
@@ -282,7 +300,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
             cancel = true;
         }
 
-        Log.v(TAG, "attemptLogin(" + club + "," + secpd + "):" + mAdminCode + ":" + mMemCode);
+        //Log.v(TAG, "attemptLogin(" + club + "," + secpd + "):" + mAdminCode + ":" + mMemCode);
 
         if (cancel) {
             // There was an error; don't attempt login and focus the first
@@ -303,8 +321,34 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
                 showProgress(false);
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
                 mPasswordView.requestFocus();
+                mCommon.mCount++;
+                if(mCommon.mCount == Constants.DATA_LOCKED_COUNT_MAX-2) {
+                    Toast.makeText(LoginActivity.this,
+                            "You will be locked out if you get it wrong again!",
+                            Toast.LENGTH_LONG).show();
+                } else if(mCommon.mCount > Constants.DATA_LOCKED_COUNT_MAX) {
+                    Long now = System.currentTimeMillis();
+                    SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putString(Constants.DATA_LOCKED, now.toString());
+                    editor.apply();
+                    lockedMsg(now.toString());
+                }
+
             }
         }
+    }
+
+    private void lockedMsg(final String lockTimeStr) {
+        Toast.makeText(LoginActivity.this,
+                "User locked out!\nToo many failed attempts to log in!\n",
+                Toast.LENGTH_LONG).show();
+        Log.e(TAG, "lockedMsg: System is locked from:" + lockTimeStr );
+        findViewById(R.id.options_ll).setVisibility(View.GONE);
+        findViewById(R.id.new_round_btn).setVisibility(View.GONE);
+        findViewById(R.id.current_round).setVisibility(View.GONE);
+        findViewById(R.id.time_now).setVisibility(View.GONE);
+        findViewById(R.id.email_sign_in_button).setEnabled(false);
     }
 
     private void successfulLogin(String club, String secpd) {
@@ -314,12 +358,12 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         editor.putString(Constants.DATA_SEC, secpd);
         editor.putString(Constants.DATA_ROLE, mRole);
         editor.putString(Constants.DATA_USER, mUser);
+        editor.putString(Constants.DATA_LOCKED, "");
         editor.apply();
-        SharedData data = SharedData.getInstance();
-        data.mClub = club;
-        data.mRole = mRole;
-        data.mUser = mUser;
-
+        mCommon.mClub = club;
+        mCommon.mRole = mRole;
+        mCommon.mUser = mUser;
+        mCommon.wakeUpDBConnection();  //update DB with the new user login
         showProgress(false);
         if (mInitialAttempt && mActToStart.isEmpty()) {
             killActivity();   //finish was not ending the activity here.
@@ -329,7 +373,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         if(mActToStart.equals(Constants.INITIAL)) {
             //start from Main again. There is no history for initial activities, so we cant just do a
             //killActivity here.
-            SharedData.getInstance().killActivity(this, RESULT_OK);
+            mCommon.killActivity(this, RESULT_OK);
             Intent intent = new Intent(LoginActivity.this, MainSigninActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(intent);
@@ -353,20 +397,21 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
                     switch (which) {
                         case DialogInterface.BUTTON_POSITIVE:
                             //Yes button clicked
-                            if(SharedData.getInstance().mInningsDBKey == -1) {
+                            if(mCommon.mInningsDBKey == -1) {
                                 Toast.makeText(LoginActivity.this,
                                         "Go to Settings and create a new innings first.", Toast.LENGTH_LONG).show();
                                 return;
                             }
-                            String roundName = SharedData.getInstance().createNewRoundName(true, LoginActivity.this);
+                            String roundName = mCommon.createNewRoundName(true, LoginActivity.this);
                             FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.INNINGS)
-                                    .child(SharedData.getInstance().mInningsDBKey.toString()).child("round").setValue(roundName);
+                                    .child(mCommon.mInningsDBKey.toString()).child("round").setValue(roundName);
                             Toast.makeText(LoginActivity.this,
                                     "Round " + roundName + " created!", Toast.LENGTH_SHORT).show();
-                            SharedData.getInstance().mRoundName = roundName;
-                            SharedData.getInstance().mGoldPresentPlayerNames.clear();
-                            SharedData.getInstance().mSilverPresentPlayerNames.clear();
-                            Log.d(TAG, "WRITTEN mRoundName: " + roundName + " data=" + SharedData.getInstance().toString());
+                            mCommon.mRoundName = roundName;
+                            mCommon.mGoldPresentPlayerNames.clear();
+                            mCommon.mSilverPresentPlayerNames.clear();
+                            Log.d(TAG, "WRITTEN mRoundName: " + roundName + " data=" +
+                                    mCommon.toString());
                             killActivity();
                             break;
 
@@ -378,7 +423,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
             };
 
             AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
-            builder.setTitle(SharedData.getInstance().getColorString("Really?", Color.RED));
+            builder.setTitle(mCommon.getColorString("Really?", Color.RED));
             builder.setMessage("You are about to create a new round!\nAre you sure?")
                     .setPositiveButton("Yes", dialogClickListener)
                     .setNegativeButton("No", dialogClickListener).show();
@@ -390,17 +435,16 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     private void createEnterDataActivity()     {
 
         if(mActToStart.equals(Constants.ACTIVITY_SETTINGS)) {
-            SharedData.getInstance().wakeUpDBConnection();
+            mCommon.wakeUpDBConnection();
             Intent settingsIntent = new Intent(LoginActivity.this, ClubLeagueSettings.class);
             LoginActivity.this.startActivityForResult(settingsIntent, Constants.SETTINGS_ACTIVITY);
             return;
         } else if(mActToStart.equals(Constants.ACTIVITY_TOURNA_SETTINGS)) {
-            SharedData.getInstance().wakeUpDBConnection();
+            mCommon.wakeUpDBConnection();
             Intent settingsIntent = new Intent(LoginActivity.this, TournaSettings.class);
             LoginActivity.this.startActivityForResult(settingsIntent, Constants.SETTINGS_ACTIVITY);
             return;
         }
-        //if (SharedData.getInstance().mTournaMode) {
         if (mTournaFlag) {
             Intent thisIntent = getIntent(); // gets the previously created intent
             String tType = thisIntent.getStringExtra(Constants.TOURNATYPE);

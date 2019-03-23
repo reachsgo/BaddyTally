@@ -1,7 +1,5 @@
 package com.sg0.baddytally;
 
-import android.util.Log;
-
 import java.util.List;
 
 public class TeamDBEntry {
