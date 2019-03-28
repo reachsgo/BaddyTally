@@ -509,16 +509,19 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
             Log.i(TAG, "isMatchDone: Best-of-1");
             if (randomPlayerT1_Wins == 1) mWinnerPlayer1 = randomPlayerT1;
             else if (randomPlayerT2_Wins == 1) mWinnerPlayer1 = randomPlayerT2;
+            matchCompleted();
             return true;
         }
 
         if (randomPlayerT1_Wins > (mBestOf / 2)) {
             mWinnerPlayer1 = randomPlayerT1;
             //Log.i(TAG, "isMatchDone: " + randomPlayerT1 + "=" + randomPlayerT1_Wins + " > " + mBestOf / 2 + " winner=" + mWinnerPlayer1);
+            matchCompleted();
             return true;
         } else if (randomPlayerT2_Wins > (mBestOf / 2)) {
             mWinnerPlayer1 = randomPlayerT2;
             //Log.i(TAG, "isMatchDone: " + randomPlayerT2 + "=" + randomPlayerT2_Wins + " > " + mBestOf / 2 + " winner=" + mWinnerPlayer1);
+            matchCompleted();
             return true;
         }
         Log.i(TAG, "isMatchDone: NOPE");

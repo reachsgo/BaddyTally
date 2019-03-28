@@ -39,6 +39,7 @@ class Constants {
     static final int LOGIN_ACTIVITY = 101;
     static final int SUMMARY_ACTIVITY = 102;
     static final int ENTERDATA_ACTIVITY = 103;
+    static final int TRACKSCORES_ACTIVITY = 104;
     static final int RESTARTAPP = 665;
     static final int EXIT_APPLICATION = -666;
 

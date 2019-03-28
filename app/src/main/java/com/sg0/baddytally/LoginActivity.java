@@ -209,8 +209,8 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
             }
             Log.i(TAG, "lockTime: " + lockTime );
             Long now = System.currentTimeMillis();
-            if((now - lockTime) < 300) {
-            //if((now - lockTime) < 18000000) {   //5 hrs = 5 * 60 * 60000
+            //if((now - lockTime) < 300) {
+            if((now - lockTime) < 18000000) {   //5 hrs = 5 * 60 * 60000
                 lockedMsg(lockedTimeStr);
             } else {
                 Log.i(TAG, "onCreate: Unlocking the system now:" + now.toString());

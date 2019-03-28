@@ -40,6 +40,15 @@ public class MainSigninActivity extends AppCompatActivity {
             }
         });
 
+        Button trackscore = findViewById(R.id.trackscore);
+        trackscore.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent myIntent = new Intent(MainSigninActivity.this, TrackScores.class);
+                MainSigninActivity.this.startActivity(myIntent);
+            }
+        });
+
         //Maintain DB connection state
         //SharedData.getInstance().setUpDBConnectionListener(); //its done from wakeUpDBConnection
         //SharedData.getInstance().wakeUpDBConnection_profile();
@@ -55,6 +64,12 @@ public class MainSigninActivity extends AppCompatActivity {
         super.onResume();
         Log.d(TAG, "onResume: ");
         if(SharedData.getInstance().mCount == Constants.EXIT_APPLICATION) killActivity();
+        //Intent myIntent = new Intent(MainSigninActivity.this, TrackScores.class);
+        //MainSigninActivity.this.startActivity(myIntent);
+        //dont keep this activity in stack to reduce heap usage (mainly due to background image)
+        //history=false set in manifest
+
+
         if (!SharedData.getInstance().mClub.isEmpty()) {
             Intent myIntent = new Intent(MainSigninActivity.this, MainSelection2.class);
             //dont keep this activity in stack to reduce heap usage (mainly due to background image)

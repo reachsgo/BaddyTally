@@ -301,7 +301,17 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:background="@drawable/roundedrect"
-            android:text="@string/action_enter"
+            android:text="Save"
+            android:textColor="#fff"
+            android:textStyle="bold" />
+        <Button
+            android:id="@+id/scoretrack_button"
+            style="?android:textAppearanceSmall"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/roundedrect"
+            android:text="Score Tracker"
             android:textColor="#fff"
             android:textStyle="bold" />
         <View

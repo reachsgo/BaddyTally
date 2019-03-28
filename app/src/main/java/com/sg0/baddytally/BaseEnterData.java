@@ -3,6 +3,7 @@ package com.sg0.baddytally;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
@@ -18,6 +19,7 @@ import android.widget.Toast;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 //Base class with the common functionalities needed to EnterData
@@ -141,6 +143,28 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
             mSpinner_P2.setVisibility(View.GONE);
             mSpinner_P4.setVisibility(View.GONE);
         }
+
+        final Button trackScores = findViewById(R.id.scoretrack_button);
+        trackScores.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(mTeams.size()<2 || mT1_players.size()==0 || mT2_players.size()==0) {
+                    Toast.makeText(BaseEnterData.this, "Teams not known!",
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                ArrayList<String> results = getGamePoints();
+                Intent myIntent = new Intent(BaseEnterData.this, TrackScores.class);
+                myIntent.putExtra("team1", mTeams.get(0));
+                myIntent.putExtra("team2", mTeams.get(1));
+                myIntent.putExtra("t1p1", mSpinner_P1_selection);
+                myIntent.putExtra("t1p2", mSpinner_P2_selection);
+                myIntent.putExtra("t2p1", mSpinner_P3_selection);
+                myIntent.putExtra("t2p2", mSpinner_P4_selection);
+                myIntent.putStringArrayListExtra("scores", results);
+                BaseEnterData.this.startActivityForResult(myIntent, Constants.TRACKSCORES_ACTIVITY);
+            }
+        });
 
         final Button enterButton = findViewById(R.id.enter_button);
         enterButton.setOnClickListener(new View.OnClickListener() {
@@ -299,6 +323,45 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     }
 
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.d(TAG, "onActivityResult: " + requestCode + "," + resultCode);
+        if(requestCode==Constants.TRACKSCORES_ACTIVITY && resultCode == RESULT_OK){
+            ArrayList<String> results = data.getStringArrayListExtra("gameResults");
+            Log.d(TAG, "onActivityResult: " + results);
+            for (int i = 0; i < results.size(); i++) {
+                if(results.get(i).isEmpty()) continue;
+                String[] parts = results.get(i).split("-");
+                if(parts.length!=2) continue;
+                setGamePointSpinner(i+1,
+                        Integer.valueOf(parts[0]),
+                        Integer.valueOf(parts[1]));
+                /*
+                switch (i) {
+                    case 0:
+                        mSpinner_T1_1.setSelection(Integer.valueOf(parts[0]));
+                        mSpinner_T2_1.setSelection(Integer.valueOf(parts[1]));
+                        break;
+                    case 1:
+                        mSpinner_T1_2.setSelection(Integer.valueOf(parts[0]));
+                        mSpinner_T2_2.setSelection(Integer.valueOf(parts[1]));
+                        break;
+                    case 2:
+                        mSpinner_T1_3.setSelection(Integer.valueOf(parts[0]));
+                        mSpinner_T2_3.setSelection(Integer.valueOf(parts[1]));
+                        break;
+                }*/
+            }
+            findViewById(R.id.scoretrack_button).setVisibility(View.GONE);
+        }
+
+    }
+
+    @Override
+    public void onBackPressed() {
+        mCommon.killActivity(BaseEnterData.this, RESULT_OK);
+    }
+
     protected void onCreateExtra() {
         Log.d(TAG, "onCreateExtra: ");
     }
@@ -320,6 +383,11 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     public void onNothingSelected(AdapterView<?> adapterView) {
     }
 
+
+    protected void matchCompleted() {
+        Log.d(TAG, "matchCompleted: ");
+        findViewById(R.id.scoretrack_button).setVisibility(View.GONE);
+    }
 
     protected void rearrangeDropdownList(Spinner spinner, ArrayAdapter<String> adapter, List<String> players) {
 
@@ -391,6 +459,24 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         tmpS = getRespectiveSpinner(gameNum, 2);
         if (tmpS != null) tmpS.setSelection(t2Score);
         mGamesReadFromDB = true; //Data read from DB is set in the spinners.
+    }
+
+    protected ArrayList<String> getGamePoints() {
+        ArrayList<String> results = new ArrayList<>(
+                Arrays.asList("", "", "")
+        );
+        Log.d(TAG, "getGamePoints: " + results.toString());
+        for (int i = 1; i <= 3; i++) {
+            Integer s1 = 0, s2 = 0;
+            Spinner tmpS = getRespectiveSpinner(i, 1);
+            if (tmpS != null) s1 = (Integer) tmpS.getSelectedItem();
+            tmpS = getRespectiveSpinner(i, 2);
+            if (tmpS != null) s2 = (Integer) tmpS.getSelectedItem();
+            if(s1==0 && s2==0) continue;
+            results.remove(i-1);
+            results.add(i-1, s1.toString() + "-" + s2.toString());
+        }
+        return results;
     }
 
     protected void setPlayersSpinner(final String t1P1, final String t1P2, final String t2P1, final String t2P2) {

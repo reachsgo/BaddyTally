@@ -440,7 +440,7 @@ class TournaTable implements View.OnClickListener {
             }
             //printDispData();
         }
-        //printDispData();
+        printDispData();
         //Log.d(TAG, "createDisplayData: about to markVerticalLines");
         markVerticalLines();
         //Log.d(TAG, "createDisplayData: about to displayTable");
@@ -449,7 +449,7 @@ class TournaTable implements View.OnClickListener {
     }
 
     void insertANode(final int round, final TournaDispMatchEntry matchEntry, final TournaDispMatchEntry lastNode) {
-        //Log.d(TAG, "  ========= insertANode: " + matchEntry.toString());
+        Log.d(TAG, "  ========= insertANode: " + matchEntry.toString());
         //if(lastNode!=null) Log.d(TAG, "  ========= insertANode lastNode: " + lastNode.toString());
 
 
@@ -470,10 +470,11 @@ class TournaTable implements View.OnClickListener {
                 createPDF(0) W=2662, divBy=2.0x H=0 - 4100
                 createPDF(1) W=2662, divBy=2.0x H=4100 - 8200
          */
+        Log.i(TAG, "insertANode: SGO:" + round + " max=" + mMaxRounds);
         if(mMaxRounds>4 && round<mMaxRounds-1 &&  //many rounds and if these are the initial rounds
                 matchEntry.isExternalLink(0) &&
                 matchEntry.oneTeamGettingABye(true)) {
-            //Log.d(TAG, "insertANode: skipping " + matchEntry.toString());
+            Log.d(TAG, "insertANode: skipping " + matchEntry.toString());
             return;
         }
         /*
@@ -502,6 +503,7 @@ class TournaTable implements View.OnClickListener {
         TournaDispMatchEntry prev1 = getTheMatchFromDispMap(matchEntry.getPr1(true));
         TournaDispMatchEntry prev2 = getTheMatchFromDispMap(matchEntry.getPr2(true));
         if (prev1 == null && prev2 == null) {
+            Log.i(TAG, "insertANode: both prev null:" + matchEntry.toString());
             //No previous nodes to link to. Could be:
             //      * first round nodes or
             //      * Bye nodes added from upper bracket to lower bracket
@@ -517,6 +519,7 @@ class TournaTable implements View.OnClickListener {
                 setCell(matchEntry);
                 return;
             } else {
+                Log.i(TAG, "insertANode: SGO: Not first round=" + matchEntry.toString());
                 //Not first round, but still there are no previous node links.
                 //This is the case where a node is added to the next round of lower bracket
                 //from upper bracket.
@@ -577,20 +580,31 @@ class TournaTable implements View.OnClickListener {
         Integer rowIdx = 0;
         Integer colIdx = 0;
         if (prev1 == null || prev2 == null) {
+            Log.i(TAG, "insertANode: one prev null:" + matchEntry.toString());
             //one team is from previous round, while the other one is already decided (coming from uppper bracket)
             //r=2 m=2>2-2:FixtureDBEntry{t1='UB2-2', t2='', pr1='', pr2='1-1', W=''}
-            //No new row to be added
-            if (prev1 == null && !matchEntry.getT1(true).isEmpty()) {
+            //Change: With optimization done, there might be external links not added to the dispMap
+            //example: 3-1:TournaFixtureDBEntry{T=null, P=[2-1, 2-2], E=null, W=}
+            //         where 2-1 is 2-1:TournaFixtureDBEntry{T=[3-1*, (bye)], P=null, E=[Ext{fixU.3-1.false}], W=}
+            //         which was skipped and hence not added to the dispMap.
+            //Due to this scenario the additional check were removed. Removed lines are:
+            //    //if (prev1 == null && !matchEntry.getT1(true).isEmpty()) {
+            //    //} else if (prev2 == null && !matchEntry.getT2(true).isEmpty()) {
+
+            //No new row to be added, this cell will just be added to the next column of the prev cell
+
+            if (prev1 == null) {
                 rowIdx = prev2.xy.getX();
                 colIdx = prev2.xy.getY() + 1;
-            } else if (prev2 == null && !matchEntry.getT2(true).isEmpty()) {
+
+            } else if (prev2 == null ) {
                 rowIdx = prev1.xy.getX();
                 colIdx = prev1.xy.getY() + 1;
             }
             insertColumn(colIdx);  //no need to add a new row. new cell added in teh same row as the previous node.
             matchEntry.xy.setX(rowIdx);
             matchEntry.xy.setY(colIdx);
-            //Log.d(TAG, "insertANode: matchEntry=" + matchEntry.toString());
+            Log.d(TAG, "insertANode: p1 or p2=null matchEntry=" + matchEntry.toString());
             setCell(matchEntry);
         } else {
             //this cell should be at the centre row relative to its parent's rows
@@ -601,12 +615,11 @@ class TournaTable implements View.OnClickListener {
                 offset = 1;  //offset has to be atleast 1; This is hit when 2 rows are immediate to each other.
             rowIdx = prev1.xy.getX() + offset;
             colIdx = prev1.xy.getY() + 1; //this cell should be to the right of previous one
-
             insertColumn(colIdx);
             insertRow(rowIdx);
             matchEntry.xy.setX(rowIdx);
             matchEntry.xy.setY(colIdx);
-            //Log.d(TAG, "insertANode: matchEntry=" + matchEntry.toString());
+            Log.d(TAG, "insertANode: last else matchEntry=" + matchEntry.toString());
             setCell(matchEntry);
         }
         return;
@@ -798,7 +811,7 @@ class TournaTable implements View.OnClickListener {
 
         for (int i = 0; i < mData.size(); i++) {
             final ArrayList<TournaDispMatchEntry> rowData = mData.get(i);
-            //Log.d(TAG, "displayTable: " + i + " rowData=" + rowData.toString());
+            Log.d(TAG, "displayTable: " + i + " rowData=" + rowData.toString());
             if (rowData == null) continue;
             final TableRow row = getRowOfViews(mActivity, rowData);
             mMainHandler.post(new Runnable() {

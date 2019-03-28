@@ -174,14 +174,17 @@ public class TournaSEDEEnterData extends BaseEnterData {
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.d(TAG, "fetchGames:" + dataSnapshot.getKey());
+                Log.d(TAG, "fetchGames:" + dataSnapshot.toString());
                 GenericTypeIndicator<List<GameJournalDBEntry>> genericTypeIndicator =
                         new GenericTypeIndicator<List<GameJournalDBEntry>>() {
                         };
                 List<GameJournalDBEntry> games = dataSnapshot.getValue(genericTypeIndicator);
                 if (games == null) {
-                    if (reinit) mGameList = new ArrayList<>();
-                    isMatchDone(mGameList, true); //reset if the winner was already set
+                    Log.d(TAG, "onDataChange: games == null");
+                    if (reinit) {
+                        mGameList = new ArrayList<>();
+                        isMatchDone(mGameList, true); //reset if the winner was already set
+                    }
                 } else {
                     mGameList = new ArrayList<>(games);
                     isMatchDone(mGameList, true);
@@ -281,15 +284,25 @@ public class TournaSEDEEnterData extends BaseEnterData {
         final Integer TEAM2_IDX = 2;
         int winner_team_idx = 0;
 
+        String randomPlayerT1 = "";
+        String randomPlayerT2 = "";
         //always choose the player from the most current gamelist.
         //This could be different from mT1_players.get(0) as user could have changed
         //the player after read from DB.
-        String randomPlayerT1 = newGameList.get(0).getmW1();   //we will see if this player has won best-of-N games.
-        String randomPlayerT2 = newGameList.get(0).getmL1();   //take one from the other team too.
-        if(mT2_players.contains(newGameList.get(0).getmW1())) {
+        if(mT1_players.contains(newGameList.get(0).getmW1())) {
+            randomPlayerT1 = newGameList.get(0).getmW1();   //we will see if this player has won best-of-N games.
+            randomPlayerT2 = newGameList.get(0).getmL1();   //take one from the other team too.
+        } else if(mT2_players.contains(newGameList.get(0).getmW1())) {
             //we got it the other way! T2 are the winners
             randomPlayerT2 = newGameList.get(0).getmW1();
             randomPlayerT1 = newGameList.get(0).getmL1();
+        }
+
+        if(randomPlayerT1.isEmpty()) {
+            //There could be stale date in DB. Matches were played and a fixture was created again.
+            //The old matches will have different players, ignore that.
+            Log.e(TAG, "isMatchDone: stale data.. ignoring:" + newGameList.get(0).toReadableString());
+            return false;
         }
 
         Log.i(TAG, "isMatchDone:" + randomPlayerT1 + " :" + randomPlayerT2);
@@ -300,6 +313,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
         int gamesCompleted = 0;
         int gamesPlayed = 0;
         for (GameJournalDBEntry jEntry : newGameList) {
+            Log.d(TAG, "isMatchDone: " + jEntry.toReadableString());
             if (jEntry.getmWS() > 0) gamesPlayed++;
             if (jEntry.getmWS() < 21) continue;
             if (jEntry.getmWS() >= 21) gamesCompleted++;
@@ -315,10 +329,10 @@ public class TournaSEDEEnterData extends BaseEnterData {
             Log.i(TAG, randomPlayerT1_Wins + ":One game completed:" + randomPlayerT2_Wins);
         } else if (randomPlayerT1_Wins > (mBestOf / 2)) {
             winner_team_idx = TEAM1_IDX;
-            //Log.i(TAG, "isMatchDone: " + randomPlayerT1 + "=" + randomPlayerT1_Wins + " > " + mBestOf / 2 + " winner=" + winner_team_idx);
+            Log.i(TAG, "isMatchDone: " + randomPlayerT1 + "=" + randomPlayerT1_Wins + " > " + mBestOf / 2 + " winner=" + winner_team_idx);
         } else if (randomPlayerT2_Wins > (mBestOf / 2)) {
             winner_team_idx = TEAM2_IDX;
-            //Log.i(TAG, "isMatchDone: " + randomPlayerT2 + "=" + randomPlayerT2_Wins + " > " + mBestOf / 2 + " winner=" + winner_team_idx);
+            Log.i(TAG, "isMatchDone: " + randomPlayerT2 + "=" + randomPlayerT2_Wins + " > " + mBestOf / 2 + " winner=" + winner_team_idx);
         }
 
         if (winner_team_idx > 0) {
@@ -338,8 +352,11 @@ public class TournaSEDEEnterData extends BaseEnterData {
                 //If only 1 game completed, then Tick completed checkbox only if best-of-1
                 //otherwise, its error prone (completed might be checked after completing game1 of best-of-3
                 checkbox.setChecked(true);
-            } else if (gamesCompleted > 1)//more than 1 game and there is a clear winner.
+                matchCompleted();
+            } else if (gamesCompleted > 1) {//more than 1 game and there is a clear winner.
                 checkbox.setChecked(true);
+                matchCompleted();
+            }
             return true;
         } else {
             Log.i(TAG, "isMatchDone: NOPE");
@@ -686,6 +703,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
         findViewById(R.id.score_t2_3).setEnabled(false);
         findViewById(R.id.winner).setEnabled(false);
         findViewById(R.id.completed).setEnabled(false);
+        findViewById(R.id.scoretrack_button).setVisibility(View.GONE);
     }
 }
 

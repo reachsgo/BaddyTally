@@ -46,8 +46,7 @@
             android:label="@string/title_activity_login"
             android:noHistory="true" />
         <activity
-            android:name=".ClubLeagueEnterData"
-            android:noHistory="true" />
+            android:name=".ClubLeagueEnterData" />
         <activity android:name=".ClubLeagueSummary" />
         <activity android:name=".ClubLeagueSettings"
             android:noHistory="true"/>
@@ -58,11 +57,9 @@
         <activity
             android:name=".TournaLeague" />
         <activity
-            android:name=".TournaLeagueEnterData"
-            android:noHistory="true" />
+            android:name=".TournaLeagueEnterData" />
         <activity
-            android:name=".TournaSEDEEnterData"
-            android:noHistory="true" />
+            android:name=".TournaSEDEEnterData" />
         <activity
             android:name=".TournaSettings" />
         <activity
@@ -73,6 +70,9 @@
             android:screenOrientation="portrait" />
         <activity
             android:name=".TournaSeeding"
+            android:noHistory="true" />
+        <activity
+            android:name=".TrackScores"
             android:noHistory="true" />
     </application>
 

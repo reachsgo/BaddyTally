@@ -52,6 +52,15 @@ public class MainSelection2 extends AppCompatActivity {
                 MainSelection2.this.startActivity(myIntent);
             }
         });
+
+        Button trackscore = findViewById(R.id.trackscore);
+        trackscore.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent myIntent = new Intent(MainSelection2.this, TrackScores.class);
+                MainSelection2.this.startActivity(myIntent);
+            }
+        });
     }
 
     @Override
