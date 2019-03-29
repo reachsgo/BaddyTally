@@ -205,12 +205,12 @@ public class SharedData {
         SharedPreferences prefs = context.getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
         String club = prefs.getString(Constants.DATA_CLUB, "");
         if (!club.isEmpty()) {
-            Log.d(TAG, "initData for " + club);
+            //Log.d(TAG, "initData for " + club);
             mClub = club;
             mUser = prefs.getString(Constants.DATA_USER, "");
             mRole = prefs.getString(Constants.DATA_ROLE, "");
             //mTournaMode = prefs.getBoolean(Constants.DATA_TMODE, false);
-            Log.d(TAG, "initData: " + SharedData.getInstance().toString());
+            //Log.d(TAG, "initData: " + SharedData.getInstance().toString());
         }
     }
 
@@ -225,7 +225,7 @@ public class SharedData {
                 DatabaseReference newHistory = inningsDBRef.push();
                 newHistory.setValue(dateStr + "#" + mUser + "#" + story);
             } else mStoreHistory += story + ",";
-        Log.w(TAG, "History added: [" + dateStr + ":" + mUser + ":" + story + "]");
+        //Log.w(TAG, "History added: [" + dateStr + ":" + mUser + ":" + story + "]");
     }
 
     public String parseHistory(String storyLine) {
@@ -298,7 +298,7 @@ public class SharedData {
 
     public void showToast(final Context c, final CharSequence s, final int d) {
         if (mUserNotifyEnabled) Toast.makeText(c, s, d).show();
-        Log.i(TAG, s.toString());
+        //Log.i(TAG, s.toString());
     }
 
     public SpannableStringBuilder getColorString(CharSequence text, int color) {
@@ -625,7 +625,7 @@ public class SharedData {
     public Boolean isPermitted(final Context context){
         SharedPreferences prefs = context.getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
         final String secpd = prefs.getString(Constants.DATA_SEC, "");
-        Log.d(TAG, "isPermitted: " + secpd + " " +mRootCode + "," + mAdminCode + "," + mMemCode);
+        //Log.d(TAG, "isPermitted: " + secpd + " " +mRootCode + "," + mAdminCode + "," + mMemCode);
         if(secpd.isEmpty()) return true;
         if (secpd.equals(mAdminCode)) {
             return true;
@@ -850,7 +850,7 @@ public class SharedData {
         SimpleDateFormat df = new SimpleDateFormat(Constants.ROUND_DATEFORMAT, Locale.CANADA);
         String rndName = df.format(c);
         if (commit) {
-            Log.w(TAG, "createNewRoundName: committing:" + rndName);
+            //Log.w(TAG, "createNewRoundName: committing:" + rndName);
             SharedPreferences prefs = context.getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
             SharedPreferences.Editor editor = prefs.edit();
             editor.putString(Constants.NEWROUND, rndName);
@@ -878,16 +878,14 @@ public class SharedData {
     public Boolean isLeagueTournament(final String tourna) {
         String tournaType = getTournamentType(tourna);
         if(tournaType.isEmpty()) return false;
-
-        Log.i(TAG, "isLeagueTournament:" + tourna + "," + tournaType);
+        //Log.i(TAG, "isLeagueTournament:" + tourna + "," + tournaType);
         return tournaType.equals(Constants.LEAGUE);
     }
 
     public Boolean isEliminationTournament(final String tourna) {
         String tournaType = getTournamentType(tourna);
         if(tournaType.isEmpty()) return false;
-
-        Log.i(TAG, "isEliminationTournament:" + tourna + "," + tournaType);
+        //Log.i(TAG, "isEliminationTournament:" + tourna + "," + tournaType);
         return tournaType.equals(Constants.SE) || tournaType.equals(Constants.DE);
     }
 
@@ -922,7 +920,7 @@ public class SharedData {
                 for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
 
                     final String team = childSnapshot.getKey();
-                    Log.i(TAG, "onDataChange Got:" + team);
+                    //Log.i(TAG, "onDataChange Got:" + team);
 
                     TeamInfo tI = new TeamInfo(team);
                     mTeams.add(team);  //still need array to get a list of teams in order
@@ -936,7 +934,7 @@ public class SharedData {
                     TeamScoreDBEntry scoreDBEntry = scoreData.getValue(TeamScoreDBEntry.class);
                     if (scoreDBEntry != null) tI.score = scoreDBEntry;
                     else tI.score = new TeamScoreDBEntry();
-                    Log.i(TAG, "onDataChange, scoreDBEntry:" + tI.score.toString());
+                    //Log.i(TAG, "onDataChange, scoreDBEntry:" + tI.score.toString());
 
                     mTeamInfoMap.put(team, tI);
                 }
@@ -1016,7 +1014,7 @@ public class SharedData {
                 return value1;
             }
         });
-        Log.d(TAG, "sortTeams: Sorted mTeams: " + mTeams.toString());
+        //Log.d(TAG, "sortTeams: Sorted mTeams: " + mTeams.toString());
     }
 
     public void showAlert(final CallbackRoutine cb, final Context context, final String title, final String msg) {
@@ -1169,7 +1167,7 @@ public class SharedData {
      * Fires an intent to spin up the "file chooser" UI and select an image.
      */
     public void performFileSearch(final Activity activity) {
-        Log.d(TAG, "performFileSearch: ");
+        //Log.d(TAG, "performFileSearch: ");
 
         // ACTION_OPEN_DOCUMENT is the intent to choose a file via the system's file
         // browser.
@@ -1201,7 +1199,7 @@ public class SharedData {
         }
         inputStream.close();
         reader.close();
-        Log.e(TAG, "readTextFromUri: " + stringBuilder.toString());
+        //Log.e(TAG, "readTextFromUri: " + stringBuilder.toString());
         return stringBuilder.toString();
     }
 

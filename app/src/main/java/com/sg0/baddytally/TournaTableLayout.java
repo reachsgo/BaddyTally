@@ -313,12 +313,12 @@ class TournaTable implements View.OnClickListener {
     void readDB() {
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
                 .child(Constants.TOURNA).child(mTourna).child(mFixtureLabel);
-        Log.d(TAG, ":readDB " + mCommon.mClub + Constants.TOURNA + mTourna + mFixtureLabel);
+        //Log.d(TAG, ":readDB " + mCommon.mClub + Constants.TOURNA + mTourna + mFixtureLabel);
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
 
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.d(TAG, "readDB: onDataChange:" + dataSnapshot.getKey() + dataSnapshot.toString());
+                //Log.d(TAG, "readDB: onDataChange:" + dataSnapshot.getKey() + dataSnapshot.toString());
 
                 GenericTypeIndicator<Map<String, TournaFixtureDBEntry>> genericTypeIndicator =
                         new GenericTypeIndicator<Map<String, TournaFixtureDBEntry>>() {
@@ -449,7 +449,7 @@ class TournaTable implements View.OnClickListener {
     }
 
     void insertANode(final int round, final TournaDispMatchEntry matchEntry, final TournaDispMatchEntry lastNode) {
-        Log.d(TAG, "  ========= insertANode: " + matchEntry.toString());
+        //Log.d(TAG, "  ========= insertANode: " + matchEntry.toString());
         //if(lastNode!=null) Log.d(TAG, "  ========= insertANode lastNode: " + lastNode.toString());
 
 
@@ -470,7 +470,7 @@ class TournaTable implements View.OnClickListener {
                 createPDF(0) W=2662, divBy=2.0x H=0 - 4100
                 createPDF(1) W=2662, divBy=2.0x H=4100 - 8200
          */
-        Log.i(TAG, "insertANode: SGO:" + round + " max=" + mMaxRounds);
+        //Log.i(TAG, "insertANode: SGO:" + round + " max=" + mMaxRounds);
         if(mMaxRounds>4 && round<mMaxRounds-1 &&  //many rounds and if these are the initial rounds
                 matchEntry.isExternalLink(0) &&
                 matchEntry.oneTeamGettingABye(true)) {
@@ -503,7 +503,7 @@ class TournaTable implements View.OnClickListener {
         TournaDispMatchEntry prev1 = getTheMatchFromDispMap(matchEntry.getPr1(true));
         TournaDispMatchEntry prev2 = getTheMatchFromDispMap(matchEntry.getPr2(true));
         if (prev1 == null && prev2 == null) {
-            Log.i(TAG, "insertANode: both prev null:" + matchEntry.toString());
+            //Log.i(TAG, "insertANode: both prev null:" + matchEntry.toString());
             //No previous nodes to link to. Could be:
             //      * first round nodes or
             //      * Bye nodes added from upper bracket to lower bracket
@@ -519,7 +519,7 @@ class TournaTable implements View.OnClickListener {
                 setCell(matchEntry);
                 return;
             } else {
-                Log.i(TAG, "insertANode: SGO: Not first round=" + matchEntry.toString());
+                //Log.i(TAG, "insertANode: SGO: Not first round=" + matchEntry.toString());
                 //Not first round, but still there are no previous node links.
                 //This is the case where a node is added to the next round of lower bracket
                 //from upper bracket.
@@ -580,7 +580,7 @@ class TournaTable implements View.OnClickListener {
         Integer rowIdx = 0;
         Integer colIdx = 0;
         if (prev1 == null || prev2 == null) {
-            Log.i(TAG, "insertANode: one prev null:" + matchEntry.toString());
+            //Log.i(TAG, "insertANode: one prev null:" + matchEntry.toString());
             //one team is from previous round, while the other one is already decided (coming from uppper bracket)
             //r=2 m=2>2-2:FixtureDBEntry{t1='UB2-2', t2='', pr1='', pr2='1-1', W=''}
             //Change: With optimization done, there might be external links not added to the dispMap
@@ -604,7 +604,7 @@ class TournaTable implements View.OnClickListener {
             insertColumn(colIdx);  //no need to add a new row. new cell added in teh same row as the previous node.
             matchEntry.xy.setX(rowIdx);
             matchEntry.xy.setY(colIdx);
-            Log.d(TAG, "insertANode: p1 or p2=null matchEntry=" + matchEntry.toString());
+            //Log.d(TAG, "insertANode: p1 or p2=null matchEntry=" + matchEntry.toString());
             setCell(matchEntry);
         } else {
             //this cell should be at the centre row relative to its parent's rows
@@ -619,7 +619,7 @@ class TournaTable implements View.OnClickListener {
             insertRow(rowIdx);
             matchEntry.xy.setX(rowIdx);
             matchEntry.xy.setY(colIdx);
-            Log.d(TAG, "insertANode: last else matchEntry=" + matchEntry.toString());
+            //Log.d(TAG, "insertANode: last else matchEntry=" + matchEntry.toString());
             setCell(matchEntry);
         }
         return;
@@ -811,7 +811,7 @@ class TournaTable implements View.OnClickListener {
 
         for (int i = 0; i < mData.size(); i++) {
             final ArrayList<TournaDispMatchEntry> rowData = mData.get(i);
-            Log.d(TAG, "displayTable: " + i + " rowData=" + rowData.toString());
+            //Log.d(TAG, "displayTable: " + i + " rowData=" + rowData.toString());
             if (rowData == null) continue;
             final TableRow row = getRowOfViews(mActivity, rowData);
             mMainHandler.post(new Runnable() {
@@ -1191,7 +1191,7 @@ class TournaTable implements View.OnClickListener {
                     return true;
                 }
                 String winner = menuItem.getTitle().toString();
-                Log.v(TAG, "updatewinner onMenuItemClick:" + winner);
+                //Log.v(TAG, "updatewinner onMenuItemClick:" + winner);
                 //dont check for winner, give an option to force write into DB
                 final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
                         .child(Constants.TOURNA).child(mCommon.mTournament)
@@ -1257,7 +1257,7 @@ class TournaTable implements View.OnClickListener {
                         ArrayList<String> team2Players = new ArrayList<>(team2DBEntry.getP());
 
                         if (node.isBye(true)) {
-                            Log.w(TAG, "showOptions:onMenuItemClick: BYE: " + node.toString());
+                            //Log.w(TAG, "showOptions:onMenuItemClick: BYE: " + node.toString());
                             Toast.makeText(mActivity, "Winner has got a bye!",
                                     Toast.LENGTH_LONG).show();
                             return true;
@@ -1539,7 +1539,7 @@ public class TournaTableLayout extends AppCompatActivity {
         mLowerVisibility = View.VISIBLE;
         findViewById(R.id.final1).setVisibility(View.GONE);
         findViewById(R.id.final2).setVisibility(View.GONE);
-        Log.d(TAG, "onCreate: ");
+        //Log.d(TAG, "onCreate: ");
         mTournaType = "";
         mDeFinalsDBEntry = null;
         readDBTournaType();
@@ -1790,10 +1790,10 @@ public class TournaTableLayout extends AppCompatActivity {
 
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.d(TAG, "readDBTournaType: onDataChange:" + dataSnapshot.getKey() + dataSnapshot.toString());
+                //Log.d(TAG, "readDBTournaType: onDataChange:" + dataSnapshot.getKey() + dataSnapshot.toString());
                 mTournaType = dataSnapshot.getValue(String.class);
                 if (null == mTournaType) mTournaType = "";
-                Log.v(TAG, "readDBTournaType: " + mTournaType);
+                //Log.v(TAG, "readDBTournaType: " + mTournaType);
                 readDBTeamInfo();
                 if (mTournaType.equals(Constants.SE)) {
                     HorizontalScrollView lowerView = findViewById(R.id.horizontal_scroll_view2);
@@ -1822,7 +1822,7 @@ public class TournaTableLayout extends AppCompatActivity {
 
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.d(TAG, "readDBDEFinals: onDataChange: " + dataSnapshot.getKey());
+                //Log.d(TAG, "readDBDEFinals: onDataChange: " + dataSnapshot.getKey());
 
                 DataSnapshot matchDS1 = dataSnapshot.child(Constants.DE_FINALS_M1);
                 TournaFixtureDBEntry match1 = matchDS1.getValue(TournaFixtureDBEntry.class);
@@ -1835,7 +1835,7 @@ public class TournaTableLayout extends AppCompatActivity {
                     findViewById(R.id.final2).setVisibility(View.VISIBLE);
                     mDeFinalsDBEntry = match2;
                 }
-                Log.d(TAG, "readDBDEFinals: onDataChange: " + mDeFinalsDBEntry.toString());
+                //Log.d(TAG, "readDBDEFinals: onDataChange: " + mDeFinalsDBEntry.toString());
 
                 if (!mDeFinalsDBEntry.getT2(true).isEmpty()) {
                     if (mDeFinalsDBEntry.isThereAWinner(true) &&
@@ -1877,7 +1877,7 @@ public class TournaTableLayout extends AppCompatActivity {
                 List<TeamDBEntry> teamList = dataSnapshot.getValue(genericTypeIndicator);
                 if (null == teamList) return;
                 mTeams = new ArrayList<>(teamList);
-                Log.v(TAG, "readDBTeamInfo: " + mTeams.toString());
+                //Log.v(TAG, "readDBTeamInfo: " + mTeams.toString());
 
                 if (mTournaType.equals(Constants.SE) || mTournaType.equals(Constants.DE)) {
                     mUpperTable = new TournaTable(TournaTableLayout.this,
@@ -1923,7 +1923,7 @@ public class TournaTableLayout extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume: ");
+        //Log.d(TAG, "onResume: ");
         //Coming back from BaseEnterData, refresh the view, if there was
         //a DB update performed.
         if (mCommon.isDBUpdated()) {
@@ -1936,14 +1936,14 @@ public class TournaTableLayout extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        Log.d(TAG, "onPause: ");
+        //Log.d(TAG, "onPause: ");
         if (null != mLowerTable) mLowerTable.onPause();
         if (null != mUpperTable) mUpperTable.onPause();
     }
 
     @Override
     protected void onDestroy() {
-        Log.d(TAG, "onDestroy: ");
+        //Log.d(TAG, "onDestroy: ");
         super.onDestroy();
         mWorkerHandler.removeCallbacksAndMessages(null);
         mMainHandler.removeCallbacksAndMessages(null);
@@ -1955,7 +1955,7 @@ public class TournaTableLayout extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        Log.d(TAG, "onBackPressed: ");
+        //Log.d(TAG, "onBackPressed: ");
         if (null != mLowerTable) mLowerTable.onDestroy();
         if (null != mUpperTable) mUpperTable.onDestroy();
 
@@ -2046,7 +2046,7 @@ public class TournaTableLayout extends AppCompatActivity {
     }
 
     void successPDFToast(final Boolean retVal, final String bracket) {
-        Log.d(TAG, "successPDFToast(" + bracket + "): " + retVal);
+        //Log.d(TAG, "successPDFToast(" + bracket + "): " + retVal);
         mMainHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -2113,7 +2113,7 @@ public class TournaTableLayout extends AppCompatActivity {
         SimpleDateFormat df = new SimpleDateFormat(Constants.ROUND_DATEFORMAT, Locale.CANADA);
         String dateStr = df.format(c);
         String fname = "scoretally" + dateStr + "_" + tableid + ".pdf";
-        Log.d(TAG, "getFileName: " + fname);
+        //Log.d(TAG, "getFileName: " + fname);
         return fname;
     }
 
@@ -2146,10 +2146,10 @@ public class TournaTableLayout extends AppCompatActivity {
         if (width > WIDTH_PAGE_LIMIT) divBy = 2.5f;
         int heightPerPage = HEIGHT_PAGE_LIMIT;
 
-        Log.d(TAG, "createPDF: Measured W=" + mView.getMeasuredWidth() +
-                "x H=" + mView.getMeasuredHeight());
-        Log.d(TAG, "createPDF: W=" + mView.getWidth() +
-                "x H=" + mView.getHeight());
+        //Log.d(TAG, "createPDF: Measured W=" + mView.getMeasuredWidth() +
+        //        "x H=" + mView.getMeasuredHeight());
+        //Log.d(TAG, "createPDF: W=" + mView.getWidth() +
+        //        "x H=" + mView.getHeight());
 
         /*
         In testing (with NO manifest entry for android:largeHeap="true") it was found that:
@@ -2227,8 +2227,8 @@ public class TournaTableLayout extends AppCompatActivity {
         while (startHeight < mView.getHeight()) {
 
             if (endHeight > mView.getHeight()) endHeight = mView.getHeight();
-            Log.d(TAG, "createPDF(" + pageNum + ") W=" + width + ", divBy=" + divBy +
-                    "x H=" + startHeight + " - " + endHeight);
+            //d(TAG, "createPDF(" + pageNum + ") W=" + width + ", divBy=" + divBy +
+            //        "x H=" + startHeight + " - " + endHeight);
 
             // start a page
             PdfDocument.Page page = document.startPage(pageNum);
@@ -2247,8 +2247,8 @@ public class TournaTableLayout extends AppCompatActivity {
             if (scale == 0) scale = Math.min(pageWidth / src.width(), pageHeight / src.height());
             //dont change the scale for the successive pages. page 1 scale should be same as page 0.
 
-            Log.d(TAG, "createPDF: pageWidth=" + pageWidth + " pageHeight=" + pageHeight + " scale=" + scale);
-            Log.d(TAG, "createPDF: src=" + src.toString());
+            //Log.d(TAG, "createPDF: pageWidth=" + pageWidth + " pageHeight=" + pageHeight + " scale=" + scale);
+            //Log.d(TAG, "createPDF: src=" + src.toString());
 
             //calculate the destination rectangle
             float left = (pageWidth - src.width() * scale) / divBy;
@@ -2256,7 +2256,7 @@ public class TournaTableLayout extends AppCompatActivity {
             float right = (pageWidth + src.width() * scale) / divBy;
             float bottom = (pageHeight + src.height() * scale) / divBy;
             RectF dst = new RectF(left, top, right, bottom);
-            Log.d(TAG, "createPDF: dst=" + dst.toString());
+            //Log.d(TAG, "createPDF: dst=" + dst.toString());
 
             /* SGO: this below code from https://developer.android.com/reference/android/print/pdf/PrintedPdfDocument.html
                 does not work for this view a scroll view. Only visible screen is printed into the pdf.
@@ -2426,21 +2426,20 @@ public class TournaTableLayout extends AppCompatActivity {
             //then the fling is horizontal, else->vertical
             if (Math.abs(velocityX) > Math.abs(velocityY)) {
                 if (velocityX >= 0) {
-                    Log.i(TAG, "swipe right");
+                    //Log.i(TAG, "swipe right");
                     makeOtherBracketVisible();
                 } else {//if velocityX is negative, then it's towards left
-                    Log.i(TAG, "swipe left");
+                    //Log.i(TAG, "swipe left");
                     makeOtherBracketVisible();
                 }
-            } else {
+            } /*
+            else {
                 if (velocityY >= 0) {
-                    Log.i(TAG, "swipe down");
+                    //Log.i(TAG, "swipe down");
                 } else {
-                    Log.i(TAG, "swipe up");
+                    //Log.i(TAG, "swipe up");
                 }
-            }
-
-
+            }*/
             return true;
         }
     }

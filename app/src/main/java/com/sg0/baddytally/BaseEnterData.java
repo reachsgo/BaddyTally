@@ -326,6 +326,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         Log.d(TAG, "onActivityResult: " + requestCode + "," + resultCode);
+        mCommon.wakeUpDBConnection_profile();
         if(requestCode==Constants.TRACKSCORES_ACTIVITY && resultCode == RESULT_OK){
             ArrayList<String> results = data.getStringArrayListExtra("gameResults");
             Log.d(TAG, "onActivityResult: " + results);
@@ -336,21 +337,6 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
                 setGamePointSpinner(i+1,
                         Integer.valueOf(parts[0]),
                         Integer.valueOf(parts[1]));
-                /*
-                switch (i) {
-                    case 0:
-                        mSpinner_T1_1.setSelection(Integer.valueOf(parts[0]));
-                        mSpinner_T2_1.setSelection(Integer.valueOf(parts[1]));
-                        break;
-                    case 1:
-                        mSpinner_T1_2.setSelection(Integer.valueOf(parts[0]));
-                        mSpinner_T2_2.setSelection(Integer.valueOf(parts[1]));
-                        break;
-                    case 2:
-                        mSpinner_T1_3.setSelection(Integer.valueOf(parts[0]));
-                        mSpinner_T2_3.setSelection(Integer.valueOf(parts[1]));
-                        break;
-                }*/
             }
             findViewById(R.id.scoretrack_button).setVisibility(View.GONE);
         }

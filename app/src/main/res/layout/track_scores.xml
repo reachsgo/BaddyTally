@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/master_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -270,6 +271,7 @@
     </RelativeLayout>
 
     <LinearLayout
+        android:id="@+id/btn_ll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
@@ -279,32 +281,35 @@
             android:layout_width="0dp"
             android:layout_height="60dp"
             android:layout_weight="1"
+            android:layout_margin="5dp"
             android:background="@drawable/roundwhite"
-            android:textSize="14sp"
+            android:textSize="15sp"
             android:textAllCaps="false"
             android:lines="2"
-            android:text="Game1" />
+            android:text="Game-1" />
 
         <Button
             android:id="@+id/game2_btn"
             android:layout_width="0dp"
             android:layout_height="60dp"
             android:layout_weight="1"
+            android:layout_margin="5dp"
             android:background="@drawable/roundwhite"
-            android:textSize="14sp"
+            android:textSize="15sp"
             android:textAllCaps="false"
             android:lines="2"
-            android:text="Game2" />
+            android:text="Game-2" />
 
         <Button
             android:id="@+id/game3_btn"
             android:layout_width="0dp"
             android:layout_height="60dp"
             android:layout_weight="1"
+            android:layout_margin="5dp"
             android:background="@drawable/roundwhite"
-            android:textSize="14sp"
+            android:textSize="15sp"
             android:textAllCaps="false"
             android:lines="2"
-            android:text="Game3" />
+            android:text="Game-3" />
     </LinearLayout>
 </LinearLayout>

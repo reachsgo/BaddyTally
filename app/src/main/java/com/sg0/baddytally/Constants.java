@@ -97,4 +97,15 @@ class Constants {
     static final String DE_LONG = "DE: Double Elimination";  //Double Elimination
     static final String BYE = "(bye)";
     static final String BYE_DISPLAY = "bye";
+
+    static final String SCORETRACKDATA = "ScoreTracker";
+    static final String DATA_T1 = "ST_T1";
+    static final String DATA_T2 = "ST_T2";
+    static final String DATA_T1P1 = "ST_T1P1";
+    static final String DATA_T1P2 = "ST_T1P2";
+    static final String DATA_T2P1 = "ST_T2P1";
+    static final String DATA_T2P2 = "ST_T2P2";
+    static final String DATA_G1 = "ST_G1";
+    static final String DATA_G2 = "ST_G2";
+    static final String DATA_G3 = "ST_G3";
 }

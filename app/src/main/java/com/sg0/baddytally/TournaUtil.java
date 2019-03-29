@@ -49,7 +49,7 @@ public class TournaUtil {
     }
 
     public void fetchActiveTournaments() {
-        Log.d(TAG, "fetchActiveTournaments..." + mCommon.mClub);
+        //Log.d(TAG, "fetchActiveTournaments..." + mCommon.mClub);
         final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
                 .child(mCommon.mClub).child(Constants.TOURNA).child(Constants.ACTIVE);
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -58,7 +58,7 @@ public class TournaUtil {
                 HashMap<String, String> tMap = new HashMap<>();
                 for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
                     String tournaType = childSnapshot.getValue(String.class);
-                    Log.i(TAG, "onDataChange:" + childSnapshot.getKey() + ":" + tournaType);
+                    //Log.i(TAG, "onDataChange:" + childSnapshot.getKey() + ":" + tournaType);
                     if (null!=tournaType && !tournaType.isEmpty())
                         tMap.put(childSnapshot.getKey(),tournaType);
                 }
@@ -93,7 +93,7 @@ public class TournaUtil {
             Log.i(TAG, "view is null!!");
             return;
         }
-        Log.d(TAG, "showTournaments...");
+
         if(mPopup!=null) {
             //routine is again invoked before the first one finished. happens if a view is kept open and then phone sleeps;
             //now, when phone wakes, if showTournaments() is again invoked from resume(). there will be 2 popups.
@@ -118,7 +118,7 @@ public class TournaUtil {
         mPopup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
-                Log.v(TAG, "onMenuItemClick[" + menuItem.getItemId()+ "] :" + menuItem.getTitle().toString());
+                //Log.v(TAG, "onMenuItemClick[" + menuItem.getItemId()+ "] :" + menuItem.getTitle().toString());
                 mPopup.dismiss();
                 mTourna = menuItem.getTitle().toString();
                 cb.completed(Constants.CB_SHOWTOURNA, true);
@@ -164,7 +164,7 @@ public class TournaUtil {
                 for (DataSnapshot childSnapshot: dataSnapshot.getChildren()) {
                     final String key = childSnapshot.getKey();
                     if(key.equals("info")) continue;   //meta/info
-                    Log.i(TAG,   "readDBMatchMeta childSnapshot reading: " + key);
+                    //Log.i(TAG,   "readDBMatchMeta childSnapshot reading: " + key);
                     HashMap<String,Boolean> tmpStatusMap = new HashMap<>();
                     for (DataSnapshot gcDS: childSnapshot.getChildren()) {
                         final String mKey = gcDS.getKey();
@@ -177,12 +177,12 @@ public class TournaUtil {
                                 final String match = Constants.MATCHSETID_PREFIX + key + Constants.TEAM_DELIM1 + info.T1 + Constants.TEAM_DELIM2 + info.T2;
                                 tmpList.add(match);
                                 tmpListInfo.put(key, info);
-                                Log.i(TAG, key + ": [" + match + "] added to list");
+                                //Log.i(TAG, key + ": [" + match + "] added to list");
                             }
                         } else {  //Match entries: get the "done" status and save for later.
                             Boolean status = gcDS.getValue(boolean.class);  //meta/<match-key>:true/false
                             tmpStatusMap.put(mKey, status);
-                            Log.i(TAG, mKey + ": [" + status + "] added to status list");
+                            //Log.i(TAG, mKey + ": [" + status + "] added to status list");
                         }
                     }
                     tmpMatchesStatus.put(key, tmpStatusMap);
@@ -190,7 +190,7 @@ public class TournaUtil {
 
                 if(tmpList.size()>0) {
                     mMSStrList = tmpList;
-                    Log.i(TAG, "onDataChange, mMSStrList:" + mMSStrList.toString());
+                    //Log.i(TAG, "onDataChange, mMSStrList:" + mMSStrList.toString());
                     mMSInfoMap = tmpListInfo;
                     mMatchesStatus = tmpMatchesStatus;
                     cb.completed(Constants.CB_READMATCHMETA, true);
@@ -228,7 +228,7 @@ public class TournaUtil {
         }
         mI.T1 = teams[0];
         mI.T2 = teams[1];
-        Log.i(TAG, "getMatchInfoFromString: " + mI.toString());
+        //Log.i(TAG, "getMatchInfoFromString: " + mI.toString());
         return mI;
     }
 
@@ -271,7 +271,7 @@ public class TournaUtil {
         mPopup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
-                Log.v(TAG, "onMenuItemClick: [" + menuItem.getTitle().toString() + "] " + menuItem.getItemId());
+                //Log.v(TAG, "onMenuItemClick: [" + menuItem.getTitle().toString() + "] " + menuItem.getItemId());
                 mMSStr_chosen = menuItem.getTitle().toString();
                 mPopup.dismiss();
                 cb.completed(Constants.CB_SHOWMATCHES, true);
