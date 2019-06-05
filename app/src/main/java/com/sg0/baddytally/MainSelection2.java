@@ -1,6 +1,7 @@
 package com.sg0.baddytally;
 
 import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
@@ -10,6 +11,7 @@ import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -29,7 +31,7 @@ public class MainSelection2 extends AppCompatActivity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main_selection2);
         Log.d(TAG, "onCreate: ");
-        SharedData.getInstance().initData(MainSelection2.this);
+
         mTournaBtn = findViewById(R.id.tournaments);
         mTournaBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -79,7 +81,15 @@ public class MainSelection2 extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.basic_menu_main, menu);
         menu.findItem(R.id.action_refresh).setVisible(false);
-        menu.findItem(R.id.action_settings).setVisible(false);
+        if (SharedData.getInstance().isRoot()) {
+            MenuItem mEnterDataItem = menu.findItem(R.id.action_settings);
+            if(SharedData.getInstance().mOfflineMode)
+                mEnterDataItem.setTitle("Disable Offline mode");
+            else
+                mEnterDataItem.setTitle("Enable Offline mode");
+        } else {
+            menu.findItem(R.id.action_settings).setVisible(false);
+        }
         return true;
     }
 
@@ -92,6 +102,61 @@ public class MainSelection2 extends AppCompatActivity {
                 break;
             // action with ID action_settings was selected
             case R.id.action_settings:
+                SharedData.getInstance().wakeUpDBConnection_profile();
+                if(SharedData.getInstance().mOfflineMode) {
+                    //in offline mode, disable it
+                    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainSelection2.this);
+                    alertBuilder.setTitle("Disable Offline mode");
+                    alertBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            if(SharedData.getInstance().isDBServerConnected()) {
+                                SharedData.getInstance().persistOfflineMode(false, MainSelection2.this);
+                            } else {
+                                Toast.makeText(MainSelection2.this,
+                                        "There is no data connection now, try again when you are connected to wifi/cellular data",
+                                        Toast.LENGTH_LONG).show();
+                            }
+
+                        }
+                    });
+                    alertBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            //
+                        }
+                    });
+                    alertBuilder.show();
+
+                } else {
+                    //in online mode, enable offline mode
+                    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainSelection2.this);
+                    alertBuilder.setTitle("Enable Offline mode");
+                    alertBuilder.setMessage("By enabling offline mode, you can update scores even there is no data connection (wifi or cellular).\n\n" +
+                            "Make sure that there is data connection at this moment to synchronise local data with server.\n");
+                    alertBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            if(SharedData.getInstance().isDBServerConnected()) {
+                                SharedData.getInstance().persistOfflineMode(true, MainSelection2.this);
+                                SharedData.getInstance().restartApplication(MainSelection2.this, MainSelection2.class);
+                            } else {
+                                Toast.makeText(MainSelection2.this,
+                                        "There is no data connection now, try again when you are connected to wifi/cellular data",
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    });
+                    alertBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            //don't enable offline mode
+                        }
+                    });
+                    alertBuilder.show();
+
+                }
+
                 break;
             case R.id.action_logout:
                 SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);

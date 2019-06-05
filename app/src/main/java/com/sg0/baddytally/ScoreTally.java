@@ -4,6 +4,7 @@ import android.app.Application;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 public class ScoreTally extends Application {
@@ -11,9 +12,10 @@ public class ScoreTally extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
-        String role = prefs.getString(Constants.DATA_ROLE, "");
-        if(Constants.ROOT.equals(role)) {
+        SharedData.getInstance().initData(getApplicationContext());
+        //SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+        //boolean offlineMode = prefs.getBoolean(Constants.DATA_OFFLINE_MODE, false);
+        if(SharedData.getInstance().mOfflineMode) {
             //if you are the root, then enable persistence.
             //Note that, this will happen only when the app is restarted after the initial login.
             //Persistence is enabled for root, basically for the "create new innings" use case.
@@ -34,8 +36,8 @@ public class ScoreTally extends Application {
             //So, persistence w/o keepsync is not safe, if manual changes to DB are done.
             //Will keep it for now, as manual updates to DB via firebase console should not be done.
 
-            //FirebaseDatabase.getInstance().setPersistenceEnabled(true);
-            //Log.d(TAG, "onCreate: DB Persistence enabled");
+
+            SharedData.getInstance().setOfflineMode(true, true);
 
             /*
             09-16 21:26:21.719 10221-10316/com.sg0.baddytally I/Transaction: runTransaction() usage detected while persistence is enabled.
@@ -49,8 +51,7 @@ public class ScoreTally extends Application {
             // 3. Before starting any Activity that needs DB update, DB connection is woken up by
             //    doing a write on a dummy DB param
         } else {
-            FirebaseDatabase.getInstance().setPersistenceEnabled(false);
-            Log.d(TAG, "onCreate: DB Persistence disabled");
+            SharedData.getInstance().setOfflineMode(false, true);
         }
     }
 

@@ -146,7 +146,7 @@
                 android:id="@+id/service_l_top_btn"
                 android:layout_width="40dp"
                 android:layout_height="50dp"
-                android:background="@drawable/birdie_btn" />
+                android:background="@drawable/birdie_red_btn" />
 
             <TextView
                 android:id="@+id/player_l_top_tv"
@@ -175,7 +175,7 @@
                 android:id="@+id/service_l_bottom_btn"
                 android:layout_width="40dp"
                 android:layout_height="50dp"
-                android:background="@drawable/birdie_btn" />
+                android:background="@drawable/birdie_red_btn" />
 
             <TextView
                 android:id="@+id/player_l_bottom_tv"
@@ -205,7 +205,7 @@
                 android:id="@+id/service_r_top_btn"
                 android:layout_width="40dp"
                 android:layout_height="50dp"
-                android:background="@drawable/birdie_btn" />
+                android:background="@drawable/birdie_red_btn" />
 
             <TextView
                 android:id="@+id/player_r_top_tv"
@@ -234,7 +234,7 @@
                 android:id="@+id/service_r_bottom_btn"
                 android:layout_width="40dp"
                 android:layout_height="50dp"
-                android:background="@drawable/birdie_btn" />
+                android:background="@drawable/birdie_red_btn" />
 
             <TextView
                 android:id="@+id/player_r_bottom_tv"
@@ -263,7 +263,7 @@
             android:id="@+id/right_win_btn"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginStart="40dp"
+            android:layout_marginStart="50dp"
             android:layout_marginEnd="15dp"
             android:layout_toEndOf="@id/vcenter3"
             android:background="@drawable/trophy_transparent_30" />

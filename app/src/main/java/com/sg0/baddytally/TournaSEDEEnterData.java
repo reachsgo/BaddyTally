@@ -531,6 +531,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
 
                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaSEDEEnterData.this);
                     alertBuilder.setTitle("");
+                    alertBuilder.setTitle("");
                     alertBuilder.setMessage(mTeams.get(0) + " lost for the first time in this tournament. Play again!");
                     alertBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                         @Override

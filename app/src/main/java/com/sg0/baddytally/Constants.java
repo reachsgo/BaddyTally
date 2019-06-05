@@ -28,6 +28,10 @@ class Constants {
     static final String DATA_PHNUMS = "phnums";
     static final String DATA_TMODE = "tmode";
     static final String DATA_LOCKED = "locked";
+    static final String DATA_OFFLINE_MODE = "offlineM";
+    static final String DATA_FLAGS = "stFlags";
+    static final String DATA_FLAG_NAV_TELIM = "N_TEL";  //Navigation help for Tourna Elimination
+    static final String DATA_FLAG_NAV_TRACK = "N_STR";  //Navigation help for Score Tracker
     static final int DATA_LOCKED_COUNT_MAX = 5;
     static final Integer NUM_OF_GROUPS = 2;
     static final int SEASON_IDX = 0;
@@ -108,4 +112,6 @@ class Constants {
     static final String DATA_G1 = "ST_G1";
     static final String DATA_G2 = "ST_G2";
     static final String DATA_G3 = "ST_G3";
+    static final String DATA_LEFTTEAM = "ST_LEFT";
+    static final String DATA_SRVCTEAM = "ST_SRVC";
 }

@@ -327,18 +327,25 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         Log.d(TAG, "onActivityResult: " + requestCode + "," + resultCode);
         mCommon.wakeUpDBConnection_profile();
-        if(requestCode==Constants.TRACKSCORES_ACTIVITY && resultCode == RESULT_OK){
-            ArrayList<String> results = data.getStringArrayListExtra("gameResults");
-            Log.d(TAG, "onActivityResult: " + results);
-            for (int i = 0; i < results.size(); i++) {
-                if(results.get(i).isEmpty()) continue;
-                String[] parts = results.get(i).split("-");
-                if(parts.length!=2) continue;
-                setGamePointSpinner(i+1,
-                        Integer.valueOf(parts[0]),
-                        Integer.valueOf(parts[1]));
+        if(requestCode==Constants.TRACKSCORES_ACTIVITY &&
+                (resultCode==RESULT_OK || resultCode==RESULT_CANCELED)){
+            //for resultCode=RESULT_CANCELED (when app goes to background while tracking scores), data will be NULL
+            //ArrayList<String> results = data.getStringArrayListExtra("gameResults");
+            ArrayList<String> results = SharedData.getInstance().mStrList;
+            if(null!=results) {
+                Log.d(TAG, "onActivityResult: " + results);
+                for (int i = 0; i < results.size(); i++) {
+                    if (results.get(i).isEmpty()) continue;
+                    String[] parts = results.get(i).split("-");
+                    if (parts.length != 2) continue;
+                    setGamePointSpinner(i + 1,
+                            Integer.valueOf(parts[0]),
+                            Integer.valueOf(parts[1]));
+                }
+            } else {
+                Log.e(TAG, "onActivityResult: null results");
             }
-            findViewById(R.id.scoretrack_button).setVisibility(View.GONE);
+            //findViewById(R.id.scoretrack_button).setVisibility(View.GONE);
         }
 
     }
@@ -491,13 +498,13 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
        //to data read from DB and that will cause auto-rearrangement.
         //flag is reset after a delay so that the UI thread has enough time to
         //complete the ongoing callbacks (onItemSelected -> rearrangeDropdownList)
-        mMainHandler.postDelayed(new Runnable() {
+        if(null!=mMainHandler)
+            mMainHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 mGamesReadFromDB = false;
             }
         }, 1000);
-
     }
 
     protected boolean enterData(boolean dry_run) {

@@ -2,7 +2,9 @@ package com.sg0.baddytally;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.AlarmManager;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -103,9 +105,11 @@ public class SharedData {
     public String mTournament;
     List<String> mTeams;
     HashMap<String, TeamInfo> mTeamInfoMap;
-    String mTournaType;
+    String mFlags;
     int mTable_view_resid;
     int mCount;   //general purpose count
+    ArrayList<String> mStrList;  //general purpose Str list for temp use
+    boolean mOfflineMode;
 
 
     public List<String> getTeamPlayers(String team) {
@@ -173,9 +177,11 @@ public class SharedData {
         mTeams = new ArrayList<>();
         mTeamInfoMap = null;
         mTeamInfoMap = new HashMap<>();
-        mTournaType = "";
+        mFlags = "";
         mTable_view_resid = R.layout.tourna_match_info_tiny;
         mCount = 0;
+        mStrList = null;
+        mOfflineMode = false;
     }
 
     public boolean isRoot() {
@@ -209,9 +215,35 @@ public class SharedData {
             mClub = club;
             mUser = prefs.getString(Constants.DATA_USER, "");
             mRole = prefs.getString(Constants.DATA_ROLE, "");
-            //mTournaMode = prefs.getBoolean(Constants.DATA_TMODE, false);
-            //Log.d(TAG, "initData: " + SharedData.getInstance().toString());
+            mOfflineMode = prefs.getBoolean(Constants.DATA_OFFLINE_MODE, false);
+            mFlags = prefs.getString(Constants.DATA_FLAGS, "");
         }
+    }
+
+    void addFlag(final Activity activity, final String flag) {
+        if(mFlags.contains(flag)) return;
+        mFlags += "|" +  flag;
+        Log.d(TAG, "addFlag: " + mFlags );
+        SharedPreferences prefs = activity.getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(Constants.DATA_FLAGS, mFlags);
+        editor.apply();
+    }
+
+    void removeFlag(final Activity activity, final String flag) {
+        if(!mFlags.contains(flag)) return;
+        String flagStr = "|" +  flag;
+        mFlags = mFlags.replace(flagStr, "");
+        Log.d(TAG, "removeFlag: " + mFlags );
+        SharedPreferences prefs = activity.getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(Constants.DATA_FLAGS, mFlags);
+        editor.apply();
+    }
+
+    boolean validFlag(final String flag) {
+        Log.d(TAG, "validFlag:" + flag + "/" + mFlags );
+        return mFlags.contains(flag);
     }
 
     private void addHistory(final String story) {
@@ -462,6 +494,16 @@ public class SharedData {
     }
 
     public boolean isDBConnected() {
+        if(SharedData.getInstance().mOfflineMode) {
+            Log.d(TAG, "Offline mode");
+            return true;
+        } else {
+            return mDBConnected;
+        }
+    }
+
+    public boolean isDBServerConnected() {
+        //real state w/o considering offline mode
         return mDBConnected;
     }
 
@@ -1090,6 +1132,56 @@ public class SharedData {
             //android.os.Process.killProcess(android.os.Process.myPid());
             //System.exit(0);
         }
+    }
+
+    public void restartApplication(final Activity activity, final Class cname) {
+        Intent mStartActivity = new Intent(activity, cname);
+        int mPendingIntentId = 3331;
+        PendingIntent mPendingIntent = PendingIntent.getActivity(activity, mPendingIntentId, mStartActivity,
+                PendingIntent.FLAG_CANCEL_CURRENT);
+        AlarmManager mgr = (AlarmManager) activity.getSystemService(Context.ALARM_SERVICE);
+        mgr.set(AlarmManager.RTC, System.currentTimeMillis() + 100, mPendingIntent);
+        System.exit(0);
+    }
+
+    void persistOfflineMode(final boolean enable, final Activity activity) {
+        if(SharedData.getInstance().mClub.isEmpty()) {
+            Log.e(TAG, "offlineMode: club not known (" + SharedData.getInstance().mClub + ")");
+            return;
+        }
+
+        if(enable)
+            Log.e(TAG, "==== persistOfflineMode: DB Persistence: OFFLINE mode ====");
+        else
+            Log.e(TAG, "==== persistOfflineMode: DB Persistence: disable offline mode ====");
+
+        SharedPreferences prefs = activity.getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(Constants.DATA_OFFLINE_MODE, enable);
+        editor.commit(); //using commit instead of apply for immediate write, since we will restart app right after this
+        SharedData.getInstance().mOfflineMode = enable;
+
+    }
+
+    void setOfflineMode(final boolean enable, final boolean init) {
+        if(SharedData.getInstance().mClub.isEmpty()) {
+            Log.e(TAG, "setOfflineMode: club not known (" + SharedData.getInstance().mClub + ")");
+            return;
+        }
+
+        if(enable)
+            Log.e(TAG, "==== setOfflineMode: DB Persistence: OFFLINE mode ====");
+        else
+            Log.e(TAG, "==== setOfflineMode: DB Persistence: disable offline mode ====");
+
+        if(init) {
+            //Calls to setPersistenceEnabled() must be made before any other usage of
+            //FirebaseDatabase instance
+            FirebaseDatabase.getInstance().setPersistenceEnabled(enable);
+        }
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                .child(SharedData.getInstance().mClub);
+        dbRef.keepSynced(enable);
     }
 
     public String getAlbumStorageDirStr() {

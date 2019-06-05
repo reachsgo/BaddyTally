@@ -7,6 +7,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -1545,7 +1546,7 @@ public class TournaTableLayout extends AppCompatActivity {
         readDBTournaType();
         zoomFactor = 1.0f;
         progressDialog = null;
-
+        mCommon.wakeUpDBConnection_profile();
         mWorker = new HandlerThread("mainWorker");
         mWorker.start();
         Looper looper = mWorker.getLooper();
@@ -1713,15 +1714,30 @@ public class TournaTableLayout extends AppCompatActivity {
         if (progressDialog != null) {
             progressDialog.dismiss();
             progressDialog = null;
-
-            if (showTips && mCommon.mCount < 3 && mTournaType.equals(Constants.DE)) {
-                mCommon.showAlert(null, TournaTableLayout.this,
-                        "Navigation Tips",
+            final int countMax = 3;
+            if (showTips && mTournaType.equals(Constants.DE) &&
+                    !SharedData.getInstance().validFlag(Constants.DATA_FLAG_NAV_TELIM)) {
+                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaTableLayout.this);
+                alertBuilder.setTitle("Navigation Tips");
+                alertBuilder.setMessage(
                         "(1) Long-press the fixture area to toggle between full screen and split screen.\n\n" +
-                                "(2) Swipe left or right to move between upper and lower bracket full screens.\n\n" +
-                                "(3) Press + or - buttons on top right of the screen to zoom in or out.\n\n" +
-                                "(4) Press on the match to see options to view match information or score.\n");
-                mCommon.mCount++;
+                        "(2) Swipe left or right to move between upper and lower bracket full screens.\n\n" +
+                        "(3) Press + or - buttons on top right of the screen to zoom in or out.\n\n" +
+                        "(4) Press on the match to see options to view match information or score.\n");
+                alertBuilder.setPositiveButton("Hmn...", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        //mCommon.mCount++;
+                    }
+                });
+                alertBuilder.setNegativeButton("Got it", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        SharedData.getInstance().addFlag(TournaTableLayout.this, Constants.DATA_FLAG_NAV_TELIM);
+                        //mCommon.mCount = countMax;
+                    }
+                });
+                alertBuilder.show();
             }
         }
     }

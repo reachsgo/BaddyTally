@@ -335,13 +335,14 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
 
         if (resultCode == Constants.RESTARTAPP) {
             Log.d(TAG, "onActivityResult: RESTARTING app");
-            Intent mStartActivity = new Intent(ClubLeagueActivity.this, MainSigninActivity.class);
+            SharedData.getInstance().restartApplication(ClubLeagueActivity.this, MainSigninActivity.class);
+            /*Intent mStartActivity = new Intent(ClubLeagueActivity.this, MainSigninActivity.class);
             int mPendingIntentId = 3331;  //some random number.
             PendingIntent mPendingIntent = PendingIntent.getActivity(ClubLeagueActivity.this, 0, mStartActivity,
                     PendingIntent.FLAG_CANCEL_CURRENT);
             AlarmManager mgr = (AlarmManager) ClubLeagueActivity.this.getSystemService(Context.ALARM_SERVICE);
             mgr.set(AlarmManager.RTC, System.currentTimeMillis() + 100, mPendingIntent);
-            System.exit(0);
+            System.exit(0);*/
         }
 
         if (SharedData.getInstance().isDBUpdated()) {

@@ -30,6 +30,11 @@ public class MainSigninActivity extends AppCompatActivity {
         //Toolbar myToolbar = findViewById(R.id.my_toolbar);
         //setSupportActionBar(myToolbar);
 
+        //SharedData.getInstance().initData(MainSigninActivity.this);
+
+
+
+
         Button signin = findViewById(R.id.clubsignin);
         signin.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -49,9 +54,7 @@ public class MainSigninActivity extends AppCompatActivity {
             }
         });
 
-        //Maintain DB connection state
-        //SharedData.getInstance().setUpDBConnectionListener(); //its done from wakeUpDBConnection
-        //SharedData.getInstance().wakeUpDBConnection_profile();
+        SharedData.getInstance().wakeUpDBConnection(); //sets up DB connection only if signed in to a club.
     }
 
     private void killActivity() {
@@ -69,7 +72,41 @@ public class MainSigninActivity extends AppCompatActivity {
         //dont keep this activity in stack to reduce heap usage (mainly due to background image)
         //history=false set in manifest
 
+        if(SharedData.getInstance().isDBServerConnected() && SharedData.getInstance().mOfflineMode) {
+            //in offline mode, remind the user
+            //Do it only if there is network connectivity at this time. To make sure that the data
+            //entered during offline-mode is sync-ed.
+            AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainSigninActivity.this);
+            alertBuilder.setTitle("You have enabled Offline mode");
+            alertBuilder.setMessage(
+                    "If you are NOT in the middle of a tournament, then disable offline mode to decrease your data usage.\n");
+            alertBuilder.setPositiveButton("Disable", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    SharedData.getInstance().persistOfflineMode(false, MainSigninActivity.this);
+                    //SharedData.getInstance().setOfflineMode(false, false);
+                    //Let the next app restart take care of disabling offline mode in Firebase
+                    //At this time, firebase could have been already initialized
+                    //and setOfflineMode() will fail on those cases. No hurry to disable offline mode!
 
+                    moveOn();
+                }
+            });
+            alertBuilder.setNegativeButton("Ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    //nothing to do. Enabling is done from ScoreTally.java
+                    moveOn();
+                }
+            });
+            alertBuilder.show();
+        } else {
+            moveOn();
+        }
+
+    }
+
+    void moveOn() {
         if (!SharedData.getInstance().mClub.isEmpty()) {
             Intent myIntent = new Intent(MainSigninActivity.this, MainSelection2.class);
             //dont keep this activity in stack to reduce heap usage (mainly due to background image)
@@ -77,7 +114,6 @@ public class MainSigninActivity extends AppCompatActivity {
             MainSigninActivity.this.startActivity(myIntent);
         }
     }
-
 
     @Override
     public void onBackPressed() {
