@@ -294,4 +294,10 @@ class GameJournalDBEntry {
         }
     }
 
+    Integer scoreForPlayers(final String p1, final String p2) {
+        if(aWinner(p1) && aWinner(p2)) return getmWS();
+        if(aLoser(p1) && aLoser(p2)) return getmLS();
+        return 0;
+    }
+
 }

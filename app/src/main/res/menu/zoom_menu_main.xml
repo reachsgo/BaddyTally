@@ -25,6 +25,11 @@
         android:title="Export pdf"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_new_tourna"
+        android:orderInCategory="45"
+        app:showAsAction="never"
+        android:title="Create sub tournament"/>
+    <item
         android:id="@+id/action_logout"
         android:orderInCategory="50"
         app:showAsAction="never"

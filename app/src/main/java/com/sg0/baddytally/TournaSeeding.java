@@ -150,19 +150,30 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
                     Toast.makeText(TournaSeeding.this,
                             "Complete seeding by selecting teams from the list on the left.",
                             Toast.LENGTH_LONG).show();
-                    return;
+                    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaSeeding.this);
+                    alertBuilder.setTitle("Team seeding");
+                    alertBuilder.setMessage(
+                            "Use the same order as you see on the left side?");
+                    alertBuilder.setPositiveButton("yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            //copy into mSeededTeams
+                            mSeededTeams = new ArrayList<>(mTeams);
+                            mTeams.clear();
+                            seedingCompleted();
+                        }
+                    });
+                    alertBuilder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            //nothing to do
+                        }
+                    });
+                    alertBuilder.show();
+                } else {
+                    seedingCompleted();
                 }
 
-                if(mTeams.size()>0 && mSeededTeams.size()>0) {
-                    mCommon.showAlert(TournaSeeding.this, TournaSeeding.this, SEEDING,
-                            "There are some more teams to be seeded.\n" +
-                                    "Once fixture is created, new teams cannot be added to this tournament.\n\n" +
-                                    "Are you sure to continue creating fixture without these teams?");
-                } else {
-                    mCommon.showAlert(TournaSeeding.this, TournaSeeding.this, SEEDING,
-                            "Once fixture is created, new teams cannot be added to this tournament.\n" +
-                                    "Are you sure to continue with creating fixture?");
-                }
             }
         });
 
@@ -207,6 +218,19 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
     @Override
     protected void onStart() {
         super.onStart();
+    }
+
+    void seedingCompleted() {
+        if(mTeams.size()>0 && mSeededTeams.size()>0) {
+            mCommon.showAlert(TournaSeeding.this, TournaSeeding.this, SEEDING,
+                    "There are some more teams to be seeded.\n" +
+                            "Once fixture is created, new teams cannot be added to this tournament.\n\n" +
+                            "Are you sure to continue creating fixture without these teams?");
+        } else {
+            mCommon.showAlert(TournaSeeding.this, TournaSeeding.this, SEEDING,
+                    "Once fixture is created, new teams cannot be added to this tournament.\n" +
+                            "Are you sure to continue with creating fixture?");
+        }
     }
 
     void readDBTeamInfo() {
@@ -285,6 +309,22 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
     }
     
     private void createFixture() {
+        //write seeding into DB
+        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
+                .child(Constants.TOURNA).child(mTourna).child(Constants.TEAMS);
+        Integer seed = 1;
+        for(String team: mSeededTeams) {
+            for(TeamDBEntry dbEntry: mTeamsFromDB) {
+                if(dbEntry.getId().equals(team)) {
+                    dbEntry.setSeed(seed);
+                    break;
+                }
+            }
+            seed++;
+        }
+        Log.d(TAG, "createFixture: mTeamsFromDB=" + mTeamsFromDB.toString());
+        dbRef.setValue(mTeamsFromDB);
+
         if(mCommon.isSETournament(mTourna)) {
             singleElimination();
         } else if (mCommon.isDETournament(mTourna)) {
@@ -327,7 +367,6 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
     }
     
     void isFixtureInDB(final String fixLabel) {
-
         //Check if fixture is already present in the DB
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
                 .child(Constants.TOURNA).child(mTourna).child(fixLabel);

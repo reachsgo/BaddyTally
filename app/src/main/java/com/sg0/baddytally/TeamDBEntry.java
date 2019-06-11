@@ -6,9 +6,11 @@ public class TeamDBEntry {
     final private int MAX_ID_LEN = 12;
     private String id;
     private List<String> p;
+    private Integer seed;
 
     public TeamDBEntry() {
         id = "";
+        seed = 0;
     }
 
     public TeamDBEntry(String id, List<String> p) {
@@ -39,10 +41,20 @@ public class TeamDBEntry {
         return "name=" + id + ", players=" + p.toString();
     }
 
+
+    public Integer getSeed() {
+        return seed;
+    }
+
+    public void setSeed(Integer seed) {
+        this.seed = seed;
+    }
+
     @Override
     public String toString() {
         return "TeamDBEntry{" +
                 "id='" + id + '\'' +
+                ", seed='" + seed + '\'' +
                 ", p='" + p.toString() + '\'' +
                 '}';
     }

@@ -58,6 +58,7 @@ class Constants {
     static final String TEAMS = "teams";
     static final String TEAM_DELIM1 = "> ";
     static final String TEAM_DELIM2 = " vs ";
+    static final String SEED = "seed";
     static final String PLAYERS = "players";
     static final String COLON_DELIM = ": ";
     static final String NAME = "name";

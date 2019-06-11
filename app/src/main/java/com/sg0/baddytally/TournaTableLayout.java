@@ -54,6 +54,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.HorizontalScrollView;
 import android.widget.PopupMenu;
 import android.widget.TableLayout;
@@ -74,11 +75,13 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 
 class Coordinates {
     public static final String ROUNDSTR = "R";
@@ -262,6 +265,7 @@ class TournaTable implements View.OnClickListener {
     private Handler mWorkerHandler;
     private Handler mMainHandler;
     private Boolean drawingInProgress;
+    private Map<String, List<GameJournalDBEntry>> mMatchesMap;
 
 
     TournaTable(final Activity activity, final int table_resId,
@@ -282,6 +286,7 @@ class TournaTable implements View.OnClickListener {
         mTournaType = type;
         matchInfoDialog = null;
         drawingInProgress = false;
+        mMatchesMap = null;
 
 
         Log.d(TAG, "Creating TournaTable..." + fixLabel);
@@ -1370,6 +1375,178 @@ class TournaTable implements View.OnClickListener {
         }
     }
 
+    void fetchGames(final int roundNum) {
+        Log.d(TAG, "fetchGames: " + mCommon.mTournament + "/" + mFixtureLabel);
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
+                .child(Constants.TOURNA).child(mCommon.mTournament)
+                .child(Constants.MATCHES).child(mFixtureLabel);
+
+
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Log.d(TAG, "fetchGames:" + dataSnapshot.toString());
+                GenericTypeIndicator<Map<String, List<GameJournalDBEntry>>> genericTypeIndicator =
+                        new GenericTypeIndicator<Map<String, List<GameJournalDBEntry>>>() { };
+                mMatchesMap = dataSnapshot.getValue(genericTypeIndicator);
+                Log.d(TAG, "fetchGames: mMatchesMap.size=" + mMatchesMap.size());
+                createSubTournament(roundNum);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+            }
+        });
+    }
+
+    private void createSubTournament(final int roundNum) {
+        Log.d(TAG, "createSubTournament:" + roundNum);
+        SparseArray<TournaDispMatchEntry> matchesInThisRound = new SparseArray<>();
+        int largestMatchId = 0;
+        for (Map.Entry<String, TournaDispMatchEntry> entry : mFixture.entrySet()) {
+            TournaDispMatchEntry mE = entry.getValue();
+            if (mE == null || mE.xy == null) continue;
+            if (mE.xy.getRound() == roundNum) {
+                matchesInThisRound.put(mE.xy.getMatchId()-1, mE);
+                //Log.d(TAG, "createSubTournament:[" + mE.xy.getMatchId() + "] Adding:" + mE.toString());
+                if(mE.xy.getMatchId()>largestMatchId) largestMatchId = mE.xy.getMatchId();
+            }
+        }
+
+        if(largestMatchId != matchesInThisRound.size()) {
+            Log.e(TAG, "createSubTournament: could not read all the matches: " + largestMatchId);
+            Toast.makeText(mActivity, "Could not read all the matches!",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        Map<Integer, TeamDBEntry> sortedTeams = new TreeMap<>(Collections.reverseOrder());
+
+        for (int i = 0; i < largestMatchId; i++) {
+            TournaDispMatchEntry match = matchesInThisRound.get(i);
+            if(match==null) return;
+            if(!match.isThereAWinner(true)) {
+                Log.e(TAG, "createSubTournament: All round-" + roundNum + " matches not done yet: " + match.toString());
+                Toast.makeText(mActivity, "All round-" + roundNum + " matches are not done yet!",
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+            TeamDBEntry losingTeam = getTeam(match.getLoser(true));
+            List<String> players = losingTeam.getP();
+            if(players.size()==1) players.add("");  //if singles, just add another empty player
+            Log.d(TAG, "createSubTournament: players=" + players);
+
+            List<GameJournalDBEntry> games = mMatchesMap.get(match.getId());
+            int score = 0;
+            if(games!=null) {
+                for(GameJournalDBEntry game: games) {
+                    score += game.scoreForPlayers(players.get(0), players.get(1));
+                    //Log.d(TAG, score + ":createSubTournament: game=" + game.toReadableString());
+                }
+            }
+            sortedTeams.put(score, losingTeam);
+        }
+
+
+        Log.d(TAG, "createSubTournament: sorted losers=" + sortedTeams);
+        final List<TeamDBEntry> losingTeamDBEntries = new ArrayList<>(sortedTeams.values());
+        if(losingTeamDBEntries.size()==0) {
+            Toast.makeText(mActivity, "Found no entries for round " + roundNum + "!",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<Integer, TeamDBEntry> entry : sortedTeams.entrySet()) {
+            sb.append(entry.getValue().getId());
+            sb.append(": ");
+            sb.append(entry.getKey());
+            sb.append("\n");
+        }
+        if(sb.length()>0) {
+            sb.append("\nThis will be the default seeding.");
+            sb.append(" You can change the seeding order when you create fixture.\n");
+        }
+
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(mActivity);
+        alertBuilder.setTitle("Teams sorted on total points scored");
+        alertBuilder.setMessage(sb.toString());
+        alertBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                //get round number
+                AlertDialog.Builder alert = new AlertDialog.Builder(mActivity);
+                final EditText edittext = new EditText(mActivity);
+                alert.setTitle("Enter sub tournament name");
+                String defName = mCommon.mTournament + "_R" + roundNum;
+                edittext.setText(defName);
+                alert.setView(edittext);
+                alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        final String newTourna = edittext.getText().toString();
+                        if(newTourna.isEmpty()) return;
+
+                        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                                .child(mCommon.mClub).child(Constants.TOURNA);
+                        dbRef.child(Constants.ACTIVE).addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                if (dataSnapshot.hasChild(newTourna)) {
+                                    Log.w(TAG, "createSubTournament: tournament already exists: " + newTourna);
+                                    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(mActivity);
+                                    alertBuilder.setTitle("Overwrite?");
+                                    alertBuilder.setMessage(
+                                            newTourna + " already exists! Overwrite?");
+                                    alertBuilder.setPositiveButton("yes", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialogInterface, int i) {
+                                            createSubTournamentInDB(dbRef, newTourna, losingTeamDBEntries, roundNum);
+                                        }
+                                    });
+                                    alertBuilder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialogInterface, int i) {
+                                            //nothing to do
+                                        }
+                                    });
+                                    alertBuilder.show();
+                                } else {
+                                    //tournament does not exist in DB, create new.
+                                    createSubTournamentInDB(dbRef, newTourna, losingTeamDBEntries, roundNum);
+                                }
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError databaseError) {
+                            }
+                        });
+                    } //Dialog "Ok" onClick
+                });
+                alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        // what ever you want to do with No option.
+                    }
+                });
+                alert.show();
+            }
+        });
+        alertBuilder.show();
+    }
+
+    private void createSubTournamentInDB(final DatabaseReference dbRef, final String newTourna,
+                                 final List<TeamDBEntry> losingTeamDBEntries, final int round) {
+        dbRef.child(Constants.ACTIVE).child(newTourna).setValue(Constants.SE);
+        dbRef.child(newTourna).child(Constants.DESCRIPTION).setValue(mCommon.mTournament + " round " + round);
+        dbRef.child(newTourna).child(Constants.TYPE).setValue(Constants.SE);
+        mCommon.createDBLock(newTourna);
+        dbRef.child(newTourna).child(Constants.TEAMS).setValue(losingTeamDBEntries);
+        mCommon.setDBUpdated(true);
+        Toast.makeText(mActivity, newTourna + " created successfully. Go to settings and create fixture for the new sub tournament.",
+                Toast.LENGTH_LONG).show();
+        Log.i(TAG, "createSubTournamentInDB: created " + losingTeamDBEntries.size() + " teams");
+        mMatchesMap = null;
+    }
 
     public class CustomDialogClass extends Dialog implements
             android.view.View.OnClickListener {
@@ -1377,6 +1554,7 @@ class TournaTable implements View.OnClickListener {
         private Dialog d;
         private TournaDispMatchEntry node;
         private Integer mMaxRounds;
+        private List<GameJournalDBEntry> games;
 
         public CustomDialogClass(final Context a) {
             super(a);
@@ -1386,7 +1564,7 @@ class TournaTable implements View.OnClickListener {
                             Integer maxRounds) {
             this.node = n;
             this.mMaxRounds = maxRounds;
-
+            this.games = null;
         }
 
         @Override
@@ -1400,11 +1578,34 @@ class TournaTable implements View.OnClickListener {
             btn.setOnClickListener(this);
         }
 
+        /* Even is DB read is done from setData() or onCreate(), the DB read is not
+        * completed before onStart() is invoked. So, to make it consistent timing
+        * reading DB is done from onStart() and then the work is done after the DB is read. */
         @Override
         protected void onStart() {
             super.onStart();
             //Log.d("CustomDialogClass", "onStart: ");
 
+            DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
+                    .child(Constants.TOURNA).child(mCommon.mTournament)
+                    .child(Constants.MATCHES).child(mFixtureLabel).child(node.getId());
+            dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    Log.d(TAG, "CustomDialogClass fetchGames:" + dataSnapshot.toString());
+                    GenericTypeIndicator<List<GameJournalDBEntry>> genericTypeIndicator =
+                            new GenericTypeIndicator<List<GameJournalDBEntry>>() { };
+                    games = dataSnapshot.getValue(genericTypeIndicator);
+                    work();
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+                }
+            });
+        }
+
+        void work() {
             //nullify old data
             ((TextView) findViewById(R.id.team1_tv)).setText("--");
             ((TextView) findViewById(R.id.team2_tv)).setText("--");
@@ -1419,20 +1620,29 @@ class TournaTable implements View.OnClickListener {
             if (!idStr.isEmpty()) matchId += ": " + idStr;
             ((TextView) findViewById(R.id.rname_tv)).setText(matchId);
 
+            StringBuilder scoreSB = new StringBuilder();
             StringBuilder sb = new StringBuilder();
             String team1 = node.getT1(true);
             if (!team1.isEmpty()) {
-                TeamDBEntry tInfo = getTeam(team1);
+
                 if (team1.equals(Constants.BYE)) sb.append(Constants.BYE_DISPLAY);
                 else if (team1.contains(Constants.DE_EXTLINK_INDICATOR)) {
                     team1 = team1.replace(Constants.DE_EXTLINK_INDICATOR, Constants.DE_EXTLINK_INDICATOR_DISPLAY_LONG);
                     sb.append(team1);
                 } else sb.append(team1);
+                TeamDBEntry tInfo = getTeam(team1);
+                if (null != tInfo && tInfo.getSeed() != 0) {
+                    sb.append(" [");
+                    sb.append(tInfo.getSeed());
+                    sb.append("]");
+                }
                 ((TextView) findViewById(R.id.team1_tv)).setText(sb.toString());
 
+                String p1 = "";
                 sb.setLength(0);
                 if (null != tInfo) {
                     for (int i = 0; i < tInfo.getP().size(); i++) {
+                        p1 = tInfo.getP().get(i);
                         sb.append(tInfo.getP().get(i));
                         if (i < tInfo.getP().size() - 1) sb.append(" / ");
                     }
@@ -1440,17 +1650,32 @@ class TournaTable implements View.OnClickListener {
                 } else {
                     findViewById(R.id.team1p_tv).setVisibility(View.GONE);
                 }
+
+                if(!p1.isEmpty() && games!=null) {
+                    for (GameJournalDBEntry game : games) {
+                        if(scoreSB.length()!=0) scoreSB.append(", ");
+                        scoreSB.append(game.toScoreString(p1));
+                    }
+                }
+                Log.d(TAG, "onStart: p1=" + p1 + " games=" + games);
             }
 
             sb.setLength(0);
             String team2 = node.getT2(true);
             if (!team2.isEmpty()) {
-                TeamDBEntry tInfo = getTeam(team2);
+
                 if (team2.equals(Constants.BYE)) sb.append(Constants.BYE_DISPLAY);
                 else if (team2.contains(Constants.DE_EXTLINK_INDICATOR)) {
                     team2 = team2.replace(Constants.DE_EXTLINK_INDICATOR, Constants.DE_EXTLINK_INDICATOR_DISPLAY_LONG);
                     sb.append(team2);
                 } else sb.append(team2);
+                TeamDBEntry tInfo = getTeam(team2);
+                //Log.d(TAG, "onStart: " + tInfo.toString());
+                if (null != tInfo && tInfo.getSeed() != 0) {
+                    sb.append(" [");
+                    sb.append(tInfo.getSeed());
+                    sb.append("]");
+                }
                 ((TextView) findViewById(R.id.team2_tv)).setText(sb.toString());
 
                 sb.setLength(0);
@@ -1466,7 +1691,7 @@ class TournaTable implements View.OnClickListener {
             }
 
             if (node.isThereAWinner(true)) {
-                String winner = node.getW() + " (Winner)";
+                String winner = node.getW() + " (Winner)\n" + scoreSB.toString();
                 ((TextView) findViewById(R.id.winner_tv)).setText(winner);
             }
 
@@ -1792,6 +2017,42 @@ public class TournaTableLayout extends AppCompatActivity {
             case R.id.zoom_out:
                 zoomFactor -= 0.2f;
                 zoom(false, zoomFactor, zoomFactor, new PointF(0, 0));
+                break;
+            case R.id.action_new_tourna:
+                Log.e(TAG, "Create sub tournament from round 1 of " + mCommon.mTournament);
+                if (null == mUpperTable) break;
+
+                //get round number
+                AlertDialog.Builder alert = new AlertDialog.Builder(TournaTableLayout.this);
+                final EditText edittext = new EditText(TournaTableLayout.this);
+                alert.setTitle("Enter round number to create sub tournament");
+                edittext.setText("1");
+                alert.setView(edittext);
+                alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String roundStr = edittext.getText().toString();
+                        Integer round = 0;
+                        boolean dataError = false;
+                        try {
+                            round = Integer.valueOf(roundStr);
+                        } catch (NumberFormatException e) {
+                            dataError = true;
+                        }
+                        if(dataError || round<=0) {
+                            Toast.makeText(TournaTableLayout.this, "Bad entry!" ,
+                                    Toast.LENGTH_SHORT).show();
+                        } else {
+                            mUpperTable.fetchGames(round);
+                        }
+                    }
+                });
+                alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        // what ever you want to do with No option.
+                    }
+                });
+                alert.show();
                 break;
             default:
                 break;
