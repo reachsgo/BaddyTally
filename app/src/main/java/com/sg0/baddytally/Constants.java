@@ -46,6 +46,7 @@ class Constants {
     static final int TRACKSCORES_ACTIVITY = 104;
     static final int RESTARTAPP = 665;
     static final int EXIT_APPLICATION = -666;
+    static final int TINYNAMELENGTH = 6;
 
     static final String ACTIVITY = "Activity";
     static final String ACTIVITY_SETTINGS = "ClubLeagueSettings";

@@ -58,7 +58,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="45"
+                android:layout_weight="50"
                 android:orientation="vertical">
                 <!-- Extra Relative layout is used to just give the white background, with black arrow -->
                 <RelativeLayout
@@ -175,7 +175,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="45"
+                android:layout_weight="50"
                 android:orientation="vertical">
 
                 <RelativeLayout

@@ -1085,7 +1085,7 @@ public class SharedData {
         } else {
             return str;
         }
-        if(len>5) retStr += "..";
+        if(len>Constants.TINYNAMELENGTH) retStr += "..";
         return retStr;
     }
 

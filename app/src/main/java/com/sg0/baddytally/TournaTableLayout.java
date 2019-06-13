@@ -53,10 +53,13 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.HorizontalScrollView;
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
+import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -82,6 +85,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.IntStream;
 
 class Coordinates {
     public static final String ROUNDSTR = "R";
@@ -874,7 +878,7 @@ class TournaTable implements View.OnClickListener {
                     shape.setStroke(2, 0xFF000000);
                     shape.setColor(mActivity.getResources().getColor(R.color.colorSilver));
                     v.setBackground(shape);
-                    NAMELENGTH = 5;
+                    NAMELENGTH = Constants.TINYNAMELENGTH; //6
                     TeamDBEntry team1DBEntry = getTeam(team1);
                     TeamDBEntry team2DBEntry = getTeam(team2);
                     StringBuilder team1SB = new StringBuilder(team1);
@@ -885,7 +889,8 @@ class TournaTable implements View.OnClickListener {
                             for (int x = 0; x < team1DBEntry.getP().size(); x++) {
                                 team1SB.append(SharedData.truncate(team1DBEntry.getP().get(x), NAMELENGTH));
                                 //Just display 2 players, even if the team has more players
-                                if (x<1 && team1DBEntry.getP().size()>1) team1SB.append("/");
+                                if (x<1 && team1DBEntry.getP().size()>1 && !team1DBEntry.getP().get(1).isEmpty())
+                                    team1SB.append("/");
                                 if (x==1) break;
                             }
                         }
@@ -899,7 +904,8 @@ class TournaTable implements View.OnClickListener {
                             for (int x = 0; x < team2DBEntry.getP().size(); x++) {
                                 team2SB.append(SharedData.truncate(team2DBEntry.getP().get(x), NAMELENGTH));
                                 //Just display 2 players, even if the team has more players
-                                if (x<1 && team2DBEntry.getP().size()>1) team2SB.append("/");
+                                if (x<1 && team2DBEntry.getP().size()>1 && !team2DBEntry.getP().get(1).isEmpty())
+                                    team2SB.append("/");
                                 if (x==1) break;
                             }
                         }
@@ -933,7 +939,8 @@ class TournaTable implements View.OnClickListener {
                                 for (int x = 0; x < winDBEntry.getP().size(); x++) {
                                     winSB.append(SharedData.truncate(winDBEntry.getP().get(x), NAMELENGTH));
                                     //Just display 2 players, even if the team has more players
-                                    if (x<1 && winDBEntry.getP().size()>1) winSB.append("/");
+                                    if (x<1 && winDBEntry.getP().size()>1 && !winDBEntry.getP().get(1).isEmpty())
+                                        winSB.append("/");
                                     if (x==1) break;
                                 }
                             }
@@ -1375,7 +1382,7 @@ class TournaTable implements View.OnClickListener {
         }
     }
 
-    void fetchGames(final int roundNum) {
+    void fetchGames(final ArrayList<Integer> roundNum) {
         Log.d(TAG, "fetchGames: " + mCommon.mTournament + "/" + mFixtureLabel);
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
                 .child(Constants.TOURNA).child(mCommon.mTournament)
@@ -1389,6 +1396,11 @@ class TournaTable implements View.OnClickListener {
                 GenericTypeIndicator<Map<String, List<GameJournalDBEntry>>> genericTypeIndicator =
                         new GenericTypeIndicator<Map<String, List<GameJournalDBEntry>>>() { };
                 mMatchesMap = dataSnapshot.getValue(genericTypeIndicator);
+                if(mMatchesMap==null) {
+                    Toast.makeText(mActivity, "All round-" + roundNum + " matches are not done yet!",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
                 Log.d(TAG, "fetchGames: mMatchesMap.size=" + mMatchesMap.size());
                 createSubTournament(roundNum);
             }
@@ -1399,59 +1411,68 @@ class TournaTable implements View.OnClickListener {
         });
     }
 
-    private void createSubTournament(final int roundNum) {
-        Log.d(TAG, "createSubTournament:" + roundNum);
-        SparseArray<TournaDispMatchEntry> matchesInThisRound = new SparseArray<>();
-        int largestMatchId = 0;
-        for (Map.Entry<String, TournaDispMatchEntry> entry : mFixture.entrySet()) {
-            TournaDispMatchEntry mE = entry.getValue();
-            if (mE == null || mE.xy == null) continue;
-            if (mE.xy.getRound() == roundNum) {
-                matchesInThisRound.put(mE.xy.getMatchId()-1, mE);
-                //Log.d(TAG, "createSubTournament:[" + mE.xy.getMatchId() + "] Adding:" + mE.toString());
-                if(mE.xy.getMatchId()>largestMatchId) largestMatchId = mE.xy.getMatchId();
-            }
-        }
-
-        if(largestMatchId != matchesInThisRound.size()) {
-            Log.e(TAG, "createSubTournament: could not read all the matches: " + largestMatchId);
-            Toast.makeText(mActivity, "Could not read all the matches!",
-                    Toast.LENGTH_LONG).show();
-            return;
-        }
-
+    private void createSubTournament(final ArrayList<Integer> rounds) {
+        final List<TeamDBEntry> losingTeamDBEntries = new ArrayList<>();
         Map<Integer, TeamDBEntry> sortedTeams = new TreeMap<>(Collections.reverseOrder());
+        int indx = 0;
+        for(Integer roundNum: rounds) {
+            Log.d(TAG, "createSubTournament:" + roundNum);
+            SparseArray<TournaDispMatchEntry> matchesInThisRound = new SparseArray<>();
+            int largestMatchId = 0;
+            for (Map.Entry<String, TournaDispMatchEntry> entry : mFixture.entrySet()) {
+                TournaDispMatchEntry mE = entry.getValue();
+                if (mE == null || mE.xy == null) continue;
+                if (mE.xy.getRound() == roundNum) {
+                    matchesInThisRound.put(mE.xy.getMatchId() - 1, mE);
+                    //Log.d(TAG, "createSubTournament:[" + mE.xy.getMatchId() + "] Adding:" + mE.toString());
+                    if (mE.xy.getMatchId() > largestMatchId) largestMatchId = mE.xy.getMatchId();
+                }
+            }
 
-        for (int i = 0; i < largestMatchId; i++) {
-            TournaDispMatchEntry match = matchesInThisRound.get(i);
-            if(match==null) return;
-            if(!match.isThereAWinner(true)) {
-                Log.e(TAG, "createSubTournament: All round-" + roundNum + " matches not done yet: " + match.toString());
-                Toast.makeText(mActivity, "All round-" + roundNum + " matches are not done yet!",
+            if (largestMatchId != matchesInThisRound.size()) {
+                Log.e(TAG, "createSubTournament: could not read all the matches: " + largestMatchId);
+                Toast.makeText(mActivity, "Could not read all the matches!",
                         Toast.LENGTH_LONG).show();
                 return;
             }
-            TeamDBEntry losingTeam = getTeam(match.getLoser(true));
-            List<String> players = losingTeam.getP();
-            if(players.size()==1) players.add("");  //if singles, just add another empty player
-            Log.d(TAG, "createSubTournament: players=" + players);
 
-            List<GameJournalDBEntry> games = mMatchesMap.get(match.getId());
-            int score = 0;
-            if(games!=null) {
-                for(GameJournalDBEntry game: games) {
-                    score += game.scoreForPlayers(players.get(0), players.get(1));
-                    //Log.d(TAG, score + ":createSubTournament: game=" + game.toReadableString());
+
+
+            for (int i = 0; i < largestMatchId; i++) {
+                TournaDispMatchEntry match = matchesInThisRound.get(i);
+                if (match == null) return;
+                if (!match.isThereAWinner(true)) {
+                    Log.e(TAG, "createSubTournament: All round-" + roundNum + " matches not done yet: " + match.toString());
+                    Toast.makeText(mActivity, "All round-" + roundNum + " matches are not done yet!",
+                            Toast.LENGTH_LONG).show();
+                    return;
                 }
+                TeamDBEntry losingTeam = getTeam(match.getLoser(true));
+                if (null == losingTeam) continue; //If its a bye, nothing to add here.
+                List<String> players = losingTeam.getP();
+                if (players.size() == 1)
+                    players.add("");  //if singles, just add another empty player
+                Log.d(TAG, "createSubTournament: players=" + players);
+
+                List<GameJournalDBEntry> games = mMatchesMap.get(match.getId());
+                int score = 0;
+                if (games != null) {
+                    for (GameJournalDBEntry game : games) {
+                        score += game.scoreForPlayers(players.get(0), players.get(1));
+                        //Log.d(TAG, score + ":createSubTournament: game=" + game.toReadableString());
+                    }
+                }
+                if(indx>0) score += indx * 42;  //for round=2, add 21x2 (won 2 round1 games)
+                //Expectation is that rounds list is in order: [1,2] or [2,3] or [1,2,3]
+                sortedTeams.put(score, losingTeam);
             }
-            sortedTeams.put(score, losingTeam);
+            indx++;
         }
 
-
         Log.d(TAG, "createSubTournament: sorted losers=" + sortedTeams);
-        final List<TeamDBEntry> losingTeamDBEntries = new ArrayList<>(sortedTeams.values());
+        losingTeamDBEntries.addAll(0, sortedTeams.values());
         if(losingTeamDBEntries.size()==0) {
-            Toast.makeText(mActivity, "Found no entries for round " + roundNum + "!",
+            Toast.makeText(mActivity, "Found no entries for round " + rounds.get(0) + "!",
                     Toast.LENGTH_LONG).show();
             return;
         }
@@ -1478,7 +1499,7 @@ class TournaTable implements View.OnClickListener {
                 AlertDialog.Builder alert = new AlertDialog.Builder(mActivity);
                 final EditText edittext = new EditText(mActivity);
                 alert.setTitle("Enter sub tournament name");
-                String defName = mCommon.mTournament + "_R" + roundNum;
+                String defName = mCommon.mTournament + "_R" + rounds.get(0);
                 edittext.setText(defName);
                 alert.setView(edittext);
                 alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
@@ -1501,7 +1522,7 @@ class TournaTable implements View.OnClickListener {
                                     alertBuilder.setPositiveButton("yes", new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialogInterface, int i) {
-                                            createSubTournamentInDB(dbRef, newTourna, losingTeamDBEntries, roundNum);
+                                            createSubTournamentInDB(dbRef, newTourna, losingTeamDBEntries, rounds);
                                         }
                                     });
                                     alertBuilder.setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -1513,7 +1534,7 @@ class TournaTable implements View.OnClickListener {
                                     alertBuilder.show();
                                 } else {
                                     //tournament does not exist in DB, create new.
-                                    createSubTournamentInDB(dbRef, newTourna, losingTeamDBEntries, roundNum);
+                                    createSubTournamentInDB(dbRef, newTourna, losingTeamDBEntries, rounds);
                                 }
                             }
 
@@ -1535,9 +1556,9 @@ class TournaTable implements View.OnClickListener {
     }
 
     private void createSubTournamentInDB(final DatabaseReference dbRef, final String newTourna,
-                                 final List<TeamDBEntry> losingTeamDBEntries, final int round) {
+                                 final List<TeamDBEntry> losingTeamDBEntries, final ArrayList<Integer> round) {
         dbRef.child(Constants.ACTIVE).child(newTourna).setValue(Constants.SE);
-        dbRef.child(newTourna).child(Constants.DESCRIPTION).setValue(mCommon.mTournament + " round " + round);
+        dbRef.child(newTourna).child(Constants.DESCRIPTION).setValue(mCommon.mTournament + " round " + round.get(0));
         dbRef.child(newTourna).child(Constants.TYPE).setValue(Constants.SE);
         mCommon.createDBLock(newTourna);
         dbRef.child(newTourna).child(Constants.TEAMS).setValue(losingTeamDBEntries);
@@ -1642,7 +1663,7 @@ class TournaTable implements View.OnClickListener {
                 sb.setLength(0);
                 if (null != tInfo) {
                     for (int i = 0; i < tInfo.getP().size(); i++) {
-                        p1 = tInfo.getP().get(i);
+                        p1 = tInfo.getP().get(0);
                         sb.append(tInfo.getP().get(i));
                         if (i < tInfo.getP().size() - 1) sb.append(" / ");
                     }
@@ -1651,6 +1672,7 @@ class TournaTable implements View.OnClickListener {
                     findViewById(R.id.team1p_tv).setVisibility(View.GONE);
                 }
 
+                //Log.d(TAG, "work: p1=" + p1);
                 if(!p1.isEmpty() && games!=null) {
                     for (GameJournalDBEntry game : games) {
                         if(scoreSB.length()!=0) scoreSB.append(", ");
@@ -2024,26 +2046,44 @@ public class TournaTableLayout extends AppCompatActivity {
 
                 //get round number
                 AlertDialog.Builder alert = new AlertDialog.Builder(TournaTableLayout.this);
-                final EditText edittext = new EditText(TournaTableLayout.this);
                 alert.setTitle("Enter round number to create sub tournament");
+                final EditText edittext = new EditText(TournaTableLayout.this);
                 edittext.setText("1");
                 alert.setView(edittext);
                 alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String roundStr = edittext.getText().toString();
-                        Integer round = 0;
+                        ArrayList<Integer> rounds = new ArrayList<>();
                         boolean dataError = false;
                         try {
-                            round = Integer.valueOf(roundStr);
+                            if(roundStr.contains("-")) {
+                                String[] separated = roundStr.split("-");
+                                if(separated.length > 1) {
+                                    int min = Integer.valueOf(separated[0].trim());
+                                    int max = Integer.valueOf(separated[1].trim());
+                                    if(max-min > 5) dataError = true;
+                                    else {
+                                        //Rounds should be in ascending order: 1-2, 2-3, 1-3 etc
+                                        for (Integer i = min; i <= max; i++) {
+                                            rounds.add(i);
+                                        }
+                                    }
+                                } else if(separated.length == 1) {
+                                    rounds.add(Integer.valueOf(separated[0].trim()));
+                                }
+                            } else {
+                                rounds.add(Integer.valueOf(roundStr));
+                            }
                         } catch (NumberFormatException e) {
                             dataError = true;
                         }
-                        if(dataError || round<=0) {
+                        Log.d(TAG, "onClick: rounds=" + rounds + " str=" + roundStr);
+                        if(dataError || rounds.size() == 0) {
                             Toast.makeText(TournaTableLayout.this, "Bad entry!" ,
                                     Toast.LENGTH_SHORT).show();
                         } else {
-                            mUpperTable.fetchGames(round);
+                            mUpperTable.fetchGames(rounds);
                         }
                     }
                 });
@@ -2152,7 +2192,12 @@ public class TournaTableLayout extends AppCompatActivity {
                         new GenericTypeIndicator<List<TeamDBEntry>>() {
                         };
                 List<TeamDBEntry> teamList = dataSnapshot.getValue(genericTypeIndicator);
-                if (null == teamList) return;
+                if (null == teamList) {
+                    mMainHandler.removeCallbacksAndMessages(null);
+                    Toast.makeText(TournaTableLayout.this, "No teams configured!",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
                 mTeams = new ArrayList<>(teamList);
                 //Log.v(TAG, "readDBTeamInfo: " + mTeams.toString());
 

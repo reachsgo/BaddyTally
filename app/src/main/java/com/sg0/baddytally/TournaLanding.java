@@ -231,13 +231,13 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
                 for (Map.Entry<String, String> entry : mCommon.mTournaMap.entrySet()) {
                     tournaList.add(entry.getKey());
                 }
+                mTournaLA.clear();
                 if (tournaList.size() > 0) {
-                    mTournaLA.clear();
                     mTournaLA.addAll(tournaList);
                     //mTournaList = tournaList;
                     //mTournaLV.setAdapter(mTournaLA);
-                    mTournaLA.notifyDataSetChanged();
                 }
+                mTournaLA.notifyDataSetChanged();
             }
 
         }

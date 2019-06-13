@@ -445,8 +445,9 @@ public class TournaSEDEEnterData extends BaseEnterData {
 
             Log.d(TAG, "enterData: " + winners);
             if (winners.equals(losers)) {
-                Toast.makeText(TournaSEDEEnterData.this, "Players configured with same names: " + winners,
-                        Toast.LENGTH_SHORT).show();
+                //Toast.makeText(TournaSEDEEnterData.this, "Players configured with same names: " + winners,
+                //        Toast.LENGTH_SHORT).show();
+                Log.w(TAG, "enterData: Players configured with same names: " + winners);
                 //return false;
             }
             if ((winningScore<21 && losingScore!=0) || s1.equals(s2)) {
