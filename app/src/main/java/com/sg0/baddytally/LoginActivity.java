@@ -219,7 +219,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     }
 
     private void prepareForLogin(String club, String secpd) {
-        mClub = mClubView.getText().toString();
+        mClub = mClubView.getText().toString().trim();
         fetchInitialData();
     }
 
@@ -280,7 +280,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         mPasswordView.setError(null);
 
         // Store values at the time of the login attempt.
-        String club = mClubView.getText().toString();
+        String club = mClubView.getText().toString().trim();
         String secpd = mPasswordView.getText().toString();
         mUser = mUserView.getText().toString();
 

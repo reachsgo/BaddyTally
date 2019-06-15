@@ -26,7 +26,7 @@ public class MainSigninActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main_selection1);
-        Log.d(TAG, "onCreate: ");
+        //Log.d(TAG, "onCreate: ");
         //Toolbar myToolbar = findViewById(R.id.my_toolbar);
         //setSupportActionBar(myToolbar);
 
@@ -54,7 +54,8 @@ public class MainSigninActivity extends AppCompatActivity {
             }
         });
 
-        SharedData.getInstance().wakeUpDBConnection(); //sets up DB connection only if signed in to a club.
+        //forcefully setup the DB listener, even if this is a re-login.
+        SharedData.getInstance().setUpDBConnectionListener();
     }
 
     private void killActivity() {
@@ -65,7 +66,7 @@ public class MainSigninActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume: ");
+        //Log.d(TAG, "onResume: ");
         if(SharedData.getInstance().mCount == Constants.EXIT_APPLICATION) killActivity();
         //Intent myIntent = new Intent(MainSigninActivity.this, TrackScores.class);
         //MainSigninActivity.this.startActivity(myIntent);
@@ -107,8 +108,6 @@ public class MainSigninActivity extends AppCompatActivity {
     }
 
     void moveOn() {
-        //forcefully setup the DB listener, even if this is a re-login.
-        SharedData.getInstance().setUpDBConnectionListener();
         if (!SharedData.getInstance().mClub.isEmpty()) {
             Intent myIntent = new Intent(MainSigninActivity.this, MainSelection2.class);
             //dont keep this activity in stack to reduce heap usage (mainly due to background image)

@@ -58,7 +58,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
         super.onCreate(savedInstanceState);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.tourna_landing);
-        Log.d(TAG, "onCreate: ");
+        //Log.d(TAG, "onCreate: ");
         mTUtil = new TournaUtil(TournaLanding.this, TournaLanding.this);
         mCommon = SharedData.getInstance();
         mMainHandler = new Handler();
@@ -76,7 +76,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 if (mTournaList.size() > i) {
-                    Log.d(TAG, "mTournaLV onItemClick: " + mTournaList.get(i));
+                    //Log.d(TAG, "mTournaLV onItemClick: " + mTournaList.get(i));
                     mCommon.mTournament = mTournaList.get(i);
                     selectActivityForTourna();
                 }
@@ -92,7 +92,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
                 mCommon.wakeUpDBConnection_profile();
 
 
-                Log.d(TAG, "mTournaLV onItemClick: " + mTournaList.get(i));
+                //Log.d(TAG, "mTournaLV onItemClick: " + mTournaList.get(i));
                 final String tourna = mTournaList.get(i);
 
 
@@ -148,7 +148,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     }
 
     private Boolean selectActivityForTourna() {
-        Log.d(TAG, "selectActivityForTourna: ");
+        Log.d(TAG, "selectActivityForTourna: [" + mCommon.mClub + "/" + mCommon.mTournament + "]");
         if (mCommon.mTournament.isEmpty()) return false;
         if (null == mCommon.mTournaMap || mCommon.mTournaMap.size() == 0) return false;
         for (Map.Entry<String, String> tourna : mCommon.mTournaMap.entrySet()) {
@@ -173,7 +173,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume: ");
+        Log.d(TAG, "onResume: [" + mCommon.mClub + "/" + mCommon.mTournament + "]");
 
         if (mCommon.isDBUpdated()) {
             refresh();

@@ -30,7 +30,7 @@ public class MainSelection2 extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main_selection2);
-        Log.d(TAG, "onCreate: ");
+        //Log.d(TAG, "onCreate: ");
 
         mTournaBtn = findViewById(R.id.tournaments);
         mTournaBtn.setOnClickListener(new View.OnClickListener() {
@@ -68,7 +68,7 @@ public class MainSelection2 extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume: ");
+        //Log.d(TAG, "onResume: ");
         //if (SharedData.getInstance().mTournaMode) {
         //    mTournaBtn.performClick();
         //} else {

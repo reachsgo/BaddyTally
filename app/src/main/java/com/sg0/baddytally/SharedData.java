@@ -598,7 +598,7 @@ public class SharedData {
                 } else {
                     try {
                         ActiveUserDBEntry userData = dataSnapshot.getValue(ActiveUserDBEntry.class);
-                        Log.w(TAG, "wakeUpDBConnection: onComplete: Success: " + userData.toString());
+                        Log.w(TAG, "wakeUpDBConnection: onComplete: Success: ");
                     } catch (NullPointerException e) {
                         if(mClub.isEmpty()) return;
                         //java.lang.NullPointerException: Attempt to invoke virtual method 'boolean java.lang.Boolean.booleanValue()' on a null object reference
