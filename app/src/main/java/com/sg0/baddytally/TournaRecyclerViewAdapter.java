@@ -78,7 +78,7 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
                 for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
 
                     final String team = childSnapshot.getKey();
-                    Log.i(TAG, "onDataChange Got:" + team);
+                    //Log.i(TAG, "onDataChange Got:" + team);
 
                     TeamInfo tI = new TeamInfo(team);
                     mCommon.mTeams.add(team);  //still need array to get a list of teams in order
@@ -92,7 +92,7 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
                     TeamScoreDBEntry scoreDBEntry = scoreData.getValue(TeamScoreDBEntry.class);
                     if(scoreDBEntry!=null) tI.score = scoreDBEntry;
                     else tI.score = new TeamScoreDBEntry();
-                    Log.i(TAG, "onDataChange, scoreDBEntry:" + tI.score.toString());
+                    //Log.i(TAG, "onDataChange, scoreDBEntry:" + tI.score.toString());
 
                     mCommon.mTeamInfoMap.put(team, tI);
                 }
@@ -124,7 +124,7 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
                         PlayerInfo pI = childSnapshot.getValue(PlayerInfo.class);
                         TeamInfo tI = mCommon.getTeamInfo(pI.T);
                         if(tI != null) {
-                            Log.i(TAG, "onDataChange Got:" + player_short + " " + pI.toString() + " " + tI.toString());
+                            //Log.i(TAG, "onDataChange Got:" + player_short + " " + pI.toString() + " " + tI.toString());
                             tI.p_nicks.add(player_short);
                             tI.players.add(pI.name);
                         } else {

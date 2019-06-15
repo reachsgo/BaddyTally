@@ -30,6 +30,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
@@ -630,9 +631,10 @@ public class SharedData {
             @Override
             public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
 
-                Log.v(TAG, "wakeUpDBConnection_profile: onDataChange");
+                //Log.v(TAG, "wakeUpDBConnection_profile: onDataChange");
                 for (MutableData child : mutableData.getChildren()) {
                     if(null==child) continue;
+
                     switch (child.getKey()) {
                         case "admincode":
                             mAdminCode = child.getValue(String.class);
@@ -995,6 +997,54 @@ public class SharedData {
         });
     }
 
+    void propogateTheWinner(final Activity activity, final String fixLabel, final String matchId, final String winner) {
+        if (fixLabel.equals(Constants.DE_FINALS)) {
+            return;
+        }
+
+        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub)
+                .child(Constants.TOURNA).child(mTournament).child(fixLabel);
+        Log.d(TAG, "propogateTheWinner: " + fixLabel + matchId + winner);
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                GenericTypeIndicator<Map<String, TournaFixtureDBEntry>> genericTypeIndicator =
+                        new GenericTypeIndicator<Map<String, TournaFixtureDBEntry>>() {
+                        };
+                Map<String, TournaFixtureDBEntry> map = dataSnapshot.getValue(genericTypeIndicator);
+                if (null == map) return;
+                for (Map.Entry<String, TournaFixtureDBEntry> entry : map.entrySet()) {
+                    String mId = entry.getKey();
+                    TournaFixtureDBEntry dbEntry = entry.getValue();
+                    //Check if the previous link is same as the match just completed.
+                    //If yes, update the team name in DB
+                    if (matchId.equals(dbEntry.getPr1(true))) {
+                        //prev1 is the match which just completed. Update team1.
+                        dbEntry.setW("");  //reset winner; This might be root doing a correction.
+                        dbEntry.setT1(true, winner);
+                        dbEntry.setWinnerString();  //If one is bye, set the other as winner
+                        dbRef.child(mId).setValue(dbEntry);
+                        Log.w(TAG, "propogateTheWinner(team1):" + mId + "=" + dbEntry.toString());
+                    } else if (matchId.equals(dbEntry.getPr2(true))) {
+                        //prev2 is the match which just completed. Update team2.
+                        dbEntry.setW("");  //reset winner; This might be root doing a correction.
+                        dbEntry.setT2(true, winner);
+                        dbEntry.setWinnerString(); //If one is bye, set the other as winner
+                        dbRef.child(mId).setValue(dbEntry);
+                        Log.w(TAG, "propogateTheWinner(team2):" + mId + "=" + dbEntry.toString());
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w(TAG, "propogateTheWinner", databaseError.toException());
+                Toast.makeText(activity, "DB error while updating DB: " + databaseError.toString(),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+    }
 
     public TeamInfo getTeamInfo(final String team) {
         TeamInfo tI = null;

@@ -39,14 +39,14 @@ public class TournaSEDEEnterData extends BaseEnterData {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.tourna_activity_enter_data);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        Log.d(TAG, "onCreate: ");
+        //Log.d(TAG, "onCreate: ");
         onCreateBase();
     }
 
 
 
     private void prepareForInput() {
-        Log.i(TAG, "prepareForInput tid=" + Thread.currentThread().getId());
+        //Log.i(TAG, "prepareForInput tid=" + Thread.currentThread().getId());
         initializeSpinners();
         populateGamePoints(mGameList);
         if (mViewOnly) makeItViewOnly();
@@ -54,7 +54,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
 
     @Override
     protected void onCreateExtra() {
-        Log.d(TAG, "onCreateExtra: ");
+        //Log.d(TAG, "onCreateExtra: ");
         mSingles = false;
 
 
@@ -69,7 +69,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
         mViewOnly = false;
         if (null != extras && !extras.isEmpty() && extras.equals(Constants.VIEWONLY)) {
             mViewOnly = true;
-            Log.d(TAG, "onCreateExtra: mViewOnly");
+            //Log.d(TAG, "onCreateExtra: mViewOnly");
         }
 
         //Winner-spinner is set from isMatchDone() invoked from spinner callbacks (onItemSelected).
@@ -112,47 +112,10 @@ public class TournaSEDEEnterData extends BaseEnterData {
             Toast.makeText(TournaSEDEEnterData.this, "Match ID or Label not available!",
                     Toast.LENGTH_LONG).show();
         } else {
-            Log.d(TAG, "onCreateExtra: invoking fetchGames");
+            //Log.d(TAG, "onCreateExtra: invoking fetchGames");
             fetchGames(mMatchId, true);
         }
     }
-
-
-
-/*
-    protected void rearrangeDropdownList(Spinner spinner, ArrayAdapter<String> adapter, List<String> players) {
-        Log.v(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/"
-                + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
-        adapter.clear();
-        //Collections.sort(players);  //sorted already so that players present on the court comes first.
-        adapter.addAll(players);
-        if (spinner == mSpinner_P2) {
-            //if spinner for player 2, remove player 1 selection & set first in the list
-            if (!mSpinner_P1_selection.isEmpty()) adapter.remove(mSpinner_P1_selection);
-            spinner.setSelection(adapter.getCount() - 1);
-            mSpinner_P2_selection = spinner.getItemAtPosition(0).toString();
-        } else if (spinner == mSpinner_P3) {
-            //if spinner for player 3, remove player 1 & 2 selections & set first in the list
-            /*
-            if (!mSpinner_P1_selection.isEmpty()) adapter.remove(mSpinner_P1_selection);
-            if (!mSpinner_P2_selection.isEmpty()) adapter.remove(mSpinner_P2_selection);
-            spinner.setSelection(adapter.getCount() - 1);
-            mSpinner_P3_selection = spinner.getItemAtPosition(0).toString();*/ /*
-        } else if (spinner == mSpinner_P4) {
-            //if spinner for player 3, remove player 1 & 2 selections & set first in the list
-            /*
-            if (!mSpinner_P1_selection.isEmpty()) adapter.remove(mSpinner_P1_selection);
-            if (!mSpinner_P2_selection.isEmpty()) adapter.remove(mSpinner_P2_selection);*/ /*
-            if (!mSpinner_P3_selection.isEmpty()) adapter.remove(mSpinner_P3_selection);
-            spinner.setSelection(adapter.getCount() - 1);
-            mSpinner_P4_selection = spinner.getItemAtPosition(0).toString();
-        }
-        Log.i(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" +
-                mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
-        adapter.notifyDataSetChanged();
-    }
-    */
-
 
     //SGO: NOTE:
     // "The Firebase Database client performs all network and disk operations off the main thread.
@@ -165,8 +128,8 @@ public class TournaSEDEEnterData extends BaseEnterData {
 
     private void fetchGames(final String matchId, final Boolean reinit) {
 
-        Log.i(TAG, "fetchGames(" + Thread.currentThread().getId() + ")  matchId=" +
-                matchId + " mMatchId=" + mMatchId);
+        //Log.i(TAG, "fetchGames(" + Thread.currentThread().getId() + ")  matchId=" +
+        //        matchId + " mMatchId=" + mMatchId);
         DatabaseReference dbRef = mDatabase.child(mCommon.mClub).child(Constants.TOURNA)
                 .child(mCommon.mTournament).child(Constants.MATCHES).child(mFixtureLabel)
                 .child(matchId);   //MATCH data
@@ -174,7 +137,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.d(TAG, "fetchGames:" + dataSnapshot.toString());
+                //Log.d(TAG, "fetchGames:" + dataSnapshot.toString());
                 GenericTypeIndicator<List<GameJournalDBEntry>> genericTypeIndicator =
                         new GenericTypeIndicator<List<GameJournalDBEntry>>() {
                         };
@@ -213,12 +176,12 @@ public class TournaSEDEEnterData extends BaseEnterData {
                 mMatchDBEntry = dbEntry;  //rewrite member data only if a valid match entry.
                 //Incase of DE_FINALS_M2, <tourna>/F-1/2 is created from <tourna>/F-1/1
                 //and hence DE_FINALS_M1 match entry should not be overwritten by null before that.
-                Log.d(TAG, "fetchGames:" + dataSnapshot.getKey() + " " + mMatchDBEntry.toString());
+                //Log.d(TAG, "fetchGames:" + dataSnapshot.getKey() + " " + mMatchDBEntry.toString());
 
                 mMatchId = matchId;  //imp to set DE_FINALS_M2 here, if present in DB
                 if (mMatchDBEntry.isThereAWinner(true)) {
                     String winner = mMatchDBEntry.getW();
-                    Log.i(TAG, Thread.currentThread().getId() + " set Winner!");
+                    //Log.i(TAG, Thread.currentThread().getId() + " set Winner!");
                     if (mTeams.get(0).equals(winner)) mSpinner_W.setSelection(1);
                     else if (mTeams.get(1).equals(winner)) mSpinner_W.setSelection(2);
                     CheckBox checkbox = findViewById(R.id.completed);
@@ -242,7 +205,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
 
 
     private void populateGamePoints(ArrayList<GameJournalDBEntry> gameList) {
-        Log.i(TAG, "populateGamePoints tid=" + Thread.currentThread().getId());
+        //Log.i(TAG, "populateGamePoints tid=" + Thread.currentThread().getId());
         if (gameList == null) return;
         int num = 1;
         for (GameJournalDBEntry g : gameList) {
@@ -250,7 +213,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
             //Don't have to check if playerInvolved(), as the match is added in DB for the players taken from DB.
             //Check if T1 is the winning team or losing team
             for (String p : mT1_players) {
-                Log.d(TAG, "populateGamePoints: " + g.toReadableString() + " T1 player=" + p);
+                //Log.d(TAG, "populateGamePoints: " + g.toReadableString() + " T1 player=" + p);
                 if (g.aWinner(p)) {
                     //get Winner's score as T1's score
                     setGamePointSpinner(g.getmGNo(), g.getmWS(), g.getmLS());
@@ -305,15 +268,15 @@ public class TournaSEDEEnterData extends BaseEnterData {
             return false;
         }
 
-        Log.i(TAG, "isMatchDone:" + randomPlayerT1 + " :" + randomPlayerT2);
-        Log.i(TAG, "isMatchDone:" + newGameList.size());
+        //Log.i(TAG, "isMatchDone:" + randomPlayerT1 + " :" + randomPlayerT2);
+        //Log.i(TAG, "isMatchDone:" + newGameList.size());
 
         int randomPlayerT1_Wins = 0;
         int randomPlayerT2_Wins = 0;
         int gamesCompleted = 0;
         int gamesPlayed = 0;
         for (GameJournalDBEntry jEntry : newGameList) {
-            Log.d(TAG, "isMatchDone: " + jEntry.toReadableString());
+            //Log.d(TAG, "isMatchDone: " + jEntry.toReadableString());
             if (jEntry.getmWS() > 0) gamesPlayed++;
             if (jEntry.getmWS() < 21) continue;
             if (jEntry.getmWS() >= 21) gamesCompleted++;
@@ -321,22 +284,22 @@ public class TournaSEDEEnterData extends BaseEnterData {
             if (jEntry.aWinner(randomPlayerT2)) randomPlayerT2_Wins++;
         }
 
-        Log.d(TAG, "isMatchDone: " + String.format("wins=%s,%s Games=%s/%s", randomPlayerT1_Wins, randomPlayerT2_Wins,
-                gamesCompleted, gamesPlayed));
+        //Log.d(TAG, "isMatchDone: " + String.format("wins=%s,%s Games=%s/%s", randomPlayerT1_Wins, randomPlayerT2_Wins,
+        //        gamesCompleted, gamesPlayed));
         if (gamesCompleted==1 && gamesPlayed==1) {
             if (randomPlayerT1_Wins == 1) winner_team_idx = TEAM1_IDX;
             else if (randomPlayerT2_Wins == 1) winner_team_idx = TEAM2_IDX;
-            Log.i(TAG, randomPlayerT1_Wins + ":One game completed:" + randomPlayerT2_Wins);
+            //Log.i(TAG, randomPlayerT1_Wins + ":One game completed:" + randomPlayerT2_Wins);
         } else if (randomPlayerT1_Wins > (mBestOf / 2)) {
             winner_team_idx = TEAM1_IDX;
-            Log.i(TAG, "isMatchDone: " + randomPlayerT1 + "=" + randomPlayerT1_Wins + " > " + mBestOf / 2 + " winner=" + winner_team_idx);
+            //Log.i(TAG, "isMatchDone: " + randomPlayerT1 + "=" + randomPlayerT1_Wins + " > " + mBestOf / 2 + " winner=" + winner_team_idx);
         } else if (randomPlayerT2_Wins > (mBestOf / 2)) {
             winner_team_idx = TEAM2_IDX;
-            Log.i(TAG, "isMatchDone: " + randomPlayerT2 + "=" + randomPlayerT2_Wins + " > " + mBestOf / 2 + " winner=" + winner_team_idx);
+            //Log.i(TAG, "isMatchDone: " + randomPlayerT2 + "=" + randomPlayerT2_Wins + " > " + mBestOf / 2 + " winner=" + winner_team_idx);
         }
 
         if (winner_team_idx > 0) {
-            Log.i(TAG, "isMatchDone: YEP:");
+            //Log.i(TAG, "isMatchDone: YEP:");
 
             if (mCommon.isRoot()) {
                 //change the winner only during initial phase.
@@ -359,7 +322,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
             }
             return true;
         } else {
-            Log.i(TAG, "isMatchDone: NOPE");
+            //Log.i(TAG, "isMatchDone: NOPE");
             mSpinner_W.setSelection(0);
             CheckBox checkbox = findViewById(R.id.completed);
             checkbox.setChecked(false);
@@ -370,11 +333,11 @@ public class TournaSEDEEnterData extends BaseEnterData {
 
     @Override
     protected boolean enterData(boolean dry_run) {
-        Log.d(TAG, "enterData: ");
+        //Log.d(TAG, "enterData: ");
         if (null == mGameList) {
             Toast.makeText(TournaSEDEEnterData.this, "Stale data, start over.",
                     Toast.LENGTH_SHORT).show();
-            Log.e(TAG, "enterData: mGameList is null");
+            //Log.e(TAG, "enterData: mGameList is null");
             return false;
         }
 
@@ -397,7 +360,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
             if (tmpS != null) s1 = (Integer) tmpS.getSelectedItem();
             tmpS = getRespectiveSpinner(gameNum, 2);
             if (tmpS != null) s2 = (Integer) tmpS.getSelectedItem();
-            Log.d(TAG, "enterData: " + gameNum + " " + s1 + "-" + s2);
+            //Log.d(TAG, "enterData: " + gameNum + " " + s1 + "-" + s2);
             if (s1 == 0 && s2 == 0) continue;
 
             String winners, winner1, winner2;
@@ -443,7 +406,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
                 losingScore = s1;
             }
 
-            Log.d(TAG, "enterData: " + winners);
+            //Log.d(TAG, "enterData: " + winners);
             if (winners.equals(losers)) {
                 //Toast.makeText(TournaSEDEEnterData.this, "Players configured with same names: " + winners,
                 //        Toast.LENGTH_SHORT).show();
@@ -472,7 +435,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
 
         }
 
-        Log.d(TAG, "enterData: " + mGameList.size());
+        //Log.d(TAG, "enterData: " + mGameList.size());
         isMatchDone(mGameList, dry_run);  //override Winner only for dry_run, for root user.
 
         //Do not proceed to do tha actual DB update, if this is a dry run.
@@ -489,9 +452,9 @@ public class TournaSEDEEnterData extends BaseEnterData {
 
    @Override
     protected void workToUpdateDB() {
-        Log.d(TAG, "workToUpdateDB: " + mCommon.mClub);
-        Log.d(TAG, "workToUpdateDB: " + mFixtureLabel + " mId=" + mMatchId);
-        Log.d(TAG, "workToUpdateDB: " + mGameList.toString());
+        //Log.d(TAG, "workToUpdateDB: " + mCommon.mClub);
+        //Log.d(TAG, "workToUpdateDB: " + mFixtureLabel + " mId=" + mMatchId);
+        //Log.d(TAG, "workToUpdateDB: " + mGameList.toString());
         final DatabaseReference dbRef = mDatabase.child(mCommon.mClub).child(Constants.TOURNA)
                 .child(mCommon.mTournament).child(Constants.MATCHES).child(mFixtureLabel)
                 .child(mMatchId);
@@ -502,7 +465,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
         String winner = mSpinner_W.getSelectedItem().toString();
         Log.d(TAG, "workToUpdateDB: " + mMatchId + " W=" + winner + " checked=" + checkbox.isChecked());
         if (checkbox.isChecked() && !winner.isEmpty()) {
-            Log.d(TAG, "workToUpdateDB: before=" + mMatchDBEntry);
+            //Log.d(TAG, "workToUpdateDB: before=" + mMatchDBEntry);
             //before=TournaFixtureDBEntry{T=[new4, new5], P=[, ], E=[Ext{fixL.0-2.true}], W=null}
             //SGO: If a null pointer exception happens while holding the DB lock,
             //DBlock will remain in the DB. Example: if mMatchDBEntry is null here.
@@ -515,7 +478,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
             mMatchDBEntry.setT1(true, mTeams.get(0));
             mMatchDBEntry.setT2(true, mTeams.get(1));
             mMatchDBEntry.setW(winner);
-            Log.d(TAG, "workToUpdateDB: after=" + mMatchDBEntry);
+            //Log.d(TAG, "workToUpdateDB: after=" + mMatchDBEntry);
             //after=TournaFixtureDBEntry{T=[new4, new5], P=[, ], E=[Ext{fixL.0-2.true}], W=new4}
 
             mDatabase.child(mCommon.mClub).child(Constants.TOURNA)
@@ -544,7 +507,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
                             mDatabase.child(mCommon.mClub).child(Constants.TOURNA)
                                     .child(mCommon.mTournament).child(mFixtureLabel).child(mMatchId)
                                     .setValue(dbEntry);
-                            Log.d(TAG, "onClick: " + mMatchId + " created.");
+                            //Log.d(TAG, "onClick: " + mMatchId + " created.");
                             //Fixture entry in DB should be there before fetching games
                             fetchGames(mMatchId, true);
                         }
@@ -588,7 +551,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
                 updateDEFinalsTeam2(mMatchDBEntry, winner);
             }
 
-            propogateTheWinner(mFixtureLabel, mMatchId, winner);
+            mCommon.propogateTheWinner(TournaSEDEEnterData.this, mFixtureLabel, mMatchId, winner);
 
             //setExternalLink();  //SGO
             if (mMatchDBEntry.getExtLinkSrcFlag(0)) {
@@ -607,7 +570,8 @@ public class TournaSEDEEnterData extends BaseEnterData {
                         .setValue(mMatchDBEntry.getLoser(true));  //set team1. team2 is bye
 
                 // fixL 0-4 (winner) -> 1-4 (corresponding team name needs to be updated)
-                propogateTheWinner(extLinkLabel, extLinkMatchId, mMatchDBEntry.getLoser(true));
+                mCommon.propogateTheWinner(TournaSEDEEnterData.this,
+                        extLinkLabel, extLinkMatchId, mMatchDBEntry.getLoser(true));
             }
 
             mFinishActivity = true;
@@ -620,65 +584,18 @@ public class TournaSEDEEnterData extends BaseEnterData {
         releaseLockAndCleanup();
     }
 
-    private void propogateTheWinner(final String fixLabel, final String matchId, final String winner) {
-        if (fixLabel.equals(Constants.DE_FINALS)) {
-            return;
-        }
 
-        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
-                .child(Constants.TOURNA).child(mCommon.mTournament).child(fixLabel);
-        Log.d(TAG, "propogateTheWinner: " + fixLabel + matchId + winner);
-        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
-
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                GenericTypeIndicator<Map<String, TournaFixtureDBEntry>> genericTypeIndicator =
-                        new GenericTypeIndicator<Map<String, TournaFixtureDBEntry>>() {
-                        };
-                Map<String, TournaFixtureDBEntry> map = dataSnapshot.getValue(genericTypeIndicator);
-                if (null == map) return;
-                for (Map.Entry<String, TournaFixtureDBEntry> entry : map.entrySet()) {
-                    String mId = entry.getKey();
-                    TournaFixtureDBEntry dbEntry = entry.getValue();
-                    //Check if the previous link is same as the match just completed.
-                    //If yes, update the team name in DB
-                    if (matchId.equals(dbEntry.getPr1(true))) {
-                        //prev1 is the match which just completed. Update team1.
-                        dbEntry.setW("");  //reset winner; This might be root doing a correction.
-                        dbEntry.setT1(true, winner);
-                        dbEntry.setWinnerString();  //If one is bye, set the other as winner
-                        dbRef.child(mId).setValue(dbEntry);
-                        Log.w(TAG, "propogateTheWinner(team1):" + mId + "=" + dbEntry.toString());
-                    } else if (matchId.equals(dbEntry.getPr2(true))) {
-                        //prev2 is the match which just completed. Update team2.
-                        dbEntry.setW("");  //reset winner; This might be root doing a correction.
-                        dbEntry.setT2(true, winner);
-                        dbEntry.setWinnerString(); //If one is bye, set the other as winner
-                        dbRef.child(mId).setValue(dbEntry);
-                        Log.w(TAG, "propogateTheWinner(team2):" + mId + "=" + dbEntry.toString());
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                Log.w(TAG, "readDB:onCancelled", databaseError.toException());
-                Toast.makeText(TournaSEDEEnterData.this, "DB error while updating DB: " + databaseError.toString(),
-                        Toast.LENGTH_LONG).show();
-            }
-        });
-    }
 
     private void updateDEFinalsTeam2(final TournaFixtureDBEntry dbEntry, final String winner) {
         final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
                 .child(Constants.TOURNA).child(mCommon.mTournament)
                 .child(Constants.DE_FINALS).child(Constants.DE_FINALS_M1);
-        Log.d(TAG, "updateDEFinalsTeam2: " + dbEntry.toString() + " " + winner);
+        //Log.d(TAG, "updateDEFinalsTeam2: " + dbEntry.toString() + " " + winner);
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
 
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.d(TAG, "updateDEFinalsTeam2: onDataChange: " + dataSnapshot.getKey());
+                //Log.d(TAG, "updateDEFinalsTeam2: onDataChange: " + dataSnapshot.getKey());
                 TournaFixtureDBEntry deFinalsDBEntry = dataSnapshot.getValue(TournaFixtureDBEntry.class);
                 if (null == deFinalsDBEntry) return;
 

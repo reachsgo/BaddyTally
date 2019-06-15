@@ -593,7 +593,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                     //Toast.makeText(TournaSettings.this, "Failure in parsing the xls file: " + e.getMessage(),
                     //        Toast.LENGTH_SHORT).show();
                     mCommon.showAlert(null, TournaSettings.this, "Bad input. ",
-                            "Failed to parse the input file.\nMake sure it is '.xls' format.");
+                            "Failed to parse the input file.\nMake sure it is excel 97-2003 ('.xls') format.");
                     return;
 
                 }

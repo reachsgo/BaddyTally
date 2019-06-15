@@ -106,7 +106,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "onClick: ");
+                //Log.d(TAG, "onClick: ");
                 mCommon.killActivity(BaseEnterData.this, RESULT_OK);
             }
         });
@@ -170,9 +170,9 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         enterButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "enterButton.onClick: " +
-                        String.format("%s,%s vs %s,%s", mSpinner_P1_selection, mSpinner_P2_selection,
-                                mSpinner_P3_selection, mSpinner_P4_selection));
+                //Log.d(TAG, "enterButton.onClick: " +
+                //        String.format("%s,%s vs %s,%s", mSpinner_P1_selection, mSpinner_P2_selection,
+                //                mSpinner_P3_selection, mSpinner_P4_selection));
                 if (mSpinner_P1_selection.isEmpty() || mSpinner_P3_selection.isEmpty()) {
                     Toast.makeText(BaseEnterData.this, "Enter both players...", Toast.LENGTH_SHORT).show();
                     return;
@@ -203,8 +203,8 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         });
 
 
-        Log.w(TAG, "T1 players:" + mT1_players.toString());
-        Log.w(TAG, "T2 players:" + mT2_players.toString());
+        //Log.w(TAG, "T1 players:" + mT1_players.toString());
+        //Log.w(TAG, "T2 players:" + mT2_players.toString());
 
         List<String> p1List = new ArrayList<>(mT1_players);
         ArrayAdapter<String> dataAdapterP1 = new ArrayAdapter<>(this,
@@ -240,7 +240,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
                 mSpinner_P1_selection = (String) adapterView.getItemAtPosition(position);
                 // Notify the selected item text
-                Log.v(TAG, "mSpinner_P1 onItemSelected mSpinner_P1_selection:" + mSpinner_P1_selection);
+                //Log.v(TAG, "mSpinner_P1 onItemSelected mSpinner_P1_selection:" + mSpinner_P1_selection);
 
 
                 //If there are games read from DB, then dont rearrange the players.
@@ -263,7 +263,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
                 mSpinner_P2_selection = (String) adapterView.getItemAtPosition(position);
-                Log.v(TAG, "mSpinner_P2 onItemSelected mSpinner_P2_selection:" + mSpinner_P2_selection);
+                //Log.v(TAG, "mSpinner_P2 onItemSelected mSpinner_P2_selection:" + mSpinner_P2_selection);
             }
 
             @Override
@@ -276,7 +276,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
                 mSpinner_P3_selection = (String) adapterView.getItemAtPosition(position);
-                Log.v(TAG, "mSpinner_P3 onItemSelected mSpinner_P3_selection:" + mSpinner_P3_selection);
+                //Log.v(TAG, "mSpinner_P3 onItemSelected mSpinner_P3_selection:" + mSpinner_P3_selection);
                 if(mGamesReadFromDB) return;
                 mSpinner_P4_selection = "";
                 if (!mSingles) rearrangeDropdownList(mSpinner_P4, dataAdapterP4, mT2_players);
@@ -291,7 +291,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
                 mSpinner_P4_selection = (String) adapterView.getItemAtPosition(position);
-                Log.v(TAG, "mSpinner_P4 onItemSelected mSpinner_P4_selection:" + mSpinner_P4_selection);
+                //Log.v(TAG, "mSpinner_P4 onItemSelected mSpinner_P4_selection:" + mSpinner_P4_selection);
             }
 
             @Override
@@ -325,7 +325,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Log.d(TAG, "onActivityResult: " + requestCode + "," + resultCode);
+        //Log.d(TAG, "onActivityResult: " + requestCode + "," + resultCode);
         mCommon.wakeUpDBConnection_profile();
         if(requestCode==Constants.TRACKSCORES_ACTIVITY &&
                 (resultCode==RESULT_OK || resultCode==RESULT_CANCELED)){
@@ -362,13 +362,13 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     @Override
     protected void onStart() {
         super.onStart();
-        Log.v(TAG, "onStart:" + Thread.currentThread().getId());
+        //Log.v(TAG, "onStart:" + Thread.currentThread().getId());
     }
 
     @Override
     public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
         String s = adapterView.getItemAtPosition(position).toString();
-        Log.d(TAG, "onItemSelected: " + s);
+        //Log.d(TAG, "onItemSelected: " + s);
         enterData(true);
     }
 
@@ -384,8 +384,8 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
 
     protected void rearrangeDropdownList(Spinner spinner, ArrayAdapter<String> adapter, List<String> players) {
 
-        Log.v(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/"
-                + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
+        //Log.v(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/"
+        //        + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
         adapter.clear();
         //Collections.sort(players);  //sorted already so that players present on the court comes first.
         adapter.addAll(players);
@@ -421,8 +421,8 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
             spinner.setSelection(0);
             mSpinner_P4_selection = spinner.getItemAtPosition(0).toString();
         }
-        Log.i(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" +
-                mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
+        //Log.i(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" +
+        //        mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
         adapter.notifyDataSetChanged();
     }
 
@@ -458,7 +458,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         ArrayList<String> results = new ArrayList<>(
                 Arrays.asList("", "", "")
         );
-        Log.d(TAG, "getGamePoints: " + results.toString());
+        //Log.d(TAG, "getGamePoints: " + results.toString());
         for (int i = 1; i <= 3; i++) {
             Integer s1 = 0, s2 = 0;
             Spinner tmpS = getRespectiveSpinner(i, 1);
@@ -473,16 +473,16 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     }
 
     protected void setPlayersSpinner(final String t1P1, final String t1P2, final String t2P1, final String t2P2) {
-        Log.d(TAG, "setPlayersSpinner: " + String.format("T1=%s,%s T2=%s,%s", t1P1, t1P2, t2P1, t2P2));
-        Log.d(TAG, "setPlayersSpinner: " + String.format("mT1=%s mT2=%s", mT1_players, mT2_players));
+        //Log.d(TAG, "setPlayersSpinner: " + String.format("T1=%s,%s T2=%s,%s", t1P1, t1P2, t2P1, t2P2));
+        //Log.d(TAG, "setPlayersSpinner: " + String.format("mT1=%s mT2=%s", mT1_players, mT2_players));
         for(int pos=0; pos < mT1_players.size(); pos++) {
             if(mT1_players.get(pos).equals(t1P1)) {
                 mSpinner_P1.setSelection(pos);
-                Log.d(TAG, "setPlayersSpinner: mSpinner_P1.setSelection" + pos);
+                //Log.d(TAG, "setPlayersSpinner: mSpinner_P1.setSelection" + pos);
             }
             else if(mT1_players.get(pos).equals(t1P2)) {
                 mSpinner_P2.setSelection(pos);
-                Log.d(TAG, "setPlayersSpinner: mSpinner_P2.setSelection" + pos);
+                //Log.d(TAG, "setPlayersSpinner: mSpinner_P2.setSelection" + pos);
             }
         }
         for(int pos=0; pos < mT2_players.size(); pos++) {
@@ -508,7 +508,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     }
 
     protected boolean enterData(boolean dry_run) {
-        Log.d(TAG, "enterData: ");
+        //Log.d(TAG, "enterData: ");
         return true;
     }
 
@@ -553,10 +553,10 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
                     }
                 }, 1000);
             } else {
-                Log.e(TAG, "waitForDBLock: Failed to acquire lock:" + mDBLockCount);
+                //Log.e(TAG, "waitForDBLock: Failed to acquire lock:" + mDBLockCount);
                 mAlertTitle = "";
-                Log.e(TAG, "workToUpdateDB: Failed to update DB, please refresh and try again later...");
-                mAlertMsg = "DB not accessible, please refresh and try again later...";
+                Log.e(TAG, "waitForDBLock: Failed to update DB, please refresh and try again later...");
+                mAlertMsg = "DB not accessible, please try again later...";
                 mFinishActivity = true;
                 mCommon.setDBUpdated(true);
                 releaseLockAndCleanup();
@@ -568,7 +568,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     }
 
     protected void workToUpdateDB() {
-        Log.d(TAG, "workToUpdateDB: " + mCommon.mClub);
+        //Log.d(TAG, "workToUpdateDB: " + mCommon.mClub);
         releaseLockAndCleanup();
     }
 
@@ -619,21 +619,21 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
 
     @Override
     protected void onResume() {
-        Log.d(TAG, "onResume: ");
+        //Log.d(TAG, "onResume: ");
         super.onResume();
         ScoreTally.activityResumed();
     }
 
     @Override
     protected void onPause() {
-        Log.d(TAG, "onPause: ");
+        //Log.d(TAG, "onPause: ");
         super.onPause();
         ScoreTally.activityPaused();
     }
 
     @Override
     protected void onDestroy() {
-        Log.d(TAG, "onDestroy: ");
+        //Log.d(TAG, "onDestroy: ");
         super.onDestroy();
         mMainHandler = null;
     }

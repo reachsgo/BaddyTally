@@ -53,13 +53,10 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.HorizontalScrollView;
-import android.widget.LinearLayout;
 import android.widget.PopupMenu;
-import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -85,7 +82,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.IntStream;
 
 class Coordinates {
     public static final String ROUNDSTR = "R";
@@ -248,7 +244,7 @@ class TournaTable implements View.OnClickListener {
     private static final String TAG = "TournaTable";
     private static final String MATCH_INFO = "Match Info";
     private static final String ENTER_SCORE = "Enter Score";
-    private static final String ENTER_WINNER = "Override Winner";
+    private static final String RESET_MATCH = "Reset Match Data";
     private static final String VIEW_SCORE = "View Score";
     private static final String BYE = "(bye)";
     public TournaTable mExternal;
@@ -450,7 +446,7 @@ class TournaTable implements View.OnClickListener {
             }
             //printDispData();
         }
-        printDispData();
+        //printDispData();
         //Log.d(TAG, "createDisplayData: about to markVerticalLines");
         markVerticalLines();
         //Log.d(TAG, "createDisplayData: about to displayTable");
@@ -1181,49 +1177,36 @@ class TournaTable implements View.OnClickListener {
         showOptions(v, node);
     }
 
-    void updatewinner(final View v, final TournaDispMatchEntry node) {
-        if (node.getT1(true).isEmpty() || node.getT2(true).isEmpty()) {
-            Toast.makeText(mActivity, "Teams not know yet.",
-                    Toast.LENGTH_SHORT).show();
-            return;
+    void resetMatch(final TournaDispMatchEntry node) {
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(mActivity);
+        alertBuilder.setTitle("Are you sure?");
+        String msg = "You are about delete the game-data (scores & winner) for this match.\n" +
+                "Continue only if you really mean it.";
+        if(!node.isThereAWinner(true)) {
+            Log.d(TAG, "resetMatch: No winner:" + node.toString());
+            msg = "This match has no recorded winner! There might be nothing to reset.";
         }
-
-        Context wrapper = new ContextThemeWrapper(mActivity, R.style.RedPopup);
-        final PopupMenu popup = new PopupMenu(wrapper, v);
-        popup.getMenuInflater().inflate(R.menu.summary_popup_menu, popup.getMenu());
-        popup.getMenu().clear();
-        Menu pMenu = popup.getMenu();
-        pMenu.add(node.getT1(true));
-        pMenu.add(node.getT2(true));
-
-        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+        alertBuilder.setMessage(msg);
+        alertBuilder.setPositiveButton("Reset", new DialogInterface.OnClickListener() {
             @Override
-            public boolean onMenuItemClick(MenuItem menuItem) {
-                if (mFixtureLabel.isEmpty()) {
-                    popup.dismiss();
-                    return true;
-                }
-                String winner = menuItem.getTitle().toString();
-                //Log.v(TAG, "updatewinner onMenuItemClick:" + winner);
-                //dont check for winner, give an option to force write into DB
+            public void onClick(DialogInterface dialogInterface, int i) {
                 final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
-                        .child(Constants.TOURNA).child(mCommon.mTournament)
-                        .child(mFixtureLabel).child(node.getId());
-                TournaFixtureDBEntry dbEntry = new TournaFixtureDBEntry(node);
-                dbEntry.setW(winner);
-                dbRef.setValue(dbEntry);
-                popup.dismiss();
-                Toast.makeText(mActivity, "Match " + node.getId() + " winner '" + node.getW() +
-                                "' overwritten with '" + winner + "'. Refresh your screen.",
+                        .child(Constants.TOURNA).child(mCommon.mTournament);
+                dbRef.child(mFixtureLabel).child(node.getId()).child("w").setValue("");
+                dbRef.child(Constants.MATCHES).child(mFixtureLabel).child(node.getId()).setValue(null);
+                mCommon.propogateTheWinner(mActivity, mFixtureLabel, node.getId(), "");
+                Toast.makeText(mActivity, "Match " + node.getId() + " of " + mCommon.mTournament + " is reset.",
                         Toast.LENGTH_LONG).show();
-                Log.w(TAG, "Match " + node.getId() + " winner " + node.getW() +
-                        " overwritten with '" + winner + "'");
-                return true;
+                Log.w(TAG, "Match " + node.getId() + ", winner=" + node.getW() + " is reset!");
+                mActivity.recreate();  //refreshing the screen
             }
         });
-        popup.show();//showing popup menu
-        Snackbar.make(v, "You are powerful! Any changes here will overwrite the master database!", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show();
+        alertBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+            }
+        });
+        alertBuilder.show();
     }
 
     void showOptions(final View v, final TournaDispMatchEntry node) {
@@ -1237,7 +1220,7 @@ class TournaTable implements View.OnClickListener {
         Menu pMenu = popup.getMenu();
         pMenu.add(MATCH_INFO);
         if (mCommon.isRoot() || mCommon.isAdmin()) pMenu.add(ENTER_SCORE);
-        if (mCommon.isRoot()) pMenu.add(ENTER_WINNER);
+        if (mCommon.isRoot()) pMenu.add(RESET_MATCH);
         pMenu.add(VIEW_SCORE);
 
         popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
@@ -1325,12 +1308,12 @@ class TournaTable implements View.OnClickListener {
                         mActivity.startActivity(myIntent);
                         break;
                     }
-                    case ENTER_WINNER:
+                    case RESET_MATCH:
                         //not checking for winner here. root should be able to override the current DB values. So, keep going even if there is a winner.
                         mMainHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                updatewinner(v, node);
+                                resetMatch(node);
                             }
                         });
                         break;
@@ -1413,7 +1396,8 @@ class TournaTable implements View.OnClickListener {
 
     private void createSubTournament(final ArrayList<Integer> rounds) {
         final List<TeamDBEntry> losingTeamDBEntries = new ArrayList<>();
-        Map<Integer, TeamDBEntry> sortedTeams = new TreeMap<>(Collections.reverseOrder());
+        Map<Integer, List<TeamDBEntry>> sortedTeams = new TreeMap<>(Collections.reverseOrder());
+        //Map does not allow duplicate keys. So, it has to be List<TeamDBEntry> as the value.
         int indx = 0;
         for(Integer roundNum: rounds) {
             Log.d(TAG, "createSubTournament:" + roundNum);
@@ -1464,13 +1448,24 @@ class TournaTable implements View.OnClickListener {
                 }
                 if(indx>0) score += indx * 42;  //for round=2, add 21x2 (won 2 round1 games)
                 //Expectation is that rounds list is in order: [1,2] or [2,3] or [1,2,3]
-                sortedTeams.put(score, losingTeam);
+                List<TeamDBEntry> tmpList = sortedTeams.get(score);
+                if(tmpList==null) {
+                    Log.d(TAG, "createSubTournament: [" + score + "] No teams yet, creating new");
+                    tmpList = new ArrayList<>();
+                }
+                tmpList.add(losingTeam);
+                Log.d(TAG, "createSubTournament: [" + score + "] Added one more:" + tmpList.size());
+                sortedTeams.put(score, tmpList);
             }
             indx++;
         }
 
         Log.d(TAG, "createSubTournament: sorted losers=" + sortedTeams);
-        losingTeamDBEntries.addAll(0, sortedTeams.values());
+        List<TeamDBEntry> tmpList = new ArrayList<>();
+        for(List<TeamDBEntry> values: sortedTeams.values()) {
+            tmpList.addAll(values);
+        }
+        losingTeamDBEntries.addAll(0, tmpList);
         if(losingTeamDBEntries.size()==0) {
             Toast.makeText(mActivity, "Found no entries for round " + rounds.get(0) + "!",
                     Toast.LENGTH_LONG).show();
@@ -1478,11 +1473,13 @@ class TournaTable implements View.OnClickListener {
         }
 
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<Integer, TeamDBEntry> entry : sortedTeams.entrySet()) {
-            sb.append(entry.getValue().getId());
-            sb.append(": ");
-            sb.append(entry.getKey());
-            sb.append("\n");
+        for (Map.Entry<Integer, List<TeamDBEntry>> entry : sortedTeams.entrySet()) {
+            for(TeamDBEntry values: entry.getValue()) {
+                sb.append(values.getId());
+                sb.append(": ");
+                sb.append(entry.getKey());
+                sb.append("\n");
+            }
         }
         if(sb.length()>0) {
             sb.append("\nThis will be the default seeding.");
@@ -2029,7 +2026,8 @@ public class TournaTableLayout extends AppCompatActivity {
                 //int versionCode = BuildConfig.VERSION_CODE;
                 AlertDialog.Builder builder = new AlertDialog.Builder(TournaTableLayout.this);
                 builder.setMessage("Version: " + BuildConfig.VERSION_NAME)
-                        .setTitle(SharedData.getInstance().getTitleStr(Constants.APPNAME, TournaTableLayout.this))
+                        .setTitle(SharedData.getInstance().getTitleStr(Constants.APPNAME,
+                                TournaTableLayout.this))
                         .setNeutralButton("Ok", null).show();
                 break;
             case R.id.zoom_in:
@@ -2041,7 +2039,12 @@ public class TournaTableLayout extends AppCompatActivity {
                 zoom(false, zoomFactor, zoomFactor, new PointF(0, 0));
                 break;
             case R.id.action_new_tourna:
-                Log.e(TAG, "Create sub tournament from round 1 of " + mCommon.mTournament);
+                Log.e(TAG, "Create sub tournament for " + mCommon.mTournament);
+                if (!mCommon.isRoot()) {
+                    Toast.makeText(TournaTableLayout.this, "You don't have permission to do this!" ,
+                            Toast.LENGTH_SHORT).show();
+                    break;
+                }
                 if (null == mUpperTable) break;
 
                 //get round number

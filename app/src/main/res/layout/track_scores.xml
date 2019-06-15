@@ -133,6 +133,13 @@
             android:layout_height="0dp"
             android:layout_centerVertical="true" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:text="N\n\n\n\nE\n\n\n\nT"
+            android:textSize="15sp"
+            android:layout_centerHorizontal="true"/>
         <RelativeLayout
             android:id="@+id/left_top_ll"
             android:layout_width="match_parent"

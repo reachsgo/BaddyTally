@@ -107,6 +107,8 @@ public class MainSigninActivity extends AppCompatActivity {
     }
 
     void moveOn() {
+        //forcefully setup the DB listener, even if this is a re-login.
+        SharedData.getInstance().setUpDBConnectionListener();
         if (!SharedData.getInstance().mClub.isEmpty()) {
             Intent myIntent = new Intent(MainSigninActivity.this, MainSelection2.class);
             //dont keep this activity in stack to reduce heap usage (mainly due to background image)
