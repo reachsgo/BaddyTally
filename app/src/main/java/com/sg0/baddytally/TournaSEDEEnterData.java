@@ -356,10 +356,12 @@ public class TournaSEDEEnterData extends BaseEnterData {
         for (int gameNum = 1; gameNum <= mBestOf; gameNum++) {
             Integer s1 = 0;
             Integer s2 = 0;
-            Spinner tmpS = getRespectiveSpinner(gameNum, 1);
-            if (tmpS != null) s1 = (Integer) tmpS.getSelectedItem();
-            tmpS = getRespectiveSpinner(gameNum, 2);
-            if (tmpS != null) s2 = (Integer) tmpS.getSelectedItem();
+            //Spinner tmpS = getRespectiveSpinner(gameNum, 1);
+            //if (tmpS != null) s1 = (Integer) tmpS.getSelectedItem();
+            s1 = getGamePoint(getRespectiveSpinner(gameNum, 1));
+            s2 = getGamePoint(getRespectiveSpinner(gameNum, 2));
+            //tmpS = getRespectiveSpinner(gameNum, 2);
+            //if (tmpS != null) s2 = (Integer) tmpS.getSelectedItem();
             //Log.d(TAG, "enterData: " + gameNum + " " + s1 + "-" + s2);
             if (s1 == 0 && s2 == 0) continue;
 

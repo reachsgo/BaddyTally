@@ -38,7 +38,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         add(21);        add(22);        add(23);
         add(24);        add(25);        add(26);
         add(27);        add(28);        add(29);
-        add(30);
+        add(MAX_POINT); add(INVALID_POINT);
     }};
 
     protected static int mBestOf = 3;
@@ -75,6 +75,8 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     protected String mType;
     protected boolean mGamesReadFromDB;
 
+    protected static final int INVALID_POINT = -9999;
+    protected static final int MAX_POINT = 30;
     private static final String TAG = "BaseEnterData";
 
     @Override
@@ -322,6 +324,33 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         Log.d(TAG, "initializeSpinners: done-----");
     }
 
+    @Override
+    public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
+        Integer i = (Integer) adapterView.getItemAtPosition(position);
+        if(i == INVALID_POINT) {
+            //Spinner reserves enough space to display its widest entry.
+            //So, in order to keep the drop-down wide enough (makes it easier for user to select),
+            //just add a longer integer to the end. If this is selected, its ignored.
+            //Log.d(TAG, "onItemSelected: " + INVALID_POINT);
+            adapterView.setSelection(0);
+            return;
+        }
+        //String s = adapterView.getItemAtPosition(position).toString();
+        //Log.d(TAG, "onItemSelected: " + s);
+        enterData(true);
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> adapterView) {
+    }
+
+    protected Integer getGamePoint(final Spinner s) {
+        if (s == null) return 0;
+        Integer pt = (Integer) s.getSelectedItem();
+        if(pt<0 || pt>MAX_POINT) return 0;
+        return pt;
+    }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -365,16 +394,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         //Log.v(TAG, "onStart:" + Thread.currentThread().getId());
     }
 
-    @Override
-    public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
-        String s = adapterView.getItemAtPosition(position).toString();
-        //Log.d(TAG, "onItemSelected: " + s);
-        enterData(true);
-    }
 
-    @Override
-    public void onNothingSelected(AdapterView<?> adapterView) {
-    }
 
 
     protected void matchCompleted() {

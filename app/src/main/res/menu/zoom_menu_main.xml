@@ -25,6 +25,11 @@
         android:title="Export pdf"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_teams"
+        android:orderInCategory="42"
+        android:title="Show teams"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_new_tourna"
         android:orderInCategory="45"
         app:showAsAction="never"

@@ -2097,6 +2097,9 @@ public class TournaTableLayout extends AppCompatActivity {
                 });
                 alert.show();
                 break;
+            case R.id.action_teams:
+                readDBTeamInfo(true);
+                break;
             default:
                 break;
         }
@@ -2114,7 +2117,7 @@ public class TournaTableLayout extends AppCompatActivity {
                 mTournaType = dataSnapshot.getValue(String.class);
                 if (null == mTournaType) mTournaType = "";
                 //Log.v(TAG, "readDBTournaType: " + mTournaType);
-                readDBTeamInfo();
+                readDBTeamInfo(false);
                 if (mTournaType.equals(Constants.SE)) {
                     HorizontalScrollView lowerView = findViewById(R.id.horizontal_scroll_view2);
                     lowerView.setVisibility(View.GONE);
@@ -2183,7 +2186,7 @@ public class TournaTableLayout extends AppCompatActivity {
     }
 
 
-    void readDBTeamInfo() {
+    void readDBTeamInfo(final boolean show) {
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
                 .child(Constants.TOURNA).child(mCommon.mTournament).child(Constants.TEAMS);
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -2203,13 +2206,38 @@ public class TournaTableLayout extends AppCompatActivity {
                 }
                 mTeams = new ArrayList<>(teamList);
                 //Log.v(TAG, "readDBTeamInfo: " + mTeams.toString());
+                if(show) {
+                    //invoked from settings: display the teams and return
+                    if(mTeams.size()==0) {
+                        Toast.makeText(TournaTableLayout.this, "No teams configured!",
+                                Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    StringBuilder sb = new StringBuilder();
+                    for(TeamDBEntry team: mTeams) {
+                        sb.append(String.format(Locale.getDefault(),
+                                "(%d) %8s: %s\n\n",
+                                team.getSeed(), team.getId(), team.getP().toString()
+                                ));
+                    }
+                    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaTableLayout.this);
+                    alertBuilder.setTitle("(Seeding) and Teams for " + mCommon.mTournament);
+                    alertBuilder.setMessage(sb.toString());
+                    alertBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+
+                        }
+                    });
+                    alertBuilder.show();
+                    return;
+                }
 
                 if (mTournaType.equals(Constants.SE) || mTournaType.equals(Constants.DE)) {
                     mUpperTable = new TournaTable(TournaTableLayout.this,
                             R.id.tourna_table_upper, Constants.FIXTURE_UPPER,
                             mCommon.mTournament, mTournaType,
                             mTeams, false);
-                    //mUpperTable.singleElimination(); //TODO: SGO comment out
                 }
                 if (mTournaType.equals(Constants.DE)) {
                     mLowerTable = new TournaTable(TournaTableLayout.this,
@@ -2218,7 +2246,6 @@ public class TournaTableLayout extends AppCompatActivity {
                             mTeams, true);
                     mUpperTable.setExternalTable(mLowerTable);
                     mLowerTable.setExternalTable(mUpperTable);
-                    //mLowerTable.doubleElimination();  //TODO: create Fixture and write to DB from else where
                 }
                 readAndDisplay();
             }
