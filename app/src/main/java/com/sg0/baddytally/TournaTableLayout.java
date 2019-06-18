@@ -2214,11 +2214,21 @@ public class TournaTableLayout extends AppCompatActivity {
                         return;
                     }
                     StringBuilder sb = new StringBuilder();
+                    sb.append("\n");
                     for(TeamDBEntry team: mTeams) {
+                        StringBuilder players = new StringBuilder();
+                        for(String p: team.getP()){
+                            if(players.length()>0) players.append(", ");
+                            if(p.length()>6)
+                                players.append(String.format(Locale.getDefault(),
+                                    "%.6s..", p));
+                            else
+                                players.append(String.format(Locale.getDefault(),
+                                        "%s", p));
+                        }
                         sb.append(String.format(Locale.getDefault(),
-                                "(%d) %8s: %s\n\n",
-                                team.getSeed(), team.getId(), team.getP().toString()
-                                ));
+                                "(%d) %.8s: %.16s\n",
+                                team.getSeed(), team.getId(), players.toString()));
                     }
                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaTableLayout.this);
                     alertBuilder.setTitle("(Seeding) and Teams for " + mCommon.mTournament);

@@ -335,6 +335,22 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
             adapterView.setSelection(0);
             return;
         }
+
+        //If the losing score is entered first, then auto-populate 21 in the other team's spinner.
+        if(i>0 && i<21) {
+            if(adapterView==mSpinner_T1_1 && (Integer)mSpinner_T2_1.getSelectedItem()==0)
+                mSpinner_T2_1.setSelection(21);
+            else if(adapterView==mSpinner_T2_1 && (Integer)mSpinner_T1_1.getSelectedItem()==0)
+                mSpinner_T1_1.setSelection(21);
+            else if(adapterView==mSpinner_T1_2 && (Integer)mSpinner_T2_2.getSelectedItem()==0)
+                mSpinner_T2_2.setSelection(21);
+            else if(adapterView==mSpinner_T2_2 && (Integer)mSpinner_T1_2.getSelectedItem()==0)
+                mSpinner_T1_2.setSelection(21);
+            else if(adapterView==mSpinner_T1_3 && (Integer)mSpinner_T2_3.getSelectedItem()==0)
+                mSpinner_T2_3.setSelection(21);
+            else if(adapterView==mSpinner_T2_3 && (Integer)mSpinner_T1_3.getSelectedItem()==0)
+                mSpinner_T1_3.setSelection(21);
+        }
         //String s = adapterView.getItemAtPosition(position).toString();
         //Log.d(TAG, "onItemSelected: " + s);
         enterData(true);

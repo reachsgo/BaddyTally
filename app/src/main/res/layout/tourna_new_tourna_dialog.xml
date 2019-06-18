@@ -139,7 +139,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_margin="1dp"
-            android:text="How many matches in a set (ex: 1 for a team of 2 players)?"
+            android:text="How many matches in a match-set (ex: 1 for a team of 2 players, 4 for a team of 4 players)?"
             android:textColor="@android:color/black"
             android:textSize="15sp"
             android:textStyle="bold" />
