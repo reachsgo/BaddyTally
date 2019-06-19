@@ -529,7 +529,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
     }
 
     private void collectTeamScoreDataFromDB(final String team) {
-
+        if(null==team) return;
         TeamScoreDBEntry value = mDBTeamScoreData.get(team);
         if (value != null) {
             //assumption is that null is not a valid value, inserted into the map
@@ -558,7 +558,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
     }
 
     private void collectPlayerDataFromDB(final String player) {
-
+        if(player==null || player.isEmpty()) return;
         PlayerInfo value = mDBPlayerData.get(player);
         if (value != null) {
             //assumption is that null is not a valid value, inserted into the map
@@ -669,26 +669,28 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
     //private void updateDB_player(final String player, final Boolean won, final Boolean updateTeamScore, final ArrayList<GameJournalDBEntry> gameList) {
     private void prepData_player(final String player, final Boolean won, final Boolean updateTeamScore,
                                  final int winningScore, final int loosingScore) {
-        Log.i(TAG, "updateDB_player Got:" + player + "/" + won + "/" + updateTeamScore);
+        if(player==null || player.isEmpty()) return;
+        Log.i(TAG, "prepData_player Got:" + player + "/" + won + "/" + updateTeamScore);
         PlayerInfo pI = mDBPlayerData.get(player);
         if (pI == null) return;
-        //Log.i(TAG, "updateDB_player old data:" + pI.toString());
+        //Log.i(TAG, "prepData_player old data:" + pI.toString());
         if (won) pI.wonGame();
         else pI.lostGame();
-        //Log.i(TAG, "updateDB_player new data:" + pI.toString());
+        //Log.i(TAG, "prepData_player new data:" + pI.toString());
         if (updateTeamScore) prepData_TeamScore_game(player, pI.T, won, winningScore, loosingScore);
     }
 
     private void prepData_TeamScore_game(final String player, final String team, final Boolean won,
                                          final int winningScore, final int loosingScore) {
-        Log.i(TAG, "updateDB_TeamScore Got games for " + player + "/" + team + " w:" + won + " WS:" +
+        if(player==null || player.isEmpty()) return;
+        Log.i(TAG, "prepData_TeamScore_game Got games for " + player + "/" + team + " w:" + won + " WS:" +
                 winningScore + " LS:" + loosingScore);
         TeamScoreDBEntry score = mDBTeamScoreData.get(team);
         if (score == null) return;
-        //Log.i(TAG, "updateDB_TeamScore old data:" + score.toString());
+        //Log.i(TAG, "prepData_TeamScore_game old data:" + score.toString());
         if (won) score.wonGame(winningScore, loosingScore);
         else score.lostGame(loosingScore, winningScore);
-        //Log.i(TAG, "updateDB_TeamScore new data:" + score.toString());
+        //Log.i(TAG, "prepData_TeamScore_game new data:" + score.toString());
     }
 
     private void prepData_TeamScore_match() {
@@ -704,8 +706,8 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
 
     private void updateDB() {
         Log.i(TAG, "updateDB Got Teams=" + mDBTeamScoreData.size() + ", Players=" + mDBPlayerData.size() +
-                "Match=" + mChosenMatch.key + "/" + mSelectedMatch);
-
+                " Match=" + mChosenMatch.key + "/" + mSelectedMatch);
+        Log.d(TAG, "updateDB: SGO=" + mDBPlayerData.toString());
         for (Map.Entry<String, TeamScoreDBEntry> entry : mDBTeamScoreData.entrySet()) {
             final String team = entry.getKey();
             final TeamScoreDBEntry score = entry.getValue();

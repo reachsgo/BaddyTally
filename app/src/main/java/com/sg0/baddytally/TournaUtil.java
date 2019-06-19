@@ -212,7 +212,7 @@ public class TournaUtil {
     }
 
     static public MatchInfo getMatchInfoFromString(final String match) {
-        if (match.isEmpty()) {
+        if (null==match || match.isEmpty()) {
             Log.i(TAG, "getMatchInfoFromString, match is empty!");
             return null;
         }

@@ -128,7 +128,7 @@
             android:layout_gravity="center"
             android:layout_margin="5dp"
             android:background="@drawable/roundedrect"
-            android:text="Match summary"
+            android:text="Summary"
             android:textColor="@android:color/white"
             android:textStyle="bold" />
         </LinearLayout>

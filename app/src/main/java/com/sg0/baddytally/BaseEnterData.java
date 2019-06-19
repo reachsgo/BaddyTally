@@ -592,7 +592,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
                 //Log.e(TAG, "waitForDBLock: Failed to acquire lock:" + mDBLockCount);
                 mAlertTitle = "";
                 Log.e(TAG, "waitForDBLock: Failed to update DB, please refresh and try again later...");
-                mAlertMsg = "DB not accessible, please try again later...";
+                mAlertMsg = "DB lock held by another user, please try again later...";
                 mFinishActivity = true;
                 mCommon.setDBUpdated(true);
                 releaseLockAndCleanup();

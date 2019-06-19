@@ -76,12 +76,19 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
             @Override
             public void onClick(View view) {
                 Log.d(TAG, "onClick: ");
-                recreate();
+                if(mTUtil.mNumOfMatches > 1) {
+                    //More matches in a set, show summary for 1 match-set at a time.
+                    //Show the drop down again for user to see summary of another match-set.
+                    recreate();
+                } else {
+                    killActivity();
+                }
             }
         });
 
         TextView mHeader = findViewById(R.id.silver_group);
-        mHeader.setText("");
+        //mHeader.setText("");
+        mHeader.setText(mTourna);
         TextView summaryHeader = findViewById(R.id.header);
 
         mRecyclerView = findViewById(R.id.silver_journal_view);
@@ -139,7 +146,17 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
                 break;
             case Constants.CB_READMATCHMETA:
                 //callback after reading DB for meta data
-                if (ok) mTUtil.showMatches(findViewById(R.id.header));
+                if (ok)
+                {
+                    Log.w(TAG, "completed: " + in + ", nNum=" + mTUtil.mNumOfMatches);
+                    if(mTUtil.mNumOfMatches > 1) {
+                        //More matches in a set, show summary for 1 match-set at a time.
+                        mTUtil.showMatches(findViewById(R.id.header));
+                    } else {
+                        //No need to select a particular match, just show summary of all matches
+                        mAdapter.setMatch(mTourna, null);
+                    }
+                }
                 break;
             case Constants.CB_SHOWMATCHES:
                 //callback after reading DB for meta data

@@ -19,6 +19,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 
 public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<TournaSummaryRecyclerViewAdapter.ViewHolder> {
     private static final String TAG = "TournaSummaryAdapter";
@@ -40,7 +41,8 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
     public void setMatch(final String tournament, final MatchInfo mInfo) {
         this.mTourna = tournament;
         this.mMInfo = mInfo;
-        fetchGameJournals();
+        if(mInfo==null) fetchAllGameJournals();
+        else fetchGameJournals();
     }
 
     private void fetchGameJournals(){
@@ -48,7 +50,8 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
         if(mMInfo==null || mMInfo.T1.isEmpty()) return;
 
         Log.i(TAG, "fetchGameJournals:" + mTourna + "/../data/" + mMInfo.key);
-        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA)
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                .child(mCommon.mClub).child(Constants.TOURNA)
                 .child(mTourna).child(Constants.MATCHES).child(Constants.DATA).child(mMInfo.key);
 
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -78,6 +81,56 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
                 if(mGameJournalMap.size()>0) notifyDataSetChanged();
             }
 
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Toast.makeText(mContext, "DB error while fetching games: " + databaseError.toString(),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void fetchAllGameJournals(){
+        if(mTourna.isEmpty()) return;
+
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                .child(mCommon.mClub).child(Constants.TOURNA)
+                .child(mTourna).child(Constants.MATCHES).child(Constants.DATA);
+
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Log.d(TAG, "fetchGameJournals:" + dataSnapshot.getKey());
+                mGameJournalMap.clear();
+                mMatchList.clear();
+                for (DataSnapshot msDS : dataSnapshot.getChildren()) {  //0, 1 ..
+                    String matchSetId = msDS.getKey();
+                    for (DataSnapshot child : msDS.getChildren()) {  //M1, M2, ..
+                        String matchId = child.getKey();
+                        final ArrayList<GameJournalDBEntry> gameList = new ArrayList<>();
+                        for (DataSnapshot gc : child.getChildren()) {  //game entries 0, 1, 2
+                            GameJournalDBEntry jEntry = gc.getValue(GameJournalDBEntry.class);
+                            if (jEntry == null) continue;
+                            if (jEntry.getmWS() < 21) continue;
+                            gameList.add(jEntry);
+                            Log.d(TAG, "fetchGameJournals:" + jEntry.toReadableString());
+                        }
+                        if (gameList.size() > 0) {
+                            String tmp = String.format(Locale.getDefault(),"%s-%s",matchSetId,matchId);
+                            mGameJournalMap.put(tmp, gameList);
+                            mMatchList.add(tmp);
+                            Log.d(TAG, "onDataChange: SGO added:" + tmp);
+                            //mGameJournalMap.put(matchId, gameList);
+                            //mMatchList.add(matchId);
+                        } else {
+                            Toast.makeText(mContext, "No matches found in DB", Toast.LENGTH_LONG).show();
+                        }
+
+                    }
+                }
+                if(mGameJournalMap.size()>0) notifyDataSetChanged();
+            }
+
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
                 Toast.makeText(mContext, "DB error while fetching games: " + databaseError.toString(),
@@ -94,6 +147,8 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
             Log.d(TAG, "getPlayer1FromTeam1, mCommon.mTeamInfoMap.size is 0");
             return p1;
         }
+
+        if(mMInfo==null) return p1;
 
         TeamInfo t1Info = mCommon.mTeamInfoMap.get(mMInfo.T1);
         if(t1Info==null) {
@@ -121,17 +176,19 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
 
     @Override
     public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
-        ArrayList<GameJournalDBEntry> gameList = mGameJournalMap.get(mMatchList.get(position));
+        String matchId = mMatchList.get(position);
+        ArrayList<GameJournalDBEntry> gameList = mGameJournalMap.get(matchId);
         GameJournalDBEntry game1Entry = gameList.get(0);
         String p1T1 = getPlayer1FromTeam1(game1Entry);
         Log.d(TAG, "onBindViewHolder, getPlayer1FromTeam1:" + p1T1);
 
-
-        String matchStr = game1Entry.toPlayersString(p1T1);
+        StringBuilder sb = new StringBuilder();
+        sb.append(matchId); sb.append(":  ");
+        sb.append(game1Entry.toPlayersString(p1T1));
         for(GameJournalDBEntry jEntry: gameList) {
-            matchStr += jEntry.toScoreString(p1T1) + "  ";
+            sb.append(jEntry.toScoreString(p1T1)); sb.append("  ");
         }
-        holder.journalEntry.setText(matchStr);
+        holder.journalEntry.setText(sb.toString());
         holder.journalEntryUser.setText(gameList.get(0).getmU());
         holder.parentLayout.setDividerPadding(100);  //Padding value in pixels that will be applied to each end
 /*
@@ -157,6 +214,9 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
     public int getItemCount() {
         return mMatchList.size();
     }
+
+    //SGO: TODO: option to correct a bad entry. Deleting a match would mean, reverting the points.
+
 /*
     private void showAlert(final View view, final ViewHolder holder) {
         int position = holder.getAdapterPosition();
