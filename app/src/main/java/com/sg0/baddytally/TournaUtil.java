@@ -145,7 +145,7 @@ public class TournaUtil {
                     return;
                 }
                 mNumOfMatches = numOfMatches;
-                Log.i(TAG, "readDBMatchMeta Num of Matches = " + mNumOfMatches.toString());
+                //Log.i(TAG, "readDBMatchMeta Num of Matches = " + mNumOfMatches.toString());
 
                 ds = dataSnapshot.child(Constants.INFO + "/" + Constants.NUM_OF_GAMES);
                 Integer bestOf = ds.getValue(Integer.class);
@@ -156,7 +156,8 @@ public class TournaUtil {
                     return;
                 }
                 mBestOf = bestOf;
-                Log.i(TAG, "readDBMatchMeta Best of = " + mBestOf.toString());
+                Log.i(TAG, "readDBMatchMeta Best of = " + mBestOf.toString() +
+                        " Num of Matches = " + mNumOfMatches.toString());
 
                 List<String> tmpList = new ArrayList<>();
                 HashMap<String,MatchInfo> tmpListInfo = new HashMap<>();

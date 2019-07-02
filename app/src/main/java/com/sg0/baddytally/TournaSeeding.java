@@ -87,7 +87,7 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
         }
         mCommon = SharedData.getInstance();
 
-        if(!mCommon.isRoot() && !mCommon.isAdmin()) finish();
+        if(!mCommon.isAdminOrRoot()) finish();
 
         setTitle(mTourna);
         mTeams = new ArrayList<>();

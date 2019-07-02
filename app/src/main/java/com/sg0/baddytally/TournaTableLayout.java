@@ -1219,7 +1219,7 @@ class TournaTable implements View.OnClickListener {
         popup.getMenu().clear();
         Menu pMenu = popup.getMenu();
         pMenu.add(MATCH_INFO);
-        if (mCommon.isRoot() || mCommon.isAdmin()) pMenu.add(ENTER_SCORE);
+        if (mCommon.isAdminOrRoot()) pMenu.add(ENTER_SCORE);
         if (mCommon.isRoot()) pMenu.add(RESET_MATCH);
         pMenu.add(VIEW_SCORE);
 

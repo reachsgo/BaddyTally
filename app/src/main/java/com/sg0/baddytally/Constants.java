@@ -77,7 +77,7 @@ class Constants {
     static final String CB_SHOWTOURNA = "showTournaments";
     static final String CB_READMATCHMETA = "readDBMatchMeta";
     static final String CB_SHOWMATCHES = "showMatches";
-    static final String CB_NOMATCHFAOUND = "No match found!";
+    static final String CB_NOMATCHFOUND = "No match found!";
     static final String FIXTURE_UPPER = "fixU";
     static final String FIXTURE_LOWER = "fixL";
     static final String DE_FINALS = "F-1";

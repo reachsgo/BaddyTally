@@ -97,6 +97,14 @@ class TeamScoreDBEntry {
         this.gPtsA += gPointsAgainst;
     }
 
+    void deleteGame(final int gPoints, final int gPointsAgainst, final boolean won){
+        this.gP--;
+        this.gPts -= gPoints;
+        this.gPtsA -= gPointsAgainst;
+        if(won) this.gW--;
+        Log.i("Tournament", won + ":deleteGame:" + toString());
+    }
+
     public void wonMatch(){
         this.pts++;
         this.mW++;
@@ -109,6 +117,14 @@ class TeamScoreDBEntry {
         Log.i("Tournament", "lostMatch:" + toString());
     }
 
+    void deleteMatch(final boolean won){
+        this.mP--;
+        if(won) {
+            this.pts--;
+            this.mW--;
+        }
+        Log.i("Tournament", won + ":deleteMatch:" + toString());
+    }
 
     @Override
     public String toString() {

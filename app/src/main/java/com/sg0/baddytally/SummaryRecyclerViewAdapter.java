@@ -69,7 +69,7 @@ public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecy
         holder.parentLayout.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
-                if (SharedData.getInstance().isRoot() || SharedData.getInstance().isAdmin())
+                if (SharedData.getInstance().isAdminOrRoot())
                     showOptions(view, holder);
                 return true;
             }

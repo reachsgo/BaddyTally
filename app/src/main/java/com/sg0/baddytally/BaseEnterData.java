@@ -74,6 +74,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     protected Integer mDBLockCount;
     protected String mType;
     protected boolean mGamesReadFromDB;
+    protected boolean mDeleteMS; //delete Match Set
 
     protected static final int INVALID_POINT = -9999;
     protected static final int MAX_POINT = 30;
@@ -98,12 +99,12 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         mDBLockCount = 0;
         mType = "";
         mGamesReadFromDB = false;
+        mDeleteMS = false;
     }
 
     //OnCreate() is expected to be implemented in the derived class.
     //which will invoke onCreateBase()
     protected void onCreateBase() {
-        Log.d(TAG, "onCreateBase: ");
         FloatingActionButton fab = findViewById(R.id.fab_cancel);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override

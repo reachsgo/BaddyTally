@@ -193,6 +193,10 @@ public class SharedData {
         return Constants.ADMIN.equals(mRole);
     }
 
+    public boolean isAdminOrRoot() {
+        return (Constants.ADMIN.equals(mRole) || Constants.ROOT.equals(mRole));
+    }
+
     public boolean isDBUpdated() {
         return mDBUpdated;
     }

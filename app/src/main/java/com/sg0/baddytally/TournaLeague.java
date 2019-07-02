@@ -99,7 +99,7 @@ public class TournaLeague extends AppCompatActivity implements CallbackRoutine {
         mCommon.wakeUpDBConnection_profile();
         //If this is return from other activities, show data of the already chosen tournament
         //mTUtil.fetchActiveTournaments();
-        selectActivityForTourna();
+        if(!selectActivityForTourna()) killActivity();
     }
 
     protected void killActivity() {

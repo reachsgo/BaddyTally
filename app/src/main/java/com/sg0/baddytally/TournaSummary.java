@@ -134,7 +134,7 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
     public void alertResult(final String in, final Boolean ok, final Boolean ko) {}
     public void callback(final String key, final Object inobj) {}
     public void completed (final String in, final Boolean ok) {
-        Log.w(TAG, "completed: " + in + ":" + ok);
+        //Log.w(TAG, "completed: " + in + ":" + ok);
         switch (in) {
             case Constants.CB_SHOWTOURNA:
                 //callback after reading DB for meta data
@@ -148,7 +148,7 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
                 //callback after reading DB for meta data
                 if (ok)
                 {
-                    Log.w(TAG, "completed: " + in + ", nNum=" + mTUtil.mNumOfMatches);
+                    Log.d(TAG, "completed: " + in + ", nNum=" + mTUtil.mNumOfMatches);
                     if(mTUtil.mNumOfMatches > 1) {
                         //More matches in a set, show summary for 1 match-set at a time.
                         mTUtil.showMatches(findViewById(R.id.header));
@@ -167,7 +167,7 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
                     String matchDesc = mSelectedMatch.T1 + Constants.TEAM_DELIM2 + mSelectedMatch.T2;
                     if (mSelectedMatch != null && !mSelectedMatch.desc.isEmpty())
                         matchDesc += "\n" + mSelectedMatch.desc;
-                    Log.w(TAG, "completed: " + in + ":" + mSelectedMatch.toString());
+                    Log.d(TAG, "completed: " + in + ":" + mSelectedMatch.toString());
                     TextView mHeader = findViewById(R.id.silver_group);
                     mHeader.setText(matchDesc);
                     mAdapter.setMatch(mTourna, mSelectedMatch);

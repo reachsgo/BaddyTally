@@ -20,6 +20,11 @@ public class PlayerInfo {
         this.gP++;
     }
 
+    void deleteGame(final boolean won){
+        if(won) this.gW--;
+        this.gP--;
+    }
+
     @Override
     public String toString() {
         return "PlayerInfo{" +
