@@ -5,8 +5,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.Build;
-import android.support.annotation.NonNull;
-import android.support.v7.widget.RecyclerView;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.util.Log;
@@ -31,6 +29,9 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder> {
     private static final String TAG = "RecyclerViewAdapter";
@@ -115,7 +116,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     /*
     Below error log is seen on API19 (Android 4.4.2), though the app logs I have added stop coming after this, app seems to be functional
-    09-18 10:47:33.091 12225-12225/com.sg0.baddytally D/ViewGroup: addInArray been called, this = android.support.v7.widget.RecyclerView{421f9bf8 VFED.V.. .F....ID 0,123-680,519 #7f080071 app:id/gold_view}call stack =
+    09-18 10:47:33.091 12225-12225/com.sg0.baddytally D/ViewGroup: addInArray been called, this = androidx.recyclerview.widget.RecyclerView{421f9bf8 VFED.V.. .F....ID 0,123-680,519 #7f080071 app:id/gold_view}call stack =
     java.lang.Throwable: addInArray
      */
 

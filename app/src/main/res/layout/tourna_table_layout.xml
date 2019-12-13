@@ -26,17 +26,17 @@
         android:layout_weight="1"
         android:background="@drawable/bg_nonbirdie_ub">
 
-        <android.support.v4.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        <androidx.core.widget.NestedScrollView
             android:layout_width="wrap_content"
             android:layout_height="match_parent">
-            <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            <TableLayout
                 android:id="@+id/tourna_table_upper"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:isScrollContainer="true"
                 android:padding="5dp">
             </TableLayout>
-        </android.support.v4.widget.NestedScrollView>
+        </androidx.core.widget.NestedScrollView>
 
     </HorizontalScrollView>
 
@@ -61,17 +61,17 @@
         android:layout_weight="1"
         android:background="@drawable/bg_nonbirdie_lb">
 
-        <android.support.v4.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        <androidx.core.widget.NestedScrollView
             android:layout_width="wrap_content"
             android:layout_height="match_parent">
-            <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            <TableLayout
                 android:id="@+id/tourna_table_lower"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:isScrollContainer="true"
                 android:padding="2dp">
             </TableLayout>
-        </android.support.v4.widget.NestedScrollView>
+        </androidx.core.widget.NestedScrollView>
 
     </HorizontalScrollView>
 

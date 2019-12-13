@@ -5,34 +5,45 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
+import android.text.style.RelativeSizeSpan;
+import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.firebase.database.FirebaseDatabase;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 
 public class MainSelection2 extends AppCompatActivity {
 
     private static final String TAG = "MainSelection2";
-    private Button mTournaBtn;
-    private Button mClubLeagueBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main_selection2);
-        //Log.d(TAG, "onCreate: ");
+        Log.d(TAG, "onCreate: ");
 
-        mTournaBtn = findViewById(R.id.tournaments);
+        Button mTournaBtn = findViewById(R.id.tournaments);
         mTournaBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -44,7 +55,7 @@ public class MainSelection2 extends AppCompatActivity {
             }
         });
 
-        mClubLeagueBtn = findViewById(R.id.clubleague);
+        Button mClubLeagueBtn = findViewById(R.id.clubleague);
         mClubLeagueBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -63,17 +74,16 @@ public class MainSelection2 extends AppCompatActivity {
                 MainSelection2.this.startActivity(myIntent);
             }
         });
+
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        //Log.d(TAG, "onResume: ");
-        //if (SharedData.getInstance().mTournaMode) {
-        //    mTournaBtn.performClick();
-        //} else {
-            //mClubLeagueBtn.performClick();
-        //}
+        setTitle(SharedData.getInstance().mClub);
+        Log.d(TAG, "onResume: ");
+        displayNews(false);
     }
 
 
@@ -82,13 +92,20 @@ public class MainSelection2 extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.basic_menu_main, menu);
         menu.findItem(R.id.action_refresh).setVisible(false);
         if (SharedData.getInstance().isRoot()) {
-            MenuItem mEnterDataItem = menu.findItem(R.id.action_settings);
+            MenuItem offlineMode = menu.findItem(R.id.action_settings);
             if(SharedData.getInstance().mOfflineMode)
-                mEnterDataItem.setTitle("Disable Offline mode");
+                offlineMode.setTitle("Disable Offline mode");
             else
-                mEnterDataItem.setTitle("Enable Offline mode");
+                offlineMode.setTitle("Enable Offline mode");
+
+            MenuItem miscOption = menu.findItem(R.id.action_misc);
+            miscOption.setTitle("Broadcast News");
+            miscOption.setVisible(true);
         } else {
             menu.findItem(R.id.action_settings).setVisible(false);
+            MenuItem miscOption = menu.findItem(R.id.action_misc);
+            miscOption.setTitle("Club News");
+            miscOption.setVisible(true);
         }
         return true;
     }
@@ -188,6 +205,59 @@ public class MainSelection2 extends AppCompatActivity {
                         .setTitle(SharedData.getInstance().getTitleStr(Constants.APPNAME, MainSelection2.this))
                         .setNeutralButton("Ok", null).show();
                 break;
+            case R.id.action_misc:
+                
+                //Allow root user to broadcast info. This will be shown as popup window for every user.
+                final SharedData mCommon = SharedData.getInstance();
+                mCommon.wakeUpDBConnection_profile(); //read news again; might not be in time for this view, but atleast for future.
+                if (mCommon.isRoot()) {
+                    AlertDialog.Builder alert = new AlertDialog.Builder(MainSelection2.this);
+                    final EditText edittext = new EditText(MainSelection2.this);
+                    edittext.setTextColor(Color.WHITE);
+                    //final EditText edittext = dialogView.findViewById(R.id.et);
+                    alert.setTitle(mCommon.getColorString("Message to broadcast:\n", Color.CYAN));
+
+                    edittext.setHint("Type message here to be displayed to all users");
+
+
+                    if (!mCommon.mNews.isEmpty()) edittext.setText(mCommon.mNews);
+                    edittext.setSelection(edittext.getText().length());
+                    alert.setView(edittext);
+
+                    alert.setPositiveButton("Broadcast", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            String new_msg = edittext.getText().toString();
+                            if (!new_msg.equals(mCommon.mNews)) {
+                                //write the new msg to DB
+                                FirebaseDatabase.getInstance().getReference()
+                                        .child(mCommon.mClub).child(Constants.PROFILE).child(Constants.NEWS)
+                                        .setValue(new_msg);
+                                Log.i(TAG, "News set: [" + new_msg + "]");
+                                mCommon.wakeUpDBConnection_profile(); //read news again
+                            }
+                        }
+                    });
+
+                    alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            // what ever you want to do with No option.
+                        }
+                    });
+                    AlertDialog dialog = alert.create();
+                    dialog.show();
+                    Window window = dialog.getWindow();
+                    if(window != null) {
+                        WindowManager.LayoutParams windowParams = window.getAttributes();
+                        windowParams.dimAmount = 0.90f;
+                        windowParams.flags |= WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+                        window.setAttributes(windowParams);
+                        window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                    }
+
+                } else {
+                    displayNews(true);
+                }
+                break;
             default:
                 break;
         }
@@ -203,5 +273,56 @@ public class MainSelection2 extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         SharedData.getInstance().killApplication(MainSelection2.this);
+    }
+
+    private void displayNews(final boolean showAlways) {
+        final SharedData mCommon = SharedData.getInstance();
+        if (!showAlways) {
+            //if the news was already read by this user, dont show it.
+            if (mCommon.mReadNews.equals(mCommon.mNews)) return;
+        }
+        if(mCommon.mNews.isEmpty()) {
+            Toast.makeText(MainSelection2.this, "No news!", Toast.LENGTH_SHORT)
+                    .show();
+            return;
+        }
+
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainSelection2.this);
+        //alertBuilder.setTitle("Club News");
+        alertBuilder.setMessage(mCommon.getColorString(mCommon.mNews, Color.WHITE));
+        alertBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                mCommon.mReadNews = mCommon.mNews;
+            }
+        });
+
+        //finally creating the alert dialog and displaying it
+        AlertDialog alertDialog = alertBuilder.create();
+        // Change the alert dialog background color
+        //alertDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.YELLOW));
+        alertDialog.show();
+        Window window = alertDialog.getWindow();
+        if(window != null) {
+            WindowManager.LayoutParams windowParams = window.getAttributes();
+            windowParams.dimAmount = 0.90f;
+            windowParams.flags |= WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+            window.setAttributes(windowParams);
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+    }
+
+    private void setTitle(String title) {
+        if (!TextUtils.isEmpty(title)) {
+            //Log.d(TAG, "setTitle: " + title);
+            String tempString = Constants.APPNAME + "  " + title;
+            SpannableString spanString = new SpannableString(tempString);
+            spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPNAME.length(), 0);
+            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPNAME.length(), tempString.length(), 0);
+            spanString.setSpan(new RelativeSizeSpan(0.7f), Constants.APPNAME.length(), tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            getSupportActionBar().setTitle(""); //workaround for title getting truncated.
+            getSupportActionBar().setTitle(spanString);
+            //getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
     }
 }

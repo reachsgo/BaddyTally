@@ -13,9 +13,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.content.res.ResourcesCompat;
+
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.BackgroundColorSpan;
@@ -55,6 +53,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.res.ResourcesCompat;
 import jxl.Cell;
 import jxl.Sheet;
 import jxl.Workbook;
@@ -87,6 +88,8 @@ public class SharedData {
     String mAdminCode;
     String mMemCode;
     String mRootCode;
+    String mNews;
+    String mReadNews;
     ArrayList<PlayerData> mGoldPlayers;
     ArrayList<PlayerData> mSilverPlayers;
     Integer mInningsDBKey;
@@ -158,6 +161,8 @@ public class SharedData {
         mAdminCode = "";
         mMemCode = "";
         mRootCode = "";
+        mNews = "";
+        mReadNews = "";
         mGoldPlayers = null;
         mSilverPlayers = null;
         mInningsDBKey = -1;
@@ -602,7 +607,15 @@ public class SharedData {
                 } else {
                     try {
                         ActiveUserDBEntry userData = dataSnapshot.getValue(ActiveUserDBEntry.class);
-                        Log.w(TAG, "wakeUpDBConnection: onComplete: Success: ");
+                        Log.w(TAG, "wakeUpDBConnection: onComplete: Success: " + id);
+                        if(userData == null) {
+                            Log.w(TAG, "wakeUpDBConnection: onComplete: Success: " + "null data");
+                            dbRef.setValue(new ActiveUserDBEntry(mRole, model_name,
+                                    login_day, BuildConfig.VERSION_NAME));
+                            Log.w(TAG, "New user created in DB:" + id);
+                        } else {
+                            Log.w(TAG, "wakeUpDBConnection: onComplete: Success: " + userData.toString());
+                        }
                     } catch (NullPointerException e) {
                         if(mClub.isEmpty()) return;
                         //java.lang.NullPointerException: Attempt to invoke virtual method 'boolean java.lang.Boolean.booleanValue()' on a null object reference
@@ -657,6 +670,9 @@ public class SharedData {
                             Boolean wake = child.getValue(Boolean.class);
                             child.setValue(!wake);
                             Log.w(TAG, "doTransaction: wake=" + !wake );
+                            break;
+                        case Constants.NEWS:
+                            mNews = child.getValue(String.class);
                             break;
                     } //switch case
                 }
@@ -877,7 +893,9 @@ public class SharedData {
                         case "numgroups":
                             mNumOfGroups = child.getValue(Integer.class);
                             break;
-
+                        case Constants.NEWS:
+                            mNews = child.getValue(String.class);
+                            break;
                     } //switch case
                 }
                 //Log.w(TAG, "fetchProfile: onDataChange:" + mAdminCode + "/" + mRootCode);

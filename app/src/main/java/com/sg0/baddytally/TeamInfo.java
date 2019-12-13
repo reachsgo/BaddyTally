@@ -48,13 +48,18 @@ public class TeamInfo {
     }
 
     public String get1LineDesc() {
-        String descStr = desc;
+        //String descStr = desc + " "; //Saving screen space to have multiple teams on the same page
+        String descStr = "";
         if(p_nicks.size()>0) {
-            descStr += " (";
+            descStr += "(";
             int idx = 0;
             for (String p: p_nicks) {
-                if(idx>0) descStr += ",";
+                if(idx>0) descStr += ", ";
                 descStr += p;
+                if(descStr.length()>40) {
+                    descStr += "..";
+                    break; //save screen space
+                }
                 idx++;
             }
             descStr += ")";

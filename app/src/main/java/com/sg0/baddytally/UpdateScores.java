@@ -1,7 +1,6 @@
 package com.sg0.baddytally;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -12,6 +11,8 @@ import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.List;
+
+import androidx.annotation.NonNull;
 
 class UpdateScores implements ValueEventListener {
     private static final String TAG = "UpdateScores";

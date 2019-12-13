@@ -6,9 +6,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -17,6 +15,8 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -26,6 +26,8 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import androidx.annotation.NonNull;
 
 
 public class ClubLeagueEnterData extends BaseEnterData {
@@ -266,6 +268,77 @@ public class ClubLeagueEnterData extends BaseEnterData {
         mSpinner_T2_1.setAdapter(scoreAdapter);
         mSpinner_T1_1.setSelection(0);
         mSpinner_T2_1.setSelection(0);
+
+        mSpinner_T1_1.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int pos, long l) {
+                Integer i = (Integer) adapterView.getItemAtPosition(pos);
+                if(i == INVALID_POINT) {
+                    //Spinner reserves enough space to display its widest entry.
+                    //So, in order to keep the drop-down wide enough (makes it easier for user to select),
+                    //just add a longer integer to the end. If this is selected, its ignored.
+                    //Log.d(TAG, "onItemSelected: " + INVALID_POINT);
+                    adapterView.setSelection(0);
+                    return;
+                }
+
+                //If the losing score is entered first, then auto-populate 21 in the other team's spinner.
+                if(i>0 && i<20) {
+                    if((Integer)mSpinner_T2_1.getSelectedItem()==0)
+                        mSpinner_T2_1.setSelection(21);
+                }
+                if(i==20) {
+                    if((Integer)mSpinner_T2_1.getSelectedItem()==0)
+                        mSpinner_T2_1.setSelection(22);
+                }
+                //If a score above 21 is entered, assume this is the loser score and guess the winning score.
+                if(i>21 && i<29) {
+                    if((Integer)mSpinner_T2_1.getSelectedItem()==0)
+                        mSpinner_T2_1.setSelection(i+2);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
+
+        mSpinner_T2_1.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int pos, long l) {
+                Integer i = (Integer) adapterView.getItemAtPosition(pos);
+                if(i == INVALID_POINT) {
+                    //Spinner reserves enough space to display its widest entry.
+                    //So, in order to keep the drop-down wide enough (makes it easier for user to select),
+                    //just add a longer integer to the end. If this is selected, its ignored.
+                    //Log.d(TAG, "onItemSelected: " + INVALID_POINT);
+                    adapterView.setSelection(0);
+                    return;
+                }
+
+                //If the losing score is entered first, then auto-populate 21 in the other team's spinner.
+                if(i>0 && i<20) {
+                    if((Integer)mSpinner_T1_1.getSelectedItem()==0)
+                        mSpinner_T1_1.setSelection(21);
+                }
+                if(i==20) {
+                    if((Integer)mSpinner_T1_1.getSelectedItem()==0)
+                        mSpinner_T1_1.setSelection(22);
+                }
+                //If a score above 21 is entered, assume this is the loser score and guess the winning score.
+                if(i>21 && i<29) {
+                    if((Integer)mSpinner_T1_1.getSelectedItem()==0)
+                        mSpinner_T1_1.setSelection(i+2);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
+
     }
 
     /*

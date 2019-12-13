@@ -8,8 +8,7 @@ import android.content.pm.ActivityInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
+
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
@@ -27,11 +26,14 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.Map;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 
 public class TournaLanding extends AppCompatActivity implements CallbackRoutine {

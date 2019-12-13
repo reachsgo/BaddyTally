@@ -12,8 +12,7 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v7.app.AppCompatActivity;
+
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -29,12 +28,15 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
 
@@ -301,6 +303,14 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         }
 
         //Log.v(TAG, "attemptLogin(" + club + "," + secpd + "):" + mAdminCode + ":" + mMemCode);
+
+        //hide keyboard
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+        if(getCurrentFocus()!=null) {
+            InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if(null!=inputMethodManager)
+                inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+        }
 
         if (cancel) {
             // There was an error; don't attempt login and focus the first

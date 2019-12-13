@@ -6,9 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
+
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -16,11 +14,16 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.Toast;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 //Base class with the common functionalities needed to EnterData
 //Mostly around DB lock & release.
@@ -105,12 +108,15 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     //OnCreate() is expected to be implemented in the derived class.
     //which will invoke onCreateBase()
     protected void onCreateBase() {
+        Log.i(TAG, "BaseEnterData::onCreateBase");
         FloatingActionButton fab = findViewById(R.id.fab_cancel);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 //Log.d(TAG, "onClick: ");
                 mCommon.killActivity(BaseEnterData.this, RESULT_OK);
+                //behavior is to kill the activity. Derived class could overirde this
+                //as done in TournaLeagueEnterData
             }
         });
         onCreateExtra();
@@ -243,7 +249,8 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
                 mSpinner_P1_selection = (String) adapterView.getItemAtPosition(position);
                 // Notify the selected item text
-                //Log.v(TAG, "mSpinner_P1 onItemSelected mSpinner_P1_selection:" + mSpinner_P1_selection);
+                //Log.v(TAG, "mSpinner_P1 onItemSelected, readFromDB=" +  mGamesReadFromDB +
+                //        " mSpinner_P1_selection:" + mSpinner_P1_selection);
 
 
                 //If there are games read from DB, then dont rearrange the players.
@@ -338,7 +345,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         }
 
         //If the losing score is entered first, then auto-populate 21 in the other team's spinner.
-        if(i>0 && i<21) {
+        if(i>0 && i<20) {
             if(adapterView==mSpinner_T1_1 && (Integer)mSpinner_T2_1.getSelectedItem()==0)
                 mSpinner_T2_1.setSelection(21);
             else if(adapterView==mSpinner_T2_1 && (Integer)mSpinner_T1_1.getSelectedItem()==0)
@@ -352,8 +359,37 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
             else if(adapterView==mSpinner_T2_3 && (Integer)mSpinner_T1_3.getSelectedItem()==0)
                 mSpinner_T1_3.setSelection(21);
         }
+        if(i==20) {
+            if(adapterView==mSpinner_T1_1 && (Integer)mSpinner_T2_1.getSelectedItem()==0)
+                mSpinner_T2_1.setSelection(22);
+            else if(adapterView==mSpinner_T2_1 && (Integer)mSpinner_T1_1.getSelectedItem()==0)
+                mSpinner_T1_1.setSelection(22);
+            else if(adapterView==mSpinner_T1_2 && (Integer)mSpinner_T2_2.getSelectedItem()==0)
+                mSpinner_T2_2.setSelection(22);
+            else if(adapterView==mSpinner_T2_2 && (Integer)mSpinner_T1_2.getSelectedItem()==0)
+                mSpinner_T1_2.setSelection(22);
+            else if(adapterView==mSpinner_T1_3 && (Integer)mSpinner_T2_3.getSelectedItem()==0)
+                mSpinner_T2_3.setSelection(22);
+            else if(adapterView==mSpinner_T2_3 && (Integer)mSpinner_T1_3.getSelectedItem()==0)
+                mSpinner_T1_3.setSelection(22);
+        }
+        //If a score above 21 is entered, assume this is the loser score and guess the winning score.
+        if(i>21 && i<29) {
+            if(adapterView==mSpinner_T1_1 && (Integer)mSpinner_T2_1.getSelectedItem()==0)
+                mSpinner_T2_1.setSelection(i+2);
+            else if(adapterView==mSpinner_T2_1 && (Integer)mSpinner_T1_1.getSelectedItem()==0)
+                mSpinner_T1_1.setSelection(i+2);
+            else if(adapterView==mSpinner_T1_2 && (Integer)mSpinner_T2_2.getSelectedItem()==0)
+                mSpinner_T2_2.setSelection(i+2);
+            else if(adapterView==mSpinner_T2_2 && (Integer)mSpinner_T1_2.getSelectedItem()==0)
+                mSpinner_T1_2.setSelection(i+2);
+            else if(adapterView==mSpinner_T1_3 && (Integer)mSpinner_T2_3.getSelectedItem()==0)
+                mSpinner_T2_3.setSelection(i+2);
+            else if(adapterView==mSpinner_T2_3 && (Integer)mSpinner_T1_3.getSelectedItem()==0)
+                mSpinner_T1_3.setSelection(i+2);
+        }
         //String s = adapterView.getItemAtPosition(position).toString();
-        //Log.d(TAG, "onItemSelected: " + s);
+        Log.d(TAG, "onItemSelected for Points");
         enterData(true);
     }
 
@@ -371,6 +407,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode,  resultCode,  data);
         //Log.d(TAG, "onActivityResult: " + requestCode + "," + resultCode);
         mCommon.wakeUpDBConnection_profile();
         if(requestCode==Constants.TRACKSCORES_ACTIVITY &&
@@ -421,8 +458,8 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
 
     protected void rearrangeDropdownList(Spinner spinner, ArrayAdapter<String> adapter, List<String> players) {
 
-        //Log.v(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/"
-        //        + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
+        Log.v(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/"
+                  + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
         adapter.clear();
         //Collections.sort(players);  //sorted already so that players present on the court comes first.
         adapter.addAll(players);
@@ -458,8 +495,8 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
             spinner.setSelection(0);
             mSpinner_P4_selection = spinner.getItemAtPosition(0).toString();
         }
-        //Log.i(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" +
-        //        mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
+        Log.i(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" +
+                mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
         adapter.notifyDataSetChanged();
     }
 
@@ -483,12 +520,12 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     }
 
     protected void setGamePointSpinner(final int gameNum, final int t1Score, final int t2Score) {
-        //Log.i(TAG, "setGamePointSpinner,case " + gameNum + ": " + t1Score + "/" + t2Score);
+        mGamesReadFromDB = true; //Data read from DB is set in the spinners.
+        Log.i(TAG, "setGamePointSpinner game=" + gameNum + ": " + t1Score + "/" + t2Score + " f=" + mGamesReadFromDB);
         Spinner tmpS = getRespectiveSpinner(gameNum, 1);
         if (tmpS != null) tmpS.setSelection(t1Score);
         tmpS = getRespectiveSpinner(gameNum, 2);
         if (tmpS != null) tmpS.setSelection(t2Score);
-        mGamesReadFromDB = true; //Data read from DB is set in the spinners.
     }
 
     protected ArrayList<String> getGamePoints() {
@@ -512,23 +549,54 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     protected void setPlayersSpinner(final String t1P1, final String t1P2, final String t2P1, final String t2P2) {
         //Log.d(TAG, "setPlayersSpinner: " + String.format("T1=%s,%s T2=%s,%s", t1P1, t1P2, t2P1, t2P2));
         //Log.d(TAG, "setPlayersSpinner: " + String.format("mT1=%s mT2=%s", mT1_players, mT2_players));
-        for(int pos=0; pos < mT1_players.size(); pos++) {
-            if(mT1_players.get(pos).equals(t1P1)) {
-                mSpinner_P1.setSelection(pos);
-                //Log.d(TAG, "setPlayersSpinner: mSpinner_P1.setSelection" + pos);
+        //Log.d(TAG, "SGO setPlayersSpinner2 mSpinner_P1 items=" + printSpinnerItems(mSpinner_P1) +
+        //        " playerShort=" + t1P1 + "ada_count=" + mSpinner_P1.getAdapter().getCount());
+        setPlayersSpinner2(mSpinner_P1, t1P1);
+        //Log.d(TAG, "SGO setPlayersSpinner2 mSpinner_P2 items=" + printSpinnerItems(mSpinner_P2) +
+        //        " playerShort=" + t1P2 + "ada_count=" + mSpinner_P2.getAdapter().getCount());
+        setPlayersSpinner2(mSpinner_P2, t1P2);
+        //Log.d(TAG, "SGO setPlayersSpinner2 mSpinner_P3 items=" + printSpinnerItems(mSpinner_P3) +
+        //        " playerShort=" + t2P1 + "ada_count=" + mSpinner_P3.getAdapter().getCount());
+        setPlayersSpinner2(mSpinner_P3, t2P1);
+        //Log.d(TAG, "SGO setPlayersSpinner2 mSpinner_P4 items=" + printSpinnerItems(mSpinner_P4) +
+        //        " playerShort=" + t2P2+ "ada_count=" + mSpinner_P4.getAdapter().getCount());
+        setPlayersSpinner2(mSpinner_P4, t2P2);
+
+        /*
+        Log.d(TAG, "mSpinner ==> " +
+                String.format("Team1=%s,%s Team2=%s,%s",
+                        mSpinner_P1.getSelectedItem().toString(),
+                        mSpinner_P2.getSelectedItem().toString(),
+                        mSpinner_P3.getSelectedItem().toString(),
+                        mSpinner_P4.getSelectedItem().toString())
+                );
+         */
+    }
+
+    //Use the list from spinner (in case the list is changed) instead of mT1_players & mT2_players
+    protected void setPlayersSpinner2(final Spinner spinner, final String pnick)
+    {
+        for(int pos=0; pos < spinner.getCount(); pos++) {
+            //Log.d(TAG, "mSpinner_P4: " + String.format("%s %s", spinner.getItemAtPosition(pos), playerShort));
+            if(((String)spinner.getItemAtPosition(pos)).contains(pnick)) {
+                spinner.setSelection(pos);
+                //Log.d(TAG, "setPlayersSpinner: ==============" +
+                //        String.format("c=%s %s:%s = %s", spinner.getCount(), pos,
+                //                spinner.getItemAtPosition(pos), pnick));
+                break;
             }
-            else if(mT1_players.get(pos).equals(t1P2)) {
-                mSpinner_P2.setSelection(pos);
-                //Log.d(TAG, "setPlayersSpinner: mSpinner_P2.setSelection" + pos);
-            }
-        }
-        for(int pos=0; pos < mT2_players.size(); pos++) {
-            if(mT2_players.get(pos).equals(t2P1)) mSpinner_P3.setSelection(pos);
-            else if(mT2_players.get(pos).equals(t2P2)) mSpinner_P4.setSelection(pos);
         }
     }
 
-    //
+    protected String printSpinnerItems(final Spinner spinner)
+    {
+        String items = "";
+        for(int pos=0; pos < spinner.getCount(); pos++) {
+            items += String.format("%s:%s ", pos, spinner.getItemAtPosition(pos).toString());
+        }
+        return items;
+    }
+
     protected void populateGamePoints() {
        //This needs to be invoked after the derived class does it stuff
        //to populate data from DB. this is needed so that, user can make changes
@@ -540,8 +608,9 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
             @Override
             public void run() {
                 mGamesReadFromDB = false;
+                //Log.i(TAG, "postDelayed reset mGamesReadFromDB f=" + mGamesReadFromDB);
             }
-        }, 1000);
+        }, 2000);
     }
 
     protected boolean enterData(boolean dry_run) {

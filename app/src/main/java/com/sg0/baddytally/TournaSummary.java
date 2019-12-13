@@ -4,11 +4,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Typeface;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.TextUtils;
@@ -19,8 +15,14 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 
 public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
@@ -75,7 +77,7 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "onClick: ");
+                Log.d(TAG, "onClick: " + mTUtil.mNumOfMatches);
                 if(mTUtil.mNumOfMatches > 1) {
                     //More matches in a set, show summary for 1 match-set at a time.
                     //Show the drop down again for user to see summary of another match-set.

@@ -1,14 +1,15 @@
 package com.sg0.baddytally;
 
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
+
 import android.text.SpannableStringBuilder;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
@@ -23,6 +24,9 @@ import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -34,6 +38,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import androidx.annotation.NonNull;
 
 
 public class TournaLeagueEnterData extends BaseEnterData implements CallbackRoutine {
@@ -67,6 +73,19 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
         onCreateBase();
     }
 
+    protected void onCreateBase() {
+        Log.i(TAG, "TournaLeagueEnterData::onCreateBase");
+        FloatingActionButton fab = findViewById(R.id.fab_cancel);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //Overriding the behavior to show the match drop down list again, so that the
+                //next game can be entered (useful in cases where all the entries for a day is done together).
+                recreate();
+            }
+        });
+        onCreateExtra();
+    }
 
     @Override
     protected void onCreateExtra() {
@@ -116,14 +135,33 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
         delButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(mCommon.isAdminOrRoot()) {
-                    mDeleteMS = true;
-                    mCommon.wakeUpDBConnection();
-                    enterData(false);
+                if(mCommon.isRoot()) {
+                    //double check if he really wants to delete
+                    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaLeagueEnterData.this);
+                    alertBuilder.setTitle("Are you sure?");
+                    alertBuilder.setMessage("You are about to delete a match. Scores currently entered will be gone!\n");
+                    mAlertMsg = mAlertTitle = "";
+                    alertBuilder.setPositiveButton("Go ahead, I know what I am doing!", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            Log.e(TAG, "onCreateExtra: MATCH IS BEING DELETED ======== " + mTeams + "/"
+                                    + mT1_players + "/" + mT2_players);
+                            mDeleteMS = true;
+                            mCommon.wakeUpDBConnection();
+                            enterData(false);
+                        }
+                    });
+                    alertBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                        }
+                    });
+                    alertBuilder.show();
                 } else {
                     Toast.makeText(TournaLeagueEnterData.this, "You don't have permission to do this!" ,
                             Toast.LENGTH_SHORT).show();
                     findViewById(R.id.delete).setEnabled(false);
+                    findViewById(R.id.delete).setVisibility(View.GONE);
                 }
             }
         });
@@ -247,7 +285,6 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
                     if (team_index == 1) mT1_players = tmpList;
                     else {
                         mT2_players = tmpList;
-                        initializeSpinners();
                         fetchGames();
                         Log.d(TAG, "fetchPlayers: mT1_players=" + mT1_players +
                                         " mT2_players=" + mT2_players);
@@ -287,6 +324,13 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
                     gameList.add(jEntry);
                     //Log.d(TAG, "fetchGames:" + jEntry.toReadableString());
                 }
+                initializeSpinners();
+                //SGO: if initializeSpinners() is invoked from fetchPlayers(), there is the below issue (hence moved here):
+                //Initializing the spinner causes selection callbacks (OnItemSelectedListener) to be invoked.
+                //This inturn was invoking rearrangeDropdownList before the flag 'mGamesReadFromDB' getting set.
+                //That leads to a situation where a player was being deleted from P2/P4 drop down list, leading to
+                //wrong player being displayed, instead of the one read from DB in case of scenario where DB
+                //already has completed matches.
                 populateGamePoints(gameList);
                 Log.d(TAG, "fetchGames onDataChange: " + gameList.size());
                 mGameList = gameList;
@@ -357,7 +401,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
         String p2 = "";
         String p4 = "";
 
-        Log.d(TAG, "enterData:" + p1 + "," + p2);
+        Log.d(TAG, "enterData(" + dry_run + ") :" + p1 + "," + p2 + " vs " + p3 + "," + p4);
         if (!mSingles) {
             String tmp2 = mSpinner_P2.getSelectedItem().toString();
             String tmp4 = mSpinner_P4.getSelectedItem().toString();
@@ -508,7 +552,9 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
 
                 if(mMatchAlreadyCompleted) {
                     //Only completed matches to be deleted
-                    findViewById(R.id.delete).setVisibility(View.VISIBLE);
+                    if(mCommon.isRoot()) {
+                        findViewById(R.id.delete).setVisibility(View.VISIBLE);
+                    }
                 } else {
                     //Only completed matches to be deleted
                     findViewById(R.id.delete).setVisibility(View.GONE);

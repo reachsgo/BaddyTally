@@ -11,6 +11,7 @@ class Constants {
     static final String HISTORY = "story";
     static final String SEASON = "season";
     static final String PROFILE = "profile";
+    static final String NEWS = "news";
     static final String JOURNAL = "journal";
     static final String SINGLES = "singles";
     static final String DOUBLES = "doubles";

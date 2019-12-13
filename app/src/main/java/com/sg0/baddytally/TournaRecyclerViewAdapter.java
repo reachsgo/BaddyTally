@@ -5,8 +5,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.Build;
-import android.support.annotation.NonNull;
-import android.support.v7.widget.RecyclerView;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -35,6 +33,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 
 
 public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecyclerViewAdapter.ViewHolder> implements CallbackRoutine{
@@ -158,7 +159,7 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
 
     /*
     Below error log is seen on API19 (Android 4.4.2), though the app logs I have added stop coming after this, app seems to be functional
-    09-18 10:47:33.091 12225-12225/com.sg0.baddytally D/ViewGroup: addInArray been called, this = android.support.v7.widget.RecyclerView{421f9bf8 VFED.V.. .F....ID 0,123-680,519 #7f080071 app:id/gold_view}call stack =
+    09-18 10:47:33.091 12225-12225/com.sg0.baddytally D/ViewGroup: addInArray been called, this = androidx.recyclerview.widget.RecyclerView{421f9bf8 VFED.V.. .F....ID 0,123-680,519 #7f080071 app:id/gold_view}call stack =
     java.lang.Throwable: addInArray
      */
 

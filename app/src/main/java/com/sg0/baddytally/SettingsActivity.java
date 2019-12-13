@@ -1,8 +1,9 @@
 package com.sg0.baddytally;
 
 import android.annotation.SuppressLint;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 //SGO: This class is not used now. Just for trying out Preferences settings menu
 

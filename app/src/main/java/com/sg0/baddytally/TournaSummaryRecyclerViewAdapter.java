@@ -1,8 +1,6 @@
 package com.sg0.baddytally;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,6 +18,9 @@ import com.google.firebase.database.ValueEventListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 
 public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<TournaSummaryRecyclerViewAdapter.ViewHolder> {
     private static final String TAG = "TournaSummaryAdapter";
@@ -73,12 +74,14 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
                     if(gameList.size()>0) {
                         mGameJournalMap.put(matchId, gameList);
                         mMatchList.add(matchId);
-                    } else {
-                        Toast.makeText(mContext, "No matches found in DB", Toast.LENGTH_LONG).show();
                     }
 
                 }
-                if(mGameJournalMap.size()>0) notifyDataSetChanged();
+                if(mGameJournalMap.size()>0) {
+                    notifyDataSetChanged();
+                } else {
+                    Toast.makeText(mContext, "Match yet to be played!", Toast.LENGTH_LONG).show();
+                }
             }
 
 

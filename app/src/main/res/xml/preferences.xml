@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--suppress AndroidElementNotAllowed -->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <android.support.v7.preference.SwitchPreferenceCompat
+    <SwitchPreferenceCompat
         android:defaultValue="false"
         android:key="switch_clear"
         android:summary="Clear the cache"
