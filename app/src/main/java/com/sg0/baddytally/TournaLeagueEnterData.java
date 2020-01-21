@@ -309,6 +309,10 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
     private void fetchGames() {
         //mGameNum = 1;
         Log.i(TAG, "fetchGames:" + mChosenMatch.key + "/" + mSelectedMatch);
+        //Add selected match id (ex: MS2/M3) to title
+        setTitle(String.format(Locale.getDefault(),"%s%s/%s", Constants.MATCHSETID_PREFIX, mChosenMatch.key,
+                               mSelectedMatch));
+
         final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
                 .child(mCommon.mClub).child(Constants.TOURNA)
                 .child(mCommon.mTournament).child(Constants.MATCHES).child(Constants.DATA)
@@ -532,7 +536,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
 
     private void isMatchAlreadyCompleted() {
         Log.d(TAG, "isMatchAlreadyCompleted: mMatchAlreadyCompleted=" + mMatchAlreadyCompleted +
-                String.format(" [%s/%s/%s]", Constants.META, mChosenMatch.key, mSelectedMatch));
+                String.format(Locale.getDefault()," [%s/%s/%s]", Constants.META, mChosenMatch.key, mSelectedMatch));
         final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
                 .child(Constants.TOURNA)
                 .child(mCommon.mTournament).child(Constants.MATCHES).child(Constants.META)
@@ -544,10 +548,10 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
                 if (completed != null) {
                     mMatchAlreadyCompleted = completed;
                     Log.d(TAG, "isMatchAlreadyCompleted: mMatchAlreadyCompleted=" + mMatchAlreadyCompleted +
-                            String.format(" [%s/%s/%s]", Constants.META, mChosenMatch.key,mSelectedMatch));
+                            String.format(Locale.getDefault()," [%s/%s/%s]", Constants.META, mChosenMatch.key,mSelectedMatch));
                 } else {
                     Log.d(TAG, "isMatchAlreadyCompleted (null): mMatchAlreadyCompleted=" + mMatchAlreadyCompleted +
-                            String.format(" [%s/%s/%s]", Constants.META, mChosenMatch.key,mSelectedMatch));
+                            String.format(Locale.getDefault()," [%s/%s/%s]", Constants.META, mChosenMatch.key,mSelectedMatch));
                 }
 
                 if(mMatchAlreadyCompleted) {
@@ -645,11 +649,11 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
             if (jEntry.aWinner(randomPlayerT2)) randomPlayerT2_Wins++;
         }
         Log.i(TAG, "isMatchDone: " +
-                String.format("randomPlayerT1=%s randomPlayerT1_Wins=%d, randomPlayerT2=%s randomPlayerT2_Wins=%d",
+                String.format(Locale.getDefault(),"randomPlayerT1=%s randomPlayerT1_Wins=%d, randomPlayerT2=%s randomPlayerT2_Wins=%d",
                         randomPlayerT1, randomPlayerT1_Wins, randomPlayerT2, randomPlayerT2_Wins));
         if (gamesCompleted == 1 && mBestOf == 1) {
             Log.i(TAG, "isMatchDone: Best-of-1 " +
-                    String.format("randomPlayerT1=%s randomPlayerT1_Wins=%d,%d",
+                    String.format(Locale.getDefault(),"randomPlayerT1=%s randomPlayerT1_Wins=%d,%d",
                             randomPlayerT1, randomPlayerT1_Wins, randomPlayerT2_Wins));
             if (randomPlayerT1_Wins == 1) mWinnerPlayer1 = randomPlayerT1;
             else if (randomPlayerT2_Wins == 1) mWinnerPlayer1 = randomPlayerT2;
@@ -869,6 +873,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
         Log.i(TAG, "updateDB Got Teams=" + mDBTeamScoreData.size() + ", Players=" + mDBPlayerData.size() +
                 " Match=" + mChosenMatch.key + "/" + mSelectedMatch);
         //Log.d(TAG, "updateDB: SGO=" + mDBPlayerData.toString());
+        StringBuffer scoreSB = new StringBuffer();
         for (Map.Entry<String, TeamScoreDBEntry> entry : mDBTeamScoreData.entrySet()) {
             final String team = entry.getKey();
             final TeamScoreDBEntry score = entry.getValue();
@@ -876,6 +881,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
             DatabaseReference dbUpdateRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA)
                     .child(mCommon.mTournament).child(Constants.TEAMS).child(team).child(Constants.SCORE);
             dbUpdateRef.setValue(score);
+            scoreSB.append(String.format(Locale.getDefault(),"%s:%d ", team, score.getPts()));
         }
 
         for (Map.Entry<String, PlayerInfo> entry : mDBPlayerData.entrySet()) {
@@ -898,8 +904,21 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
                             child(mSelectedMatch);
             jDBEntryRef.setValue(null);
             Log.d(TAG, "UpdateDB: deleted:" +
-                    String.format("%s/%s/%s/%s/%s",
-                            mCommon.mTournament,Constants.MATCHES,Constants.DATA,mChosenMatch.key,mSelectedMatch));
+                    String.format(Locale.getDefault(),"%s/%s/%s/%s/%s [%s]",
+                            mCommon.mTournament,Constants.MATCHES,Constants.DATA,mChosenMatch.key,mSelectedMatch,
+                            scoreSB.toString()));
+
+            mCommon.addHistory(
+                    FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA).child(mCommon.mTournament),
+                    String.format(Locale.getDefault(),"DEL %s%s/%s [%s]",
+                            Constants.MATCHSETID_PREFIX, mChosenMatch.key, mSelectedMatch,
+                            scoreSB.toString()));
+        } else {
+            mCommon.addHistory(
+                    FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA).child(mCommon.mTournament),
+                    String.format(Locale.getDefault(),"UPD %s%s/%s [%s]",
+                            Constants.MATCHSETID_PREFIX, mChosenMatch.key, mSelectedMatch,
+                            scoreSB.toString()));
         }
 
         auditIfAllMatchesInASetCompleted();  //its ok to do this in background even when DB lock is being released

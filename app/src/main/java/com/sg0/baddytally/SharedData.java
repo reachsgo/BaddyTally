@@ -295,6 +295,18 @@ public class SharedData {
         return resultStr;
     }
 
+    void addHistory(final DatabaseReference dbRef, final String story) {
+        if(story.isEmpty()) return;
+        Date c = Calendar.getInstance().getTime();
+        SimpleDateFormat df = new SimpleDateFormat(Constants.ROUND_DATEFORMAT, Locale.CANADA);
+        String dateStr = df.format(c);
+
+        DatabaseReference newHistory = dbRef.child(Constants.INTERNALS).child(Constants.HISTORY).push();
+        newHistory.setValue(dateStr + "#" + mUser + "#" + story);
+
+        Log.w(TAG, "History added: [" + dateStr + ":" + mUser + ":" + story + "]");
+    }
+
     public void addShuffleStart2History(final String newInningsName) {
         addHistory(SHUFFLE_START + "=" + newInningsName);
     }

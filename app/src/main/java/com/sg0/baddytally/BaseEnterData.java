@@ -4,9 +4,15 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.TextUtils;
+import android.text.style.RelativeSizeSpan;
+import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -742,6 +748,19 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         //Log.d(TAG, "onDestroy: ");
         super.onDestroy();
         mMainHandler = null;
+    }
+
+    protected void setTitle(String title) {
+        if (!TextUtils.isEmpty(title)) {
+            Log.d(TAG, "setTitle: " + title);
+            String tempString = Constants.APPNAME + "  " + title;
+            SpannableString spanString = new SpannableString(tempString);
+            spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPNAME.length(), 0);
+            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPNAME.length(), tempString.length(), 0);
+            spanString.setSpan(new RelativeSizeSpan(0.7f), Constants.APPNAME.length(), tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            getSupportActionBar().setTitle(""); //workaround for title getting truncated.
+            getSupportActionBar().setTitle(spanString);
+        }
     }
 }
 

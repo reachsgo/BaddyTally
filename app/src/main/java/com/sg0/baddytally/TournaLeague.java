@@ -1,6 +1,7 @@
 package com.sg0.baddytally;
 
 import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -20,11 +21,15 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.Map;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -72,7 +77,44 @@ public class TournaLeague extends AppCompatActivity implements CallbackRoutine {
             } //onClick
         });
 
+        summaryBtn.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                if(!mCommon.isRoot()) return false;
+                if(mCommon.mClub.isEmpty() || mCommon.mTournament.isEmpty()) {
+                    return false;
+                }
+                DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
+                        .child(Constants.TOURNA).child(mCommon.mTournament)
+                        .child(Constants.INTERNALS).child(Constants.HISTORY);
+                dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        StringBuilder history = new StringBuilder();
+                        for (DataSnapshot child : dataSnapshot.getChildren()) {
+                            String storyLine = child.getValue(String.class);
+                            if (null == storyLine) continue;
+                            String parsed = mCommon.parseHistory(storyLine);
+                            if (!parsed.isEmpty()) history.append(parsed).append("\n");
+                        }
+                        if(history.length()==0) return;
+                        AlertDialog.Builder builder = new AlertDialog.Builder(TournaLeague.this);
+                        builder.setMessage(mCommon.getSizeString(history.toString(), 0.6f))
+                                .setTitle(mCommon.getTitleStr("History:", TournaLeague.this))
+                                .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                    }
+                                }).show();
+                    }
 
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+                    }
+                });
+                return true;
+            }
+        });
     }
 
     private void setTitle(String tourna) {
