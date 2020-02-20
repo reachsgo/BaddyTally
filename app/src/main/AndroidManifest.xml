@@ -54,8 +54,10 @@
             android:name=".TournaLanding"
             android:label="ST Active tournaments">
         </activity>
+        <!-- TournaLeague should have history so that we can return to this screen after entering score -->
         <activity
-            android:name=".TournaLeague" />
+            android:name=".TournaLeague"
+            android:noHistory="false" />
         <activity
             android:name=".TournaLeagueEnterData" />
         <activity
@@ -65,14 +67,22 @@
         <activity
             android:name=".TournaSummary"
             android:noHistory="false" />
+        <!-- TournaTableLayout should have history so that we can return to this screen after entering data -->
         <activity
             android:name=".TournaTableLayout"
+            android:noHistory="false"
             android:screenOrientation="portrait" />
         <activity
             android:name=".TournaSeeding"
             android:noHistory="true" />
         <activity
             android:name=".TrackScores"
+            android:noHistory="true" />
+        <activity
+            android:name=".TournaLeagueSchedule"
+            android:noHistory="true" />
+        <activity
+            android:name=".ClubLeagueCreateTourna"
             android:noHistory="true" />
     </application>
 

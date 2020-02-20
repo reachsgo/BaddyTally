@@ -22,8 +22,11 @@ class Constants {
     static final String ROOT = "root";
     static final String NEWROUND = "start_new_round";
     static final String USERDATA = "Userdata";
+    static final String USERDATA_ID = "UserdataID";
+    static final String USERID_TMP = "ST-";
     static final String DATA_CLUB = "club";
     static final String DATA_USER = "user";
+    static final String DATA_USER2 = "uid2";
     static final String DATA_SEC = "secpd";
     static final String DATA_ROLE = "role";
     static final String DATA_PHNUMS = "phnums";
@@ -47,7 +50,10 @@ class Constants {
     static final int TRACKSCORES_ACTIVITY = 104;
     static final int RESTARTAPP = 665;
     static final int EXIT_APPLICATION = -666;
-    static final int TINYNAMELENGTH = 6;
+    static final int TINYNAMELENGTH = 8;
+    static final int MAX_NUM_TEAMS = 64;
+    static final int DB_READ_TIMEOUT = 5000;  //5s
+    static final int SHOWTOAST_TIMEOUT = 3000;  //5s
 
     static final String ACTIVITY = "Activity";
     static final String ACTIVITY_SETTINGS = "ClubLeagueSettings";
@@ -72,6 +78,7 @@ class Constants {
     static final String NUM_OF_MATCHES = "mNum";
     static final String NUM_OF_GAMES = "bestOf";
     static final String COMPLETED = "done";
+    static final String MATCHDATE = "date";
     static final String MATCHID_PREFIX = "M";
     static final String MATCHSETID_PREFIX = "MS";
     static final String CB_READTOURNA = "fetchActiveTournaments";

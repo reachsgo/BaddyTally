@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Typeface;
 import android.os.Build;
+import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.util.Log;
@@ -58,7 +59,9 @@ public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecy
     @Override
     public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
         holder.journalEntry.setText(mGameJournalDBEntry.get(position).toJournalEntry());
-        holder.journalEntryUser.setText(mGameJournalDBEntry.get(position).getmU());
+        holder.journalEntryUser.setText(SharedData.truncate(
+                mGameJournalDBEntry.get(position).getmU(), false,0));
+                //len=0, so truncate to TINYNAMELENGTH
 
         holder.parentLayout.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -90,12 +93,15 @@ public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecy
 
         AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
         builder.setTitle(SharedData.getInstance().getTitleStr("Game stats:", mContext));
-        Spanned spanString = (Spanned) TextUtils.concat("\n", SharedData.getInstance().getStyleString(jEntry.toJournalEntry(), Typeface.ITALIC),
-                "\n\nDate: " + jEntry.getmDate() +
-                        "\nInnings: " + jEntry.getmIn() +
-                        "\nEntered by: " + jEntry.getmU() +
-                        "\nPlayers repeated: " + (jEntry.getmGNo() > 1 ? "Yes" : "No"));
-        builder.setMessage(spanString);
+
+        SpannableStringBuilder sb = new SpannableStringBuilder();
+        sb.append("\n");
+        sb.append(SharedData.getInstance().getStyleString(jEntry.toJournalEntry(), Typeface.ITALIC));
+        sb.append("\n\nDate: "); sb.append(jEntry.getmDate());
+        sb.append("\nInnings: "); sb.append(jEntry.getmIn());
+        sb.append("\nEntered by: "); sb.append(jEntry.getmU());
+        sb.append("\nPlayers repeated: "); sb.append((jEntry.getmGNo() > 1 ? "Yes" : "No"));
+        builder.setMessage(sb);
         builder.setNeutralButton("Ok", null);
         builder.show();
     }
@@ -151,7 +157,8 @@ public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecy
     private void deleteGameJournal(final int position) {
 
         if (!SharedData.getInstance().isDBConnected()) {
-            Toast.makeText(mContext, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext,
+                    "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
             return;
         }
 

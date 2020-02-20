@@ -25,7 +25,7 @@
         android:textSize="14sp"
         android:textColor="@color/colorLightGrey"
         android:text="usr"
-        android:maxLength="3"
+        android:maxLength="8"
         android:gravity="start" />
 
 </LinearLayout>

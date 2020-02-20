@@ -481,7 +481,7 @@ class TournaTable implements View.OnClickListener {
         if(mMaxRounds>4 && round<mMaxRounds-1 &&  //many rounds and if these are the initial rounds
                 matchEntry.isExternalLink(0) &&
                 matchEntry.oneTeamGettingABye(true)) {
-            Log.d(TAG, "insertANode: skipping " + matchEntry.toString());
+            //Log.d(TAG, "insertANode: skipping " + matchEntry.toString());
             return;
         }
         /*
@@ -875,7 +875,7 @@ class TournaTable implements View.OnClickListener {
                     shape.setStroke(2, 0xFF000000);
                     shape.setColor(mActivity.getResources().getColor(R.color.colorSilver));
                     v.setBackground(shape);
-                    NAMELENGTH = Constants.TINYNAMELENGTH; //6
+                    NAMELENGTH = Constants.TINYNAMELENGTH; //8
                     TeamDBEntry team1DBEntry = getTeam(team1);
                     TeamDBEntry team2DBEntry = getTeam(team2);
                     StringBuilder team1SB = new StringBuilder(team1);
@@ -884,7 +884,8 @@ class TournaTable implements View.OnClickListener {
                         if (team1DBEntry.getP().size() > 0) {
                             team1SB.setLength(0);  //no need ot the team name
                             for (int x = 0; x < team1DBEntry.getP().size(); x++) {
-                                team1SB.append(SharedData.truncate(team1DBEntry.getP().get(x), NAMELENGTH));
+                                team1SB.append(SharedData.truncate(team1DBEntry.getP().get(x),
+                                        true, NAMELENGTH));
                                 //Just display 2 players, even if the team has more players
                                 if (x<1 && team1DBEntry.getP().size()>1 && !team1DBEntry.getP().get(1).isEmpty())
                                     team1SB.append("/");
@@ -899,7 +900,8 @@ class TournaTable implements View.OnClickListener {
                         if (team2DBEntry.getP().size() > 0) {
                             team2SB.setLength(0);  //no need ot the team name
                             for (int x = 0; x < team2DBEntry.getP().size(); x++) {
-                                team2SB.append(SharedData.truncate(team2DBEntry.getP().get(x), NAMELENGTH));
+                                team2SB.append(SharedData.truncate(team2DBEntry.getP().get(x),
+                                        true, NAMELENGTH));
                                 //Just display 2 players, even if the team has more players
                                 if (x<1 && team2DBEntry.getP().size()>1 && !team2DBEntry.getP().get(1).isEmpty())
                                     team2SB.append("/");
@@ -934,7 +936,8 @@ class TournaTable implements View.OnClickListener {
                             if (winDBEntry.getP().size() > 0) {
                                 winSB.setLength(0);  //no need ot the team name
                                 for (int x = 0; x < winDBEntry.getP().size(); x++) {
-                                    winSB.append(SharedData.truncate(winDBEntry.getP().get(x), NAMELENGTH));
+                                    winSB.append(SharedData.truncate(winDBEntry.getP().get(x),
+                                            true, NAMELENGTH));
                                     //Just display 2 players, even if the team has more players
                                     if (x<1 && winDBEntry.getP().size()>1 && !winDBEntry.getP().get(1).isEmpty())
                                         winSB.append("/");
@@ -1050,7 +1053,8 @@ class TournaTable implements View.OnClickListener {
                 if (null != team1DBEntry) {
                     if (team1DBEntry.getP().size() > 0) {
                         for (int x = 0; x < team1DBEntry.getP().size(); x++) {
-                            team1SB.append(SharedData.truncate(team1DBEntry.getP().get(x), NAMELENGTH));
+                            team1SB.append(SharedData.truncate(team1DBEntry.getP().get(x),
+                                    true, NAMELENGTH));
                             if (x < team1DBEntry.getP().size() - 1) team1SB.append("/");
                         }
                         ((TextView) v.findViewById(R.id.team1p_tv)).setText(team1SB);
@@ -1066,7 +1070,8 @@ class TournaTable implements View.OnClickListener {
                 if (null != team2DBEntry) {
                     if (team2DBEntry.getP().size() > 0) {
                         for (int x = 0; x < team2DBEntry.getP().size(); x++) {
-                            team2SB.append(SharedData.truncate(team2DBEntry.getP().get(x), NAMELENGTH));
+                            team2SB.append(SharedData.truncate(team2DBEntry.getP().get(x),
+                                    true, NAMELENGTH));
                             if (x < team2DBEntry.getP().size() - 1) team2SB.append("/");
                         }
                         ((TextView) v.findViewById(R.id.team2p_tv)).setText(team2SB);
@@ -1396,12 +1401,13 @@ class TournaTable implements View.OnClickListener {
     }
 
     private void createSubTournament(final ArrayList<Integer> rounds) {
+        final String FN = "createSubTournament:";
         final List<TeamDBEntry> losingTeamDBEntries = new ArrayList<>();
         Map<Integer, List<TeamDBEntry>> sortedTeams = new TreeMap<>(Collections.reverseOrder());
         //Map does not allow duplicate keys. So, it has to be List<TeamDBEntry> as the value.
         int indx = 0;
         for(Integer roundNum: rounds) {
-            Log.d(TAG, "createSubTournament:" + roundNum);
+            Log.d(TAG, FN + roundNum);
             SparseArray<TournaDispMatchEntry> matchesInThisRound = new SparseArray<>();
             int largestMatchId = 0;
             for (Map.Entry<String, TournaDispMatchEntry> entry : mFixture.entrySet()) {
@@ -1409,25 +1415,24 @@ class TournaTable implements View.OnClickListener {
                 if (mE == null || mE.xy == null) continue;
                 if (mE.xy.getRound() == roundNum) {
                     matchesInThisRound.put(mE.xy.getMatchId() - 1, mE);
-                    //Log.d(TAG, "createSubTournament:[" + mE.xy.getMatchId() + "] Adding:" + mE.toString());
+                    //Log.d(TAG, FN + "[" + mE.xy.getMatchId() + "] Adding:" + mE.toString());
                     if (mE.xy.getMatchId() > largestMatchId) largestMatchId = mE.xy.getMatchId();
                 }
             }
 
             if (largestMatchId != matchesInThisRound.size()) {
-                Log.e(TAG, "createSubTournament: could not read all the matches: " + largestMatchId);
+                Log.e(TAG, FN + " could not read all the matches: " + largestMatchId);
                 Toast.makeText(mActivity, "Could not read all the matches!",
                         Toast.LENGTH_LONG).show();
                 return;
             }
 
-
-
             for (int i = 0; i < largestMatchId; i++) {
                 TournaDispMatchEntry match = matchesInThisRound.get(i);
                 if (match == null) return;
                 if (!match.isThereAWinner(true)) {
-                    Log.e(TAG, "createSubTournament: All round-" + roundNum + " matches not done yet: " + match.toString());
+                    Log.e(TAG, FN + " All round-" + roundNum +
+                            " matches not done yet: " + match.toString());
                     Toast.makeText(mActivity, "All round-" + roundNum + " matches are not done yet!",
                             Toast.LENGTH_LONG).show();
                     return;
@@ -1437,31 +1442,31 @@ class TournaTable implements View.OnClickListener {
                 List<String> players = losingTeam.getP();
                 if (players.size() == 1)
                     players.add("");  //if singles, just add another empty player
-                Log.d(TAG, "createSubTournament: players=" + players);
+                Log.d(TAG, FN + " players=" + players);
 
                 List<GameJournalDBEntry> games = mMatchesMap.get(match.getId());
                 int score = 0;
                 if (games != null) {
                     for (GameJournalDBEntry game : games) {
                         score += game.scoreForPlayers(players.get(0), players.get(1));
-                        //Log.d(TAG, score + ":createSubTournament: game=" + game.toReadableString());
+                        //Log.d(TAG, score + FN + " game=" + game.toReadableString());
                     }
                 }
                 if(indx>0) score += indx * 42;  //for round=2, add 21x2 (won 2 round1 games)
                 //Expectation is that rounds list is in order: [1,2] or [2,3] or [1,2,3]
                 List<TeamDBEntry> tmpList = sortedTeams.get(score);
                 if(tmpList==null) {
-                    Log.d(TAG, "createSubTournament: [" + score + "] No teams yet, creating new");
+                    Log.d(TAG, FN + " [" + score + "] No teams yet, creating new");
                     tmpList = new ArrayList<>();
                 }
                 tmpList.add(losingTeam);
-                Log.d(TAG, "createSubTournament: [" + score + "] Added one more:" + tmpList.size());
+                Log.d(TAG, FN + " [" + score + "] Added one more:" + tmpList.size());
                 sortedTeams.put(score, tmpList);
             }
             indx++;
         }
 
-        Log.d(TAG, "createSubTournament: sorted losers=" + sortedTeams);
+        Log.d(TAG, FN + " sorted losers=" + sortedTeams);
         List<TeamDBEntry> tmpList = new ArrayList<>();
         for(List<TeamDBEntry> values: sortedTeams.values()) {
             tmpList.addAll(values);
@@ -1512,7 +1517,7 @@ class TournaTable implements View.OnClickListener {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                 if (dataSnapshot.hasChild(newTourna)) {
-                                    Log.w(TAG, "createSubTournament: tournament already exists: " + newTourna);
+                                    Log.w(TAG, FN + " tournament already exists: " + newTourna);
                                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(mActivity);
                                     alertBuilder.setTitle("Overwrite?");
                                     alertBuilder.setMessage(
@@ -1561,10 +1566,18 @@ class TournaTable implements View.OnClickListener {
         mCommon.createDBLock(newTourna);
         dbRef.child(newTourna).child(Constants.TEAMS).setValue(losingTeamDBEntries);
         mCommon.setDBUpdated(true);
-        Toast.makeText(mActivity, newTourna + " created successfully. Go to settings and create fixture for the new sub tournament.",
-                Toast.LENGTH_LONG).show();
+        Toast.makeText(mActivity, newTourna +
+                        " created successfully. Go ahead and 'create fixture' for the new sub tournament.",
+                        Toast.LENGTH_LONG).show();
         Log.i(TAG, "createSubTournamentInDB: created " + losingTeamDBEntries.size() + " teams");
         mMatchesMap = null;
+
+        //wake up connection and read profile again from DB to check for password changes
+        mCommon.wakeUpDBConnection_profile();
+        Intent myIntent = new Intent(mActivity, TournaSettings.class);
+        myIntent.putExtra("animation", "fixture");
+        myIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        mActivity.startActivity(myIntent);
     }
 
     public class CustomDialogClass extends Dialog implements
@@ -1575,11 +1588,11 @@ class TournaTable implements View.OnClickListener {
         private Integer mMaxRounds;
         private List<GameJournalDBEntry> games;
 
-        public CustomDialogClass(final Context a) {
+        CustomDialogClass(final Context a) {
             super(a);
         }
 
-        public void setData(final TournaDispMatchEntry n,
+        void setData(final TournaDispMatchEntry n,
                             Integer maxRounds) {
             this.node = n;
             this.mMaxRounds = maxRounds;
@@ -1611,7 +1624,7 @@ class TournaTable implements View.OnClickListener {
             dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    Log.d(TAG, "CustomDialogClass fetchGames:" + dataSnapshot.toString());
+                    Log.d(TAG, "CustomDialogClass onStart:" + dataSnapshot.toString());
                     GenericTypeIndicator<List<GameJournalDBEntry>> genericTypeIndicator =
                             new GenericTypeIndicator<List<GameJournalDBEntry>>() { };
                     games = dataSnapshot.getValue(genericTypeIndicator);
@@ -1753,6 +1766,13 @@ public class TournaTableLayout extends AppCompatActivity {
         finish();
     }
 
+    @Override
+    public void finish() {
+        //Log.d(TAG, "finish: calling stopProgressDialog");
+        stopProgressDialog(false);
+        super.finish();
+    }
+
     public void restartActivity() {
         recreate();
         //killActivity();
@@ -1885,14 +1905,10 @@ public class TournaTableLayout extends AppCompatActivity {
         });
 
         setUpGesture();
-        mMainHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(TournaTableLayout.this,
-                        "No connection to internet!", Toast.LENGTH_LONG).show();
-                killActivity();
-            }
-        }, 3000);
+
+        SharedData.showToastAndDieOnTimeout(mMainHandler, TournaTableLayout.this,
+                "Check your internet connection",
+                true, 0);
     }
 
 
@@ -1941,18 +1957,30 @@ public class TournaTableLayout extends AppCompatActivity {
         readDBDEFinals();
         if (null != mLowerTable) mLowerTable.onResume();
         if (null != mUpperTable) mUpperTable.onResume();
+
+        SharedData.showToastAndDieOnTimeout(mMainHandler, TournaTableLayout.this,
+                "Check your internet connection", true, 0);
+        //stopProgressDialog is called from finish()
     }
 
     public void startProgressDialog(final String title, final String msg) {
         if (progressDialog != null) {
             return;
         }
+
+        //it could happen that the user moves this app to background while the background loop is running.
+        //In thats case, dialog will fail: "WindowManager$BadTokenException: Unable to add window"
+        //So, check if this activity is in foreground before displaying dialogue.
+        if (isFinishing()) return;
+        if (!ScoreTally.isActivityVisible()) return;
+
         progressDialog = new ProgressDialog(TournaTableLayout.this);
         progressDialog.setTitle(title); // Setting Title
         progressDialog.setMessage(msg); // Setting Message
         progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
         progressDialog.show(); // Display Progress Dialog
         progressDialog.setCancelable(false);
+        progressDialog.setCanceledOnTouchOutside(false);
     }
 
     public void stopProgressDialog(final Boolean showTips) {
@@ -1999,13 +2027,7 @@ public class TournaTableLayout extends AppCompatActivity {
                 exportPDF();
                 break;
             case R.id.action_logout:
-                SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
-                SharedPreferences.Editor editor = prefs.edit();
-                editor.clear();
-                editor.commit();  //using commit instead of apply for immediate write
-                mCommon.clear();
-                Toast.makeText(TournaTableLayout.this, "Cache cleared!", Toast.LENGTH_SHORT)
-                        .show();
+                mCommon.clearData(TournaTableLayout.this, true);
                 mCommon.killActivity(this, RESULT_OK);
                 Intent intent = new Intent(TournaTableLayout.this, MainSigninActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -2024,12 +2046,7 @@ public class TournaTableLayout extends AppCompatActivity {
                         .setMovementMethod(LinkMovementMethod.getInstance());
                 break;
             case R.id.action_about:
-                //int versionCode = BuildConfig.VERSION_CODE;
-                AlertDialog.Builder builder = new AlertDialog.Builder(TournaTableLayout.this);
-                builder.setMessage("Version: " + BuildConfig.VERSION_NAME)
-                        .setTitle(SharedData.getInstance().getTitleStr(Constants.APPNAME,
-                                TournaTableLayout.this))
-                        .setNeutralButton("Ok", null).show();
+                SharedData.showAboutAlert(TournaTableLayout.this);
                 break;
             case R.id.zoom_in:
                 zoomFactor += 0.2f;
@@ -2040,7 +2057,7 @@ public class TournaTableLayout extends AppCompatActivity {
                 zoom(false, zoomFactor, zoomFactor, new PointF(0, 0));
                 break;
             case R.id.action_new_tourna:
-                Log.e(TAG, "Create sub tournament for " + mCommon.mTournament);
+                Log.w(TAG, "Create sub tournament for " + mCommon.mTournament);
                 if (!mCommon.isRoot()) {
                     Toast.makeText(TournaTableLayout.this, "You don't have permission to do this!" ,
                             Toast.LENGTH_SHORT).show();
@@ -2147,6 +2164,8 @@ public class TournaTableLayout extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 //Log.d(TAG, "readDBDEFinals: onDataChange: " + dataSnapshot.getKey());
+                stopProgressDialog(false);
+                mMainHandler.removeCallbacksAndMessages(null);
 
                 DataSnapshot matchDS1 = dataSnapshot.child(Constants.DE_FINALS_M1);
                 TournaFixtureDBEntry match1 = matchDS1.getValue(TournaFixtureDBEntry.class);
@@ -2287,6 +2306,7 @@ public class TournaTableLayout extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         //Log.d(TAG, "onResume: ");
+        ScoreTally.activityResumed();
         //Coming back from BaseEnterData, refresh the view, if there was
         //a DB update performed.
         if (mCommon.isDBUpdated()) {
@@ -2299,6 +2319,7 @@ public class TournaTableLayout extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        ScoreTally.activityPaused();
         //Log.d(TAG, "onPause: ");
         if (null != mLowerTable) mLowerTable.onPause();
         if (null != mUpperTable) mUpperTable.onPause();

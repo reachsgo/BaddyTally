@@ -424,7 +424,8 @@ public class TournaSEDEEnterData extends BaseEnterData {
 
             if (!mCommon.isDBConnected()) {
                 if (!dry_run) {
-                    Toast.makeText(TournaSEDEEnterData.this, "Stale DB connection, retry.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(TournaSEDEEnterData.this,
+                            "Stale DB connection, retry.", Toast.LENGTH_SHORT).show();
                     mCommon.wakeUpDBConnection();
                     return false;
                 }

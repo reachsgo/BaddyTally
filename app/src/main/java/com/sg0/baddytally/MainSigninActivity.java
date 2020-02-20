@@ -179,10 +179,7 @@ public class MainSigninActivity extends AppCompatActivity {
                         .setMovementMethod(LinkMovementMethod.getInstance());
                 break;
             case R.id.action_about:
-                String msg = BuildConfig.VERSION_NAME;
-                builder.setMessage(msg)
-                        .setTitle(Constants.APPNAME)
-                        .setNeutralButton("Ok", null).show();
+                SharedData.showAboutAlert(MainSigninActivity.this);
                 break;
             default:
                 break;

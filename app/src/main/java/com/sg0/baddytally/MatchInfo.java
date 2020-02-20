@@ -6,6 +6,7 @@ public class MatchInfo {
     public String desc;
     public Boolean done;
     public String key;
+    public String date;
 
     public MatchInfo() {}
 
@@ -31,6 +32,14 @@ public class MatchInfo {
         this.done = done;
     }
 
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
     @Override
     public String toString() {
         return "MatchInfo{" +
@@ -39,6 +48,7 @@ public class MatchInfo {
                 ", desc='" + desc + '\'' +
                 ", done=" + done +
                 ", key=" + key +
+                ", date=" + date +
                 '}';
     }
 }

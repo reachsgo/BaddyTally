@@ -259,7 +259,8 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     private void updatedDB(final ViewHolder holder, final int key, final Integer score) {
 
         if(!SharedData.getInstance().isDBConnected()) {
-            Toast.makeText(mContext, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext,
+                    "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -338,7 +339,8 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     private void moveUser(final PlayerData p) {
         final SharedData mCommon = SharedData.getInstance();
         if (!mCommon.isDBConnected()) {
-            mCommon.showToast(mContext, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
+            mCommon.showToast(mContext,
+                    "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
             return;
         }
         String tg = Constants.GOLD;

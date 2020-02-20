@@ -176,13 +176,7 @@ public class MainSelection2 extends AppCompatActivity {
 
                 break;
             case R.id.action_logout:
-                SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
-                SharedPreferences.Editor editor = prefs.edit();
-                editor.clear();
-                editor.commit();  //using commit instead of apply for immediate write
-                SharedData.getInstance().clear();
-                Toast.makeText(MainSelection2.this, "Cache cleared!", Toast.LENGTH_SHORT)
-                        .show();
+                SharedData.getInstance().clearData(MainSelection2.this, true);
                 Intent intent = new Intent(MainSelection2.this, MainSigninActivity.class);
                 startActivity(intent);
                 break;
@@ -199,11 +193,7 @@ public class MainSelection2 extends AppCompatActivity {
                         .setMovementMethod(LinkMovementMethod.getInstance());
                 break;
             case R.id.action_about:
-                //int versionCode = BuildConfig.VERSION_CODE;
-                AlertDialog.Builder builder = new AlertDialog.Builder(MainSelection2.this);
-                builder.setMessage("Version: " + BuildConfig.VERSION_NAME)
-                        .setTitle(SharedData.getInstance().getTitleStr(Constants.APPNAME, MainSelection2.this))
-                        .setNeutralButton("Ok", null).show();
+                SharedData.showAboutAlert(MainSelection2.this);
                 break;
             case R.id.action_misc:
                 
@@ -219,15 +209,15 @@ public class MainSelection2 extends AppCompatActivity {
 
                     edittext.setHint("Type message here to be displayed to all users");
 
-
-                    if (!mCommon.mNews.isEmpty()) edittext.setText(mCommon.mNews);
+                    final String mNews = mCommon.mProfile.getNews();
+                    if (!mNews.isEmpty()) edittext.setText(mNews);
                     edittext.setSelection(edittext.getText().length());
                     alert.setView(edittext);
 
                     alert.setPositiveButton("Broadcast", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int whichButton) {
                             String new_msg = edittext.getText().toString();
-                            if (!new_msg.equals(mCommon.mNews)) {
+                            if (!new_msg.equals(mNews)) {
                                 //write the new msg to DB
                                 FirebaseDatabase.getInstance().getReference()
                                         .child(mCommon.mClub).child(Constants.PROFILE).child(Constants.NEWS)
@@ -279,9 +269,9 @@ public class MainSelection2 extends AppCompatActivity {
         final SharedData mCommon = SharedData.getInstance();
         if (!showAlways) {
             //if the news was already read by this user, dont show it.
-            if (mCommon.mReadNews.equals(mCommon.mNews)) return;
+            if (mCommon.mReadNews.equals(mCommon.mProfile.getNews())) return;
         }
-        if(mCommon.mNews.isEmpty()) {
+        if(mCommon.mProfile.getNews().isEmpty()) {
             Toast.makeText(MainSelection2.this, "No news!", Toast.LENGTH_SHORT)
                     .show();
             return;
@@ -289,11 +279,11 @@ public class MainSelection2 extends AppCompatActivity {
 
         AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainSelection2.this);
         //alertBuilder.setTitle("Club News");
-        alertBuilder.setMessage(mCommon.getColorString(mCommon.mNews, Color.WHITE));
+        alertBuilder.setMessage(mCommon.getColorString(mCommon.mProfile.getNews(), Color.WHITE));
         alertBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                mCommon.mReadNews = mCommon.mNews;
+                mCommon.mReadNews = mCommon.mProfile.getNews();
             }
         });
 
@@ -316,10 +306,19 @@ public class MainSelection2 extends AppCompatActivity {
         if (!TextUtils.isEmpty(title)) {
             //Log.d(TAG, "setTitle: " + title);
             String tempString = Constants.APPNAME + "  " + title;
+            if(title.equals(SharedData.getInstance().mClub)) {
+                if (SharedData.getInstance().isAdmin()) tempString += " +";
+                else if (SharedData.getInstance().isRoot()) tempString += " *";
+                else tempString += " ";
+            }
             SpannableString spanString = new SpannableString(tempString);
-            spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPNAME.length(), 0);
-            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPNAME.length(), tempString.length(), 0);
-            spanString.setSpan(new RelativeSizeSpan(0.7f), Constants.APPNAME.length(), tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spanString.setSpan(new StyleSpan(Typeface.BOLD), 0,
+                    Constants.APPNAME.length(), 0);
+            spanString.setSpan(new StyleSpan(Typeface.ITALIC),
+                    Constants.APPNAME.length(), tempString.length(), 0);
+            spanString.setSpan(new RelativeSizeSpan(0.7f),
+                    Constants.APPNAME.length(), tempString.length(),
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             getSupportActionBar().setTitle(""); //workaround for title getting truncated.
             getSupportActionBar().setTitle(spanString);
             //getSupportActionBar().setDisplayHomeAsUpEnabled(true);

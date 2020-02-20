@@ -927,11 +927,7 @@ public class TrackScores extends AppCompatActivity {
                         .setMovementMethod(LinkMovementMethod.getInstance());
                 break;
             case R.id.action_about:
-                //int versionCode = BuildConfig.VERSION_CODE;
-                AlertDialog.Builder builder = new AlertDialog.Builder(TrackScores.this);
-                builder.setMessage("Version: " + BuildConfig.VERSION_NAME)
-                        .setTitle(SharedData.getInstance().getTitleStr(Constants.APPNAME, TrackScores.this))
-                        .setNeutralButton("Ok", null).show();
+                SharedData.showAboutAlert(TrackScores.this);
                 break;
             case R.id.action_settings:
                 killActivity();
@@ -1895,6 +1891,7 @@ public class TrackScores extends AppCompatActivity {
         mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
         mProgressDialog.show(); // Display Progress Dialog
         mProgressDialog.setCancelable(false);
+        mProgressDialog.setCanceledOnTouchOutside(false);
     }
 
     public void stopProgressDialog() {

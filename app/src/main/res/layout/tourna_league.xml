@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:background="@color/colorPrimaryDark"
             android:padding="5dp"
-            android:text="Ongoing tournaments"
+            android:text="League Points"
             android:textColor="@android:color/white"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -103,34 +103,50 @@
                 android:backgroundTint="@color/colorGold"
                 android:scrollbars="vertical" />
         </LinearLayout>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
-        <Button
-            android:id="@+id/enter_button"
-            style="?android:textAppearanceSmall"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="35dp"
-            android:layout_gravity="center"
-            android:layout_margin="5dp"
-            android:background="@drawable/roundedrect"
-            android:text="Enter Score"
-            android:textColor="@android:color/white"
-            android:textStyle="bold" />
-        <Button
-            android:id="@+id/summary_button"
-            style="?android:textAppearanceSmall"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="35dp"
-            android:layout_gravity="center"
-            android:layout_margin="5dp"
-            android:background="@drawable/roundedrect"
-            android:text="Summary"
-            android:textColor="@android:color/white"
-            android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/enter_button"
+                style="?android:textAppearanceSmall"
+                android:layout_width="0dp"
+                android:layout_height="35dp"
+                android:layout_gravity="center"
+                android:layout_margin="5dp"
+                android:layout_weight="1"
+                android:background="@drawable/roundedrect"
+                android:text="Enter Score"
+                android:textColor="@android:color/white"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/schedule_button"
+                style="?android:textAppearanceSmall"
+                android:layout_width="0dp"
+                android:layout_height="35dp"
+                android:layout_gravity="center"
+                android:layout_margin="5dp"
+                android:layout_weight="1"
+                android:background="@drawable/roundedrect"
+                android:text="Schedule"
+                android:textColor="@android:color/white"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/summary_button"
+                style="?android:textAppearanceSmall"
+                android:layout_width="0dp"
+                android:layout_height="35dp"
+                android:layout_gravity="center"
+                android:layout_margin="5dp"
+                android:layout_weight="1"
+                android:background="@drawable/roundedrect"
+                android:text="Match Summary"
+                android:textColor="@android:color/white"
+                android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>
 

@@ -1,7 +1,9 @@
 package com.sg0.baddytally;
 
+import android.graphics.Typeface;
 import android.text.Spannable;
 import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.text.style.RelativeSizeSpan;
 import android.util.Log;
 
@@ -20,18 +22,24 @@ public class TeamInfo {
         this.desc = "";
         players = new ArrayList<>();
         p_nicks = new ArrayList<>();
-        Log.d(TAG, "TeamInfo constructed");
+        Log.d(TAG, "TeamInfo constructed" + toString());
     }
 
     public TeamInfo(final String name) {
-        this.name = name;
+        this.name = name; //short name
+        this.desc = name; //long name
         players = new ArrayList<>();
         p_nicks = new ArrayList<>();
         score = new TeamScoreDBEntry();
-        Log.d(TAG, "TeamInfo constructed");
+        Log.d(TAG, "TeamInfo constructed:" + toString());
     }
 
-
+    boolean isValid() {
+        if(name.isEmpty()) return false;
+        if(players.size() == 0) return false;
+        if(p_nicks.size() == 0) return false;
+        return true;
+    }
 
     public String getPlayerNameLong(final int i) {
         if(p_nicks.size()<=0 || i>=p_nicks.size()) return "NoData";
@@ -89,6 +97,31 @@ public class TeamInfo {
     @Override
     public int hashCode() {
         return Objects.hash(name, desc);
+    }
+
+    SpannableStringBuilder toDisplayString() {
+        SpannableStringBuilder sb = new SpannableStringBuilder();
+        sb.append("\t");
+        sb.append(SharedData.getInstance().getStyleString(name, Typeface.BOLD_ITALIC));
+        sb.append(" : ");
+        sb.append(SharedData.getInstance().getStyleString(desc, Typeface.BOLD));
+        sb.append("\n");
+        if(players.size() != p_nicks.size()) {
+            //this code might never be hit
+            sb.append(p_nicks.toString());
+            sb.append("/");
+            sb.append(players.toString());
+        } else {
+            for (int i = 0; i < players.size(); i++) {
+                sb.append("\t\t\t\t");
+                sb.append(SharedData.getInstance().getStyleString(
+                        p_nicks.get(i), Typeface.ITALIC));
+                sb.append(" : ");
+                sb.append(players.get(i));
+                sb.append("\n");
+            }
+        }
+        return sb;
     }
 
     @Override

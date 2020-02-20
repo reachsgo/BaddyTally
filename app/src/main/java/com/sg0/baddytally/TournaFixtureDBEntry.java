@@ -99,20 +99,20 @@ class TournaFixtureDBEntry {
                 setTeam(TEAM1_IDX, mN.getExtMatchIdStr());
                 setTeam(TEAM2_IDX, Constants.BYE);
             }
-            Log.d("TournaFixtureDBEntry", "isExternalLink: " + toString());
+            //Log.d("TournaFixtureDBEntry", "isExternalLink: " + toString());
             return;
         } else if(mN.isBye()) {
             setW(Constants.BYE);
             //setTeam(TEAM1_IDX,Constants.BYE);
             //setTeam(TEAM2_IDX, "");
-            Log.d("TournaFixtureDBEntry", "isBye: " + toString());
+            //Log.d("TournaFixtureDBEntry", "isBye: " + toString());
             return;
         } else if(mN.isLeaf()) {
-            Log.d("TournaFixtureDBEntry", "++isLeaf:++");
+            //Log.d("TournaFixtureDBEntry", "++isLeaf:++");
         }
 
         if(null==mN.t1) {
-            Log.d("TournaFixtureDBEntry", "++ T1 is null ++");
+            //Log.d("TournaFixtureDBEntry", "++ T1 is null ++");
         } else if(mN.t1.isExternalLink()) {
             //team1 node is an external link
             if(!mN.t1.getWinner().isEmpty()) {
@@ -123,7 +123,7 @@ class TournaFixtureDBEntry {
             //if previous link is not set, then vertical lines will not be drawn
             //between EXTERNALLEAF and regular NODE (with teams linking to EXTERNALLEAF nodes) in the same round.
             setPrevLink(TEAM1_IDX, mN.t1.getId());
-            Log.d("TournaFixtureDBEntry", "mN.t1.isExternalLink: " + toString());
+            //Log.d("TournaFixtureDBEntry", "mN.t1.isExternalLink: " + toString());
         } else if(mN.t1.isLeaf()) {
             if(!mN.t1.getWinner().isEmpty()) {
                 setTeam(TEAM1_IDX, mN.t1.getWinner());
@@ -142,7 +142,7 @@ class TournaFixtureDBEntry {
             //setWinnerString: [: (-1,-1)=fixU,NODE,/fixU/2-10,/fixU,(W),false]
 
             setPrevLink(TEAM1_IDX, "");
-            Log.d("TournaFixtureDBEntry", "mN.t1.isLeaf: " + toString());
+            //Log.d("TournaFixtureDBEntry", "mN.t1.isLeaf: " + toString());
             //this.pr1 = mN.t1.getId();
         } else {
             setTeam(TEAM1_IDX, "");
@@ -175,11 +175,11 @@ class TournaFixtureDBEntry {
                 setTeam(TEAM1_IDX, mN.t1.getWinner());
             }
             setPrevLink(TEAM1_IDX, mN.t1.getId());
-            Log.d("TournaFixtureDBEntry", "mN.t1.isLeaf else: " + toString());
+            //Log.d("TournaFixtureDBEntry", "mN.t1.isLeaf else: " + toString());
         }
 
         if(null==mN.t2) {
-            Log.d("TournaFixtureDBEntry", "++ T2 is null ++");
+            //Log.d("TournaFixtureDBEntry", "++ T2 is null ++");
         } else if(mN.t2.isExternalLink()) {
             //team2 node is an external link
             if(!mN.t2.getWinner().isEmpty()) {
@@ -191,21 +191,21 @@ class TournaFixtureDBEntry {
             //if previous link is not set, then vertical lines will not be drawn
             //between EXTERNALLEAF and regular NODE (with teams linking to EXTERNALLEAF nodes) in the same round.
             setPrevLink(TEAM2_IDX, mN.t2.getId());
-            Log.d("TournaFixtureDBEntry", "mN.t2.isExternalLink: " + toString());
+            //Log.d("TournaFixtureDBEntry", "mN.t2.isExternalLink: " + toString());
         } else if(mN.t2.isLeaf()) {
             if(!mN.t2.getWinner().isEmpty()) {
                 setTeam(TEAM2_IDX, mN.t2.getWinner());
             } else setTeam(TEAM2_IDX, mN.t2.getDesc());  //desc has the team name, id has row-matchId
             setPrevLink(TEAM2_IDX, "");
             //this.pr2 = mN.t2.getId();
-            Log.d("TournaFixtureDBEntry", "mN.t2.isLeaf: " + toString());
+            //Log.d("TournaFixtureDBEntry", "mN.t2.isLeaf: " + toString());
         } else {
             setTeam(TEAM2_IDX, "");
             if(!mN.t2.getWinner().isEmpty()) {
                 setTeam(TEAM2_IDX, mN.t2.getWinner());
             }
             setPrevLink(TEAM2_IDX, mN.t2.getId());
-            Log.d("TournaFixtureDBEntry", "mN.t2.isLeaf else: " + toString());
+            //Log.d("TournaFixtureDBEntry", "mN.t2.isLeaf else: " + toString());
         }
         if(!mN.getWinner().isEmpty()) setW(mN.getWinner());
 
@@ -341,7 +341,7 @@ class TournaFixtureDBEntry {
 
     public String getLoser(final Boolean junk) {
         if(null==getW() || getW().isEmpty()) return "";
-        Log.d(TAG, "DB:getLoser: " + toString());
+        //Log.d(TAG, "DB:getLoser: " + toString());
         if(getW().equals(getT1(true))) return getT2(true);
         else if(getW().equals(getT2(true))) return getT1(true);
         else return "";
@@ -357,11 +357,11 @@ class TournaFixtureDBEntry {
         if(team1.isEmpty() && team2.isEmpty()) {
             //if t1 & t2 are null, then its a leaf node.
             //NODELEAF (winner is set), BYELEAF or EXTERNALLEAF.
-            Log.d(TAG, "setWinnerString, nothing to do: " + toString());
+            //Log.d(TAG, "setWinnerString, nothing to do: " + toString());
             return;
         }
 
-        Log.d(TAG, "setWinnerString:" + team1 + " vs " + team2);
+        //Log.d(TAG, "setWinnerString:" + team1 + " vs " + team2);
         if(team1.equals(Constants.BYE)) setW(team2);
         else if(team2.equals(Constants.BYE)) setW(team1);
 

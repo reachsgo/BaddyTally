@@ -5,9 +5,12 @@ android {
     defaultConfig {
         applicationId "com.sg0.baddytally"
         minSdkVersion 19
+        /*minSdkVersion 26
+        After adding org.apache.poi:poi-ooxml:4.1.2:
+        MethodHandle.invoke and MethodHandle.invokeExact are only supported starting with Android O (--min-api 26) */
         targetSdkVersion 29
-        versionCode 342
-        versionName "3.4.2"
+        versionCode 400
+        versionName "4.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -16,6 +19,15 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        /* JavaVersion is added to solve below error on adding org.apache.poi:poi-ooxml:4.1.2:
+        Default interface methods are only supported starting with Android N (--min-api 24):
+        java.util.Collection org.apache.commons.collections4.ListValuedMap.get(java.lang.Object)
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+         */
+    }
+
 }
 
 dependencies {
@@ -23,15 +35,20 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
     implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'com.google.android.material:material:1.1.0'
     implementation 'androidx.preference:preference:1.1.0'
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'com.google.firebase:firebase-database:19.2.0'
+    implementation 'com.google.firebase:firebase-database:19.2.1'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:core:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     implementation 'net.sourceforge.jexcelapi:jxl:2.6.12'
+
+    /*    implementation "org.apache.poi:poi:4.1.2"
+    implementation 'org.apache.poi:poi-ooxml:4.1.2'
+    java.lang.NoClassDefFoundError: Failed resolution of: Ljavax/xml/stream/XMLStreamReader;*/
+
 }
 
 apply plugin: 'com.google.gms.google-services'

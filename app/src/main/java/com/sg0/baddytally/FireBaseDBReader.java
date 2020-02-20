@@ -48,7 +48,8 @@ class FireBaseDBReader {
     public void fetchOverallScore() {
         Log.w(TAG, "fetchOverallScore:" + mLogStr);
         if (mClub.isEmpty()) return;
-        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub).child(Constants.GROUPS).child(mGroup);
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mClub)
+                .child(Constants.GROUPS).child(mGroup);
         //firebase documentation: Children with a numeric value come next, sorted in ascending order.
         //         If multiple children have the same numerical value for the specified child node, they are sorted by key.
         //String orderBy = Integer.toString(Constants.INNINGS_IDX) + "/pts";
@@ -63,8 +64,8 @@ class FireBaseDBReader {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 Log.w(TAG, "onDataChange:" + mLogStr);
                 //for (DataSnapshot child : dataSnapshot.getChildren()) {
-                GenericTypeIndicator<Map<String, List<PointsDBEntry>>> genericTypeIndicator = new GenericTypeIndicator<Map<String, List<PointsDBEntry>>>() {
-                };
+                GenericTypeIndicator<Map<String, List<PointsDBEntry>>> genericTypeIndicator =
+                        new GenericTypeIndicator<Map<String, List<PointsDBEntry>>>() { };
                 Map<String, List<PointsDBEntry>> map = dataSnapshot.getValue(genericTypeIndicator);
                 if (null == map) return;
                 Log.v(TAG, "FETCH: group:" + dataSnapshot.getKey());

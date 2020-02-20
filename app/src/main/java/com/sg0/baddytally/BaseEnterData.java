@@ -109,6 +109,8 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         mType = "";
         mGamesReadFromDB = false;
         mDeleteMS = false;
+        mT1_players = new ArrayList<>();
+        mT2_players = new ArrayList<>();
     }
 
     //OnCreate() is expected to be implemented in the derived class.
@@ -395,7 +397,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
                 mSpinner_T1_3.setSelection(i+2);
         }
         //String s = adapterView.getItemAtPosition(position).toString();
-        Log.d(TAG, "onItemSelected for Points");
+        //Log.d(TAG, "onItemSelected for Points");
         enterData(true);
     }
 
@@ -464,8 +466,8 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
 
     protected void rearrangeDropdownList(Spinner spinner, ArrayAdapter<String> adapter, List<String> players) {
 
-        Log.v(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/"
-                  + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
+        //Log.v(TAG, "rearrangeDropdownList:" + mSpinner_P1_selection + "/" + mSpinner_P2_selection + "/"
+        //          + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
         adapter.clear();
         //Collections.sort(players);  //sorted already so that players present on the court comes first.
         adapter.addAll(players);
@@ -501,8 +503,8 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
             spinner.setSelection(0);
             mSpinner_P4_selection = spinner.getItemAtPosition(0).toString();
         }
-        Log.i(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" +
-                mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
+        //Log.i(TAG, "rearrangeDropdownList Done:" + mSpinner_P1_selection + "/" +
+        //        mSpinner_P2_selection + "/" + mSpinner_P3_selection + "/" + mSpinner_P4_selection);
         adapter.notifyDataSetChanged();
     }
 
@@ -527,7 +529,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
 
     protected void setGamePointSpinner(final int gameNum, final int t1Score, final int t2Score) {
         mGamesReadFromDB = true; //Data read from DB is set in the spinners.
-        Log.i(TAG, "setGamePointSpinner game=" + gameNum + ": " + t1Score + "/" + t2Score + " f=" + mGamesReadFromDB);
+        //Log.i(TAG, "setGamePointSpinner game=" + gameNum + ": " + t1Score + "/" + t2Score + " f=" + mGamesReadFromDB);
         Spinner tmpS = getRespectiveSpinner(gameNum, 1);
         if (tmpS != null) tmpS.setSelection(t1Score);
         tmpS = getRespectiveSpinner(gameNum, 2);
@@ -628,7 +630,8 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         if (null != mProgressDialog) return false;   //attempt to press Enter button repeatedly
 
         if (!mCommon.isDBConnected()) {
-            Toast.makeText(BaseEnterData.this, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(BaseEnterData.this,
+                    "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
             mCommon.wakeUpDBConnection_profile();
             return false;
         }
@@ -636,6 +639,8 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         mProgressDialog = new ProgressDialog(BaseEnterData.this);
         mProgressDialog.setMessage("Updating database....");
         mProgressDialog.show();
+        mProgressDialog.setCancelable(false);
+        mProgressDialog.setCanceledOnTouchOutside(false);
 
         //If we were to update for 1 game at a time, there will be overlaps between
         //background processes run by firebase APIs. When 2 reads are done in parallel for the
@@ -752,7 +757,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
 
     protected void setTitle(String title) {
         if (!TextUtils.isEmpty(title)) {
-            Log.d(TAG, "setTitle: " + title);
+            //Log.d(TAG, "setTitle: " + title);
             String tempString = Constants.APPNAME + "  " + title;
             SpannableString spanString = new SpannableString(tempString);
             spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPNAME.length(), 0);

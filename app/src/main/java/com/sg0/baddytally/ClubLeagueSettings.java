@@ -11,7 +11,6 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -118,9 +117,9 @@ public class ClubLeagueSettings extends AppCompatActivity {
         mDatabase = FirebaseDatabase.getInstance().getReference();
         mCommon = SharedData.getInstance();
         mWinPercInfo = "";
-        Log.w(TAG, "onCreate :" + mCommon.toString());
+        Log.i(TAG, "onCreate :" + mCommon.toString());
 
-        if(!mCommon.isPermitted(ClubLeagueSettings.this)) return;
+        if (!mCommon.isPermitted(ClubLeagueSettings.this)) return;
 
         if (!Constants.ROOT.equals(mCommon.mRole)) {
             //non root user
@@ -135,7 +134,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
             enableDisableView(ll, false);
             Button btn = findViewById(R.id.users_btn);
             enableDisableView(btn, false);
-            Log.w(TAG, "onCreate : LL is disabled");
+            //Log.w(TAG, "onCreate : LL is disabled");
 
         } else {
             //root user
@@ -172,7 +171,8 @@ public class ClubLeagueSettings extends AppCompatActivity {
                         return;
                     }  //not yet ready
                     if (!mCommon.isDBConnected()) {
-                        mCommon.showToast(ClubLeagueSettings.this, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
+                        mCommon.showToast(ClubLeagueSettings.this,
+                                "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
                         mCommon.wakeUpDBConnection_profile();
                         return;
                     }
@@ -213,7 +213,8 @@ public class ClubLeagueSettings extends AppCompatActivity {
                 if (mCommon.mClub.isEmpty()) {
                     return;
                 }  //not yet ready
-                DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.INTERNALS).child(Constants.HISTORY);
+                DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                        .child(mCommon.mClub).child(Constants.INTERNALS).child(Constants.HISTORY);
                 dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -245,7 +246,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
         });
 
 
-         ((EditText) findViewById(R.id.winPercNum)).setText(""+Constants.SHUFFLE_WINPERC_NUM_GAMES);
+        ((EditText) findViewById(R.id.winPercNum)).setText("" + Constants.SHUFFLE_WINPERC_NUM_GAMES);
 
         FloatingActionButton fab = findViewById(R.id.fab_return);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -269,30 +270,45 @@ public class ClubLeagueSettings extends AppCompatActivity {
         users_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.ACTIVE_USERS);
+                DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                        .child(mCommon.mClub).child(Constants.ACTIVE_USERS);
                 dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                         StringBuilder userList = new StringBuilder();
-
-                        for (DataSnapshot child : dataSnapshot.getChildren()) {
-                            if(child == null) continue;
-                            ActiveUserDBEntry userData = child.getValue(ActiveUserDBEntry.class);
+                        //support for releases previous to 4.0.0, where user data
+                        //was ProfileDBEntry.class instead of String.
+                        try {
+                            for (DataSnapshot child : dataSnapshot.getChildren()) {
+                                if (child == null) continue;
+                                String userData = child.getValue(String.class);
+                                if (userData != null) {
+                                    userList.append(String.format("%s - %s\n",
+                                            child.getKey(), userData));
+                                }
+                            }
+                            /*
+                            ProfileDBEntry userData = child.getValue(ProfileDBEntry.class);
                             if (userData != null) {
                                 userList.append(String.format("%s, %s, %.10s, %s, %s\n",
                                         child.getKey(), userData.getR(),userData.getD(), userData.getLl(), userData.getV()));
-                            }
+                            }*/
+
+                            if (userList.length() == 0) return;
+                            AlertDialog.Builder builder = new AlertDialog.Builder(ClubLeagueSettings.this);
+                            builder.setMessage(mCommon.getSizeString(userList.toString(), 0.8f))
+                                    .setTitle(mCommon.getTitleStr("Users:", ClubLeagueSettings.this))
+                                    .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialogInterface, int i) {
+                                            return;
+                                        }
+                                    }).show();
+                        } catch (com.google.firebase.database.DatabaseException e) {
+                            //Old DB had ProfileDBEntry.class in DB instead of String.
+                            //just ignore it.
+                            Log.d(TAG, "activateUserButton: " + e.getMessage());
                         }
-                        if(userList.length() == 0) return;
-                        AlertDialog.Builder builder = new AlertDialog.Builder(ClubLeagueSettings.this);
-                        builder.setMessage(mCommon.getSizeString(userList.toString(), 0.8f))
-                                .setTitle(mCommon.getTitleStr("Users:", ClubLeagueSettings.this))
-                                .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialogInterface, int i) {
-                                        return;
-                                    }
-                                }).show();
                     }
 
                     @Override
@@ -308,18 +324,18 @@ public class ClubLeagueSettings extends AppCompatActivity {
     private void onClickNewUser() {
         String tmpName = ((EditText) findViewById(R.id.newuser)).getText().toString();
         if (TextUtils.isEmpty(tmpName)) {
-            Log.w(TAG, "onClickNewUser: empty user name");
+            Log.w(TAG, "empty user name");
             return;
         }
         final String name = tmpName.toUpperCase().charAt(0) + tmpName.substring(1, tmpName.length());
         int selectedId = ((RadioGroup) findViewById(R.id.nu_gamegroup_radiogroup)).getCheckedRadioButtonId();
         //Log.w(TAG, "onClickNewUser:" + name + "selct:" + selectedId);
         if (selectedId < 0) {
-            Log.w(TAG, "onClickNewUser: button not selected");
+            Log.w(TAG, "button not selected");
             return;
         }
         final String group = ((RadioButton) findViewById(selectedId)).getText().toString();
-        Log.i(TAG, "onClickNewUser:" + name + ":" + group);
+        //Log.i(TAG, "onClickNewUser:" + name + ":" + group);
 
         DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
             @Override
@@ -348,7 +364,8 @@ public class ClubLeagueSettings extends AppCompatActivity {
     private void createNewUser(final String name, final String group, final PointsDBEntry seasonPts, final boolean notify) {
 
         if (!mCommon.isDBConnected()) {
-            mCommon.showToast(ClubLeagueSettings.this, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
+            mCommon.showToast(ClubLeagueSettings.this,
+                    "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
             return;
         }
 
@@ -400,14 +417,14 @@ public class ClubLeagueSettings extends AppCompatActivity {
         final String club = mCommon.mClub;
         int selectedId = ((RadioGroup) findViewById(R.id.del_gamegroup_radiogroup)).getCheckedRadioButtonId();
         final String group = ((RadioButton) findViewById(selectedId)).getText().toString();
-        Log.w(TAG, "fetchDataAndUpdateSpinner:" + group);
+        //Log.v(TAG, "fetchDataAndUpdateSpinner:" + group);
         DatabaseReference dbRef = mDatabase.child(club).child(Constants.GROUPS).child(group);
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
                     mPlayerList.add(child.getKey());
-                    Log.w(TAG, "fetchDataAndUpdateSpinner, added:" + child.getKey());
+                    //Log.w(TAG, "fetchDataAndUpdateSpinner, added:" + child.getKey());
                 }
                 updateSpinner();
             }
@@ -441,14 +458,14 @@ public class ClubLeagueSettings extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 //Change the selected item's text color
                 ((TextView) view).setTextColor(getResources().getColor(R.color.colorWhite));
-                Log.v(TAG, "updateSpinner, mDelSpinner:onItemSelected:" + position);
+                //Log.v(TAG, "updateSpinner, mDelSpinner:onItemSelected:" + position);
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
-        Log.v(TAG, "updateSpinner... done");
+        //Log.v(TAG, "updateSpinner... done");
     }
 
     private void onClickDelete() {
@@ -456,7 +473,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
         final String name = mDelSpinner.getSelectedItem().toString();
         int selectedId = ((RadioGroup) findViewById(R.id.del_gamegroup_radiogroup)).getCheckedRadioButtonId();
         final String group = ((RadioButton) findViewById(selectedId)).getText().toString();
-        Log.v(TAG, "onClickDelete:" + name + ":" + group);
+        //Log.v(TAG, "onClickDelete:" + name + ":" + group);
 
         DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
             @Override
@@ -484,7 +501,8 @@ public class ClubLeagueSettings extends AppCompatActivity {
 
     private void deleteUser(final String name, final String group, final boolean notify) {
         if (!mCommon.isDBConnected()) {
-            mCommon.showToast(ClubLeagueSettings.this, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
+            mCommon.showToast(ClubLeagueSettings.this,
+                    "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
             return;
         }
         final String club = mCommon.mClub;
@@ -532,22 +550,24 @@ public class ClubLeagueSettings extends AppCompatActivity {
         SharedData.getInstance().mWinPercNum = Constants.SHUFFLE_WINPERC_NUM_GAMES;
         boolean dataError = false;
         try {
-            Integer val =  Integer.valueOf(((EditText) findViewById(R.id.winPercNum)).getText().toString());
-            if(val>0 && val<100) SharedData.getInstance().mWinPercNum = val;
+            Integer val = Integer.valueOf(((EditText) findViewById(R.id.winPercNum)).getText().toString());
+            if (val > 0 && val < 100) SharedData.getInstance().mWinPercNum = val;
             else dataError = true;
         } catch (NumberFormatException e) {
             dataError = true;
         }
-        if(dataError) Toast.makeText(ClubLeagueSettings.this, "Bad entry for win% qualification number! Will use default:" + Constants.SHUFFLE_WINPERC_NUM_GAMES, Toast.LENGTH_LONG).show();
+        if (dataError)
+            Toast.makeText(ClubLeagueSettings.this, "Bad entry for win% qualification number! Will use default:" + Constants.SHUFFLE_WINPERC_NUM_GAMES, Toast.LENGTH_LONG).show();
 
-        Log.w(TAG, "onClickCreateNewInnings: mWinPercNum=" + SharedData.getInstance().mWinPercNum);
+        Log.i(TAG, "onClickCreateNewInnings: mWinPercNum=" + SharedData.getInstance().mWinPercNum);
 
         //If there is no lock parameter in DB, create it now.
         mCommon.createDBLock(null);
 
         if (mCommon.mInnings.isEmpty()) {
             if (!mCommon.isDBConnected()) {
-                mCommon.showToast(ClubLeagueSettings.this, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
+                mCommon.showToast(ClubLeagueSettings.this,
+                        "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT);
                 return;
             }
 
@@ -569,7 +589,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
                         innings.add(new InningsDBEntry(mNewInningsName, true, ""));
                         dbRef.setValue(innings);
                     } else {
-                        Log.w(TAG, "There are NO current innings! innings.size=" + innings.size());
+                        Log.i(TAG, "There are NO current innings! innings.size=" + innings.size());
                         innings.add(new InningsDBEntry(mNewInningsName, true, ""));
                         dbRef.setValue(innings);
                     }
@@ -577,7 +597,6 @@ public class ClubLeagueSettings extends AppCompatActivity {
                     mCommon.addInningsCreation2History(mNewInningsName);
                     Toast.makeText(ClubLeagueSettings.this, "New Innings (" + mNewInningsName + ") created", Toast.LENGTH_LONG).show();
                     killActivity();
-                    return;
                 }
 
                 @Override
@@ -587,9 +606,9 @@ public class ClubLeagueSettings extends AppCompatActivity {
             });
 
         } else {  //innings already exists
-            Log.w(TAG, "innings exists:" + mCommon.mInnings);
+            //Log.w(TAG, "innings exists:" + mCommon.mInnings);
             if (mNewInningsName.equals(mCommon.mInnings)) {
-                Log.w(TAG, "onClickCreateNewInnings: same innings name:" + mNewInningsName);
+                //Log.w(TAG, "onClickCreateNewInnings: same innings name:" + mNewInningsName);
                 Toast.makeText(ClubLeagueSettings.this, "Current innings name is already set to " + mNewInningsName, Toast.LENGTH_LONG)
                         .show();
             } else userConfirmation1();
@@ -699,7 +718,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
                     String group = child.getKey();
                     ArrayList<PlayerData> pList = new ArrayList<>();
                     String logStr = "[" + group + "]";
-                    Log.w(TAG, "identifyPlayersToShuffle group:" + logStr);
+                    //Log.w(TAG, "identifyPlayersToShuffle group:" + logStr);
                     GenericTypeIndicator<Map<String, List<PointsDBEntry>>> genericTypeIndicator = new GenericTypeIndicator<Map<String, List<PointsDBEntry>>>() {
                     };
                     Map<String, List<PointsDBEntry>> map = child.getValue(genericTypeIndicator);
@@ -710,14 +729,14 @@ public class ClubLeagueSettings extends AppCompatActivity {
                         List<PointsDBEntry> points = entry.getValue();
                         PointsDBEntry sPts = points.get(Constants.SEASON_IDX);
                         PointsDBEntry iPts = points.get(Constants.INNINGS_IDX);
-                        Log.w(TAG, logStr + " name=" + name + " iPts (" + iPts.toString() + ") sPts=" + sPts.toString());
+                        //Log.v(TAG, logStr + " name=" + name + " iPts (" + iPts.toString() + ") sPts=" + sPts.toString());
                         pList.add(new PlayerData(group, name, points));
                     }
                     if (Constants.SILVER.equals(group))
                         mCommon.sortPlayers(pList, Constants.INNINGS_IDX, false, ClubLeagueSettings.this, true);  //sort ascending for silver (last 3 to be shuffled)
                     else
                         mCommon.sortPlayers(pList, Constants.INNINGS_IDX, true, ClubLeagueSettings.this, true);  //sort descending for gold (last 3 to be shuffled)
-                    Log.w(TAG, logStr + " pList =" + pList.toString());
+                    //Log.w(TAG, logStr + " pList =" + pList.toString());
                     mAllPlayers.put(group, pList);
                 }
 
@@ -731,8 +750,8 @@ public class ClubLeagueSettings extends AppCompatActivity {
                 Map.Entry<String, ArrayList<PlayerData>> entry = mAllPlayers.entrySet().iterator().next();
                 final ArrayList<PlayerData> silverNewPL = new ArrayList<>(mAllPlayers.get(Constants.SILVER));
                 final ArrayList<PlayerData> goldNewPL = new ArrayList<>(mAllPlayers.get(Constants.GOLD));
-                Log.w(TAG, "identifyPlayersToShuffle: Silver players:" + silverNewPL.toString());
-                Log.w(TAG, "identifyPlayersToShuffle: Gold players:" + goldNewPL.toString());
+                Log.i(TAG, "identifyPlayersToShuffle: Silver players:" + silverNewPL.toString());
+                Log.i(TAG, "identifyPlayersToShuffle: Gold players:" + goldNewPL.toString());
 
                 if (silverNewPL.size() < shufNumPlayers || goldNewPL.size() < shufNumPlayers) {
                     Toast.makeText(ClubLeagueSettings.this, "Not enough players to shuffle: " + silverNewPL.size() + "," + goldNewPL.size(),
@@ -865,7 +884,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
                 //add number of Wins & number of games too
             }
         });
-        Log.w(TAG, "createWinPercentageList Full PL:" + fullPL.toString());
+        Log.i(TAG, "createWinPercentageList Full PL:" + fullPL.toString());
         return fullPL;
     }
 
@@ -880,33 +899,33 @@ public class ClubLeagueSettings extends AppCompatActivity {
             for (PlayerData pd : fullPL) {
                 winPercSet.add(Integer.valueOf(pd.getWinPercentage_innings()));   //descending order
             }
-            Log.w(funStr, winPercSet.toString());
+            Log.i(funStr, winPercSet.toString());
             Integer[] winPercArray = winPercSet.toArray(new Integer[winPercSet.size()]);  //convert to array, to iterate through the set
 
             //check if the Player with highest win% is in Gold group or already marked to be shuffled.
-            Log.w(funStr, "Full PL:" + fullPL.toString());
+            Log.i(funStr, "Full PL:" + fullPL.toString());
             //ArrayList<PlayerData> hwpList = new ArrayList<>();
             hwPD = null;
             Integer highestWinPerc = winPercArray[0];  //get first element; list is in descending order
-            Log.w(TAG, " highestWinPerc=" + highestWinPerc);
+            Log.i(TAG, " highestWinPerc=" + highestWinPerc);
             for (PlayerData pd : fullPL) {
                 if (Integer.valueOf(pd.getGamesPlayed_innings()) < SharedData.getInstance().mWinPercNum) {
                     Log.w(funStr, "not considered (< min games):" + pd.getName());
                     continue;
                 }
                 if (pd.getWinPercentage_innings().equals(highestWinPerc.toString())) {
-                    Log.w(funStr, "high win%:" + pd.toStringShort());
+                    Log.i(funStr, "high win%:" + pd.toStringShort());
                     if (Constants.GOLD.equals(pd.getGroup())) {
-                        Log.w(funStr, pd.getName() + " already in GOLD");
+                        Log.i(funStr, pd.getName() + " already in GOLD");
                         mWinPercInfo = pd.getName() + "(" + pd.getWinPercentage_innings() + "%) is already in gold group";
                         continue;
                     } else {  //highest win percentage is in silver group
                         if (pd.isMarkedToPromote()) {
-                            Log.w(funStr, pd.getName() + " already marked to be promoted to GOLD");
+                            Log.i(funStr, pd.getName() + " already marked to be promoted to GOLD");
                             mWinPercInfo = pd.getName() + "(" + pd.getWinPercentage_innings() + "%) is already getting promoted to gold group";
                             continue;
                         } else {
-                            Log.w(funStr, pd.getName() + " to be +++promoted+++ to GOLD");
+                            Log.i(funStr, pd.getName() + " to be +++promoted+++ to GOLD");
                             mWinPercInfo = pd.getName() + "(" + pd.getWinPercentage_innings() + "%) will be promoted to gold group";
                             hwPD = new PlayerData(pd);
                             break;
@@ -924,7 +943,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
                 return "";
             }
 
-            Log.w(funStr, "hwpList:" + hwPD.toStringShort());
+            Log.i(funStr, "hwpList:" + hwPD.toStringShort());
 
             //find the lowest win% player from Gold group who is not marked to be shuffled.
             //ArrayList<PlayerData> lwpList = new ArrayList<>();
@@ -932,16 +951,16 @@ public class ClubLeagueSettings extends AppCompatActivity {
             boolean found = false;
             for (int i = winPercArray.length - 1; i >= 0; i--) {  //ascending order
                 Integer lowestWinPerc = winPercArray[i];
-                Log.w(funStr, " lowestWinPerc=" + lowestWinPerc);
+                Log.i(funStr, " lowestWinPerc=" + lowestWinPerc);
                 for (ListIterator iterator = fullPL.listIterator(fullPL.size()); iterator.hasPrevious(); ) {  //iterate reverse
                     final PlayerData pd = (PlayerData) iterator.previous();
                     if (pd.getWinPercentage_innings().equals(lowestWinPerc.toString())) {
-                        Log.w(funStr, "low win%:" + pd.toStringShort());
+                        Log.i(funStr, "low win%:" + pd.toStringShort());
                         if (Constants.SILVER.equals(pd.getGroup())) {
-                            Log.w(funStr, pd.getName() + " already in SILVER");
+                            Log.i(funStr, pd.getName() + " already in SILVER");
                             //But, Is he marked to be promoted?
                             if (pd.isMarkedToPromote()) {
-                                Log.w(funStr, pd.getName() + " to be +++relegated +++ to SILVER, though he just got promoted");
+                                Log.i(funStr, pd.getName() + " to be +++relegated +++ to SILVER, though he just got promoted");
                                 lwPD = new PlayerData(pd);
                                 found = true;
                                 mWinPercInfo += " & " + pd.getName() + "(" + pd.getWinPercentage_innings() + "%) will be moved BACK to silver group.";
@@ -950,10 +969,10 @@ public class ClubLeagueSettings extends AppCompatActivity {
                             continue;
                         } else {  //lowest win percentage is in Gold group
                             if (pd.isMarkedToRelegate()) {
-                                Log.w(funStr, pd.getName() + " already marked to be relegated  to SILVER");
+                                Log.i(funStr, pd.getName() + " already marked to be relegated  to SILVER");
                                 continue;
                             } else {
-                                Log.w(funStr, pd.getName() + " to be +++relegated +++ to SILVER");
+                                Log.i(funStr, pd.getName() + " to be +++relegated +++ to SILVER");
                                 lwPD = new PlayerData(pd);
                                 found = true;
                                 mWinPercInfo += " & " + pd.getName() + "(" + pd.getWinPercentage_innings() + "%) will be moved to silver group.";
@@ -974,7 +993,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
                 //nothing to do; could not find a player with low Win % in Gold.
                 return "";
             }
-            Log.w(funStr, "lwpList:" + lwPD.toStringShort());
+            Log.i(funStr, "lwpList:" + lwPD.toStringShort());
 
             if (hwPD.getWinPercentage_innings().equals(lwPD.getWinPercentage_innings())) {
                 mCommon.showToast(ClubLeagueSettings.this, "No win% Shuffling: Highest win% (" + hwPD.getWinPercentage_innings() +
@@ -994,16 +1013,16 @@ public class ClubLeagueSettings extends AppCompatActivity {
             } else if (hwPD == null || lwPD == null) {
                 //Win% shuffling rule application went wrong somewhere.
                 mCommon.showToast(ClubLeagueSettings.this, "Win% shuffling went wrong! ", Toast.LENGTH_SHORT);
-                Log.w(funStr, "Win% shuffling went wrong!");
+                Log.i(funStr, "Win% shuffling went wrong!");
                 return "";
             }
 
             if (hwPD.getWinPercentage_innings().equals(lwPD.getWinPercentage_innings())) {
-                Log.w(funStr, "High Win% == Low Win%:" + hwPD.toStringShort() + " & " + lwPD.toStringShort());
+                Log.i(funStr, "High Win% == Low Win%:" + hwPD.toStringShort() + " & " + lwPD.toStringShort());
                 return "";
             }
 
-            Log.w(funStr, "WIN% SHUFFLE:" + mWinPercInfo + " high%=" + hwPD.toStringShort() + " low%=" + lwPD.toStringShort());
+            Log.i(funStr, "WIN% SHUFFLE:" + mWinPercInfo + " high%=" + hwPD.toStringShort() + " low%=" + lwPD.toStringShort());
             //Toast.makeText(ClubLeagueSettings.this, "Win% shuffling result: " + mWinPercInfo, Toast.LENGTH_LONG)
             //        .show();
 
@@ -1033,7 +1052,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
                 };
                 List<InningsDBEntry> innings = dataSnapshot.getValue(t);
                 if (null == innings) return;
-                Log.v(TAG, "createNewInnings: key:" + dataSnapshot.getKey());
+                Log.i(TAG, "createNewInnings: key:" + dataSnapshot.getKey());
                 if (-1 != mCommon.mInningsDBKey) innings.get(mCommon.mInningsDBKey).current = false;
                 innings.add(new InningsDBEntry(mNewInningsName, true, ""));
                 //now, write back the updated list with new innings.
@@ -1109,17 +1128,17 @@ public class ClubLeagueSettings extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(final String result) {
-            Log.v(TAG, "BackgroundTask: onPostExecute");
+            //Log.v(TAG, "BackgroundTask: onPostExecute");
             //Give some time for all other threads (firebase DB updates) to catch up.
             final Handler handler = new Handler();
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     // Do something after 5s = 5000ms
-                    Log.v(TAG, "BackgroundTask: onPostExecute, after 5s");
+                    //Log.v(TAG, "BackgroundTask: onPostExecute, after 5s");
                     completeShuffling(result);
                 }
-            }, 5000);
+            }, Constants.DB_READ_TIMEOUT);
         }
 
         private void completeShuffling(final String result) {
@@ -1171,7 +1190,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
                         }
                         createNewInnings();  //this is assumed to be the last operation always.
                         mCommon.releaseDBLock();  //release the lock
-                        Log.w(TAG, "doInBackground: success!");
+                        Log.i(TAG, "doInBackground: success!");
                         return "";
                     }
                 }

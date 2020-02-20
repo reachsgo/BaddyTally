@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -29,21 +30,27 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+
 
 public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
 
     private static final String TAG = "LoginActivity";
 
     private EditText mClubView;
-    private EditText mUserView;
+    private TextView mUserView;
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
@@ -63,10 +70,31 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     private String mActToStart;
     private Handler mMainHandler;
     private SharedData mCommon;
+    private int mVerCode;
+    private ProgressDialog progressDialog;
 
 
     private void killActivity(){
         finish();
+    }
+
+
+    @Override
+    public void finish() {
+        showProgress(false);
+        super.finish();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        ScoreTally.activityPaused();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ScoreTally.activityResumed();
     }
 
     @Override
@@ -86,6 +114,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         mMainHandler = new Handler();
         mCommon = SharedData.getInstance();
         mCommon.mCount = 0;
+        mVerCode = SharedData.getAppVersionCode(LoginActivity.this);
 
         Intent thisIntent = getIntent(); // gets the previously created intent
         String tType = thisIntent.getStringExtra(Constants.TOURNATYPE);
@@ -128,7 +157,9 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         Log.d(TAG, "onCreate LoginActivity["+ todaysDate + "]: data = " + mCommon.toString());
 
         final String club = prefs.getString(Constants.DATA_CLUB, "");
-        final String user = prefs.getString(Constants.DATA_USER, "");
+        mUser = mCommon.getUserID(LoginActivity.this);
+        String userText = "usr: " + mUser;
+        mUserView.setText(userText);
         if (club.isEmpty()) {
             mInitialAttempt = true;
             mGameTypeRadioGroup.setVisibility(View.GONE);
@@ -138,7 +169,6 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
             findViewById(R.id.time_now).setVisibility(View.GONE);
         }else {
             mClubView.setText(club);
-            mUserView.setText(user);
             String roundStr =  "Active round: ";
             if(mCommon.mRoundName.isEmpty()) roundStr += "None";
             else roundStr += mCommon.getShortRoundName(mCommon.mRoundName);
@@ -218,6 +248,8 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
                 Log.i(TAG, "onCreate: Unlocking the system now:" + now.toString());
             }
         }
+
+
     }
 
     private void prepareForLogin(String club, String secpd) {
@@ -228,38 +260,49 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     //TODO: This DB fetch is done every time data is entered. This could be optimized to
     //reduce number of DB reads.
     private void fetchInitialData() {
-        Log.w(TAG, "fetchInitialData: " + mClub);
-        if (!mCommon.mMemCode.isEmpty() && !mInitialAttempt) {
+        Log.w(TAG, "fetchInitialData: " + mClub + "/" + mCommon.mClub);
+
+        if(!mClub.equals(mCommon.mClub)) {
+            //If the club's name is changed during login, then fetch data again
+            mInitialAttempt = true;
+            mCommon.mProfile.clear();
+            mCommon.clearData(LoginActivity.this, false);
+        }
+        if (!mCommon.mProfile.getMemcode().isEmpty() && !mInitialAttempt) {
             Log.w(TAG, "fetchInitialData: data already populated!");
-            mAdminCode = mCommon.mAdminCode;
-            mMemCode = mCommon.mMemCode;
-            mRootCode = mCommon.mRootCode;
+            mAdminCode = mCommon.mProfile.getAdmincode();
+            mMemCode = mCommon.mProfile.getMemcode();
+            mRootCode = mCommon.mProfile.getRootcode();
             attemptLogin();
             return;
         }
 
+        //hide keyboard
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+        if(getCurrentFocus()!=null) {
+            InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            if(null!=inputMethodManager)
+                inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+        }
+
+        showProgress(true);
+
         mCommon.fetchProfile(LoginActivity.this, LoginActivity.this, mClub);
 
-
-        Toast.makeText(LoginActivity.this,
-                "Looking for network connection...", Toast.LENGTH_SHORT).show();
-        mMainHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(LoginActivity.this,
-                        "No connection to internet!", Toast.LENGTH_LONG).show();
-                killActivity();
-            }
-        }, 3000);
+        SharedData.showToastAndDieOnTimeout(mMainHandler, LoginActivity.this,
+                "Club not found!\nInvalid Club or bad network connectivity!",
+                true, 0);
+        //showProgress(false) will be called from finish();
     }
 
     //CallbackRoutine Callback after profile is fetched from DB. See SharedData impl of fetchProfile()
     public void profileFetched() {
         mMainHandler.removeCallbacksAndMessages(null);  //delete the toast runnables posted above
         Log.w(TAG, "profileFetched invoked ...." + mCommon.toString());
-        mAdminCode = mCommon.mAdminCode;
-        mMemCode = mCommon.mMemCode;
-        mRootCode = mCommon.mRootCode;
+        mAdminCode = mCommon.mProfile.getAdmincode();
+        mMemCode = mCommon.mProfile.getMemcode();
+        mRootCode = mCommon.mProfile.getRootcode();
+        showProgress(false);
         attemptLogin();
     }
 
@@ -271,12 +314,28 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
 
     public void callback(final String key, final Object inobj) {}
 
+    private void attemptLogin() {
+        if(mVerCode < mCommon.mProfile.getMinver()) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
+            builder.setTitle(mCommon.getColorString("Update your app", Color.RED));
+            builder.setMessage("There is a newer app version available.\nPlease update to the latest version.")
+                    .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            mCommon.killApplication(LoginActivity.this);
+                        }
+                    })
+                    .show();
+        } else {
+            attemptLogin2();
+        }
+    }
     /**
      * Attempts to sign in or register the account specified by the login form.
      * If there are form errors (invalid email, missing fields, etc.), the
      * errors are presented and no actual login attempt is made.
      */
-    private void attemptLogin() {
+    private void attemptLogin2() {
 
         // Reset errors.
         mPasswordView.setError(null);
@@ -284,11 +343,11 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
         // Store values at the time of the login attempt.
         String club = mClubView.getText().toString().trim();
         String secpd = mPasswordView.getText().toString();
-        mUser = mUserView.getText().toString();
 
         if(club.isEmpty() || secpd.isEmpty() || mUser.isEmpty()) {
             Toast.makeText(LoginActivity.this,
                     "All fields are mandatory!", Toast.LENGTH_SHORT).show();
+
             return;
         }
 
@@ -317,7 +376,6 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
             // form field with an error.
             focusView.requestFocus();
         } else {
-            showProgress(true);
             if (secpd.equals(mAdminCode)) {
                 mRole = Constants.ADMIN;
                 successfulLogin(club, secpd);
@@ -328,7 +386,6 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
                 mRole = Constants.ROOT;
                 successfulLogin(club, secpd);
             } else {
-                showProgress(false);
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
                 mPasswordView.requestFocus();
                 mCommon.mCount++;
@@ -362,19 +419,19 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     }
 
     private void successfulLogin(String club, String secpd) {
+        setUserInDB();
         SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(Constants.DATA_CLUB, club);
         editor.putString(Constants.DATA_SEC, secpd);
         editor.putString(Constants.DATA_ROLE, mRole);
-        editor.putString(Constants.DATA_USER, mUser);
+        //editor.putString(Constants.DATA_USER, mUser);
         editor.putString(Constants.DATA_LOCKED, "");
         editor.apply();
         mCommon.mClub = club;
         mCommon.mRole = mRole;
-        mCommon.mUser = mUser;
+        //mCommon.mUser = mUser;
         mCommon.wakeUpDBConnection();  //update DB with the new user login
-        showProgress(false);
         if (mInitialAttempt && mActToStart.isEmpty()) {
             killActivity();   //finish was not ending the activity here.
             return;
@@ -494,30 +551,80 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     /**
      * Shows the progress UI and hides the login form.
      */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
+
     private void showProgress(final boolean show) {
-        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
-        // for very easy animations. If available, use these APIs to fade-in
-        // the progress spinner.
-        int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
 
-        mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-        mLoginFormView.animate().setDuration(shortAnimTime).alpha(
-                show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
+        if(show) {
+
+            //it could happen that the user moves this app to background while the background loop is running.
+            //In thats case, dialog will fail: "WindowManager$BadTokenException: Unable to add window"
+            //So, check if this activity is in foreground before displaying dialogue.
+            if (isFinishing()) return;
+            if (!ScoreTally.isActivityVisible()) return;
+
+            if (progressDialog != null) {
+                return;
+            }
+            //Log.d(TAG, "startProgressDialog: ");
+            progressDialog = new ProgressDialog(LoginActivity.this);
+            progressDialog.setTitle("Fetching club data"); // Setting Title
+            progressDialog.setMessage("Connecting..."); // Setting Message
+            progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
+            progressDialog.show(); // Display Progress Dialog
+            progressDialog.setCancelable(false);
+            progressDialog.setCanceledOnTouchOutside(false);
+        } else {
+            if (progressDialog != null) {
+                progressDialog.dismiss();
+                progressDialog = null;
+            }
+        }
+    }
+
+    void setUserInDB() {
+        if(mUser.isEmpty()) return;
+        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                .child(Constants.ACTIVE_USERS).child(mUser);
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onAnimationEnd(Animator animation) {
-                mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Log.w(TAG, "setUserInDB: onDataChange");
+                if(dataSnapshot.exists()){
+                    //no worry about support for prev releases, as users entry under root
+                    //was created for the first time in 4.0.0 with UserDBEntry class.
+                    UserDBEntry usr = dataSnapshot.getValue(UserDBEntry.class);
+                    if(usr==null || dataSnapshot.getKey()==null) {
+                        Log.w(TAG, "setUserInDB: usr is null");
+                        return;
+                    }
+                    //if(dataSnapshot.getKey().contains(Constants.USERID_TMP)) {
+                    if(dataSnapshot.getKey() != null) {
+                        usr.setTs("now");
+                        usr.setPh("");
+                        usr.setClub(mClub);   //may be last login was for another club
+                        usr.setVer( mVerCode );
+                        dbRef.setValue(usr);
+                        Log.d(TAG, "setUserInDB: DB updated:" + dataSnapshot.getKey() + " >> "
+                                + usr.toString());
+                    }
+                } else {
+                    UserDBEntry usr = new UserDBEntry();
+                    usr.setClub(mClub);
+                    usr.setVer( mVerCode );
+                    dbRef.setValue(usr);
+                    Log.d(TAG, "setUserInDB: Usr created in DB:" + dataSnapshot.getKey() + " >> "
+                            + usr.toString());
+                }
+
+                //user id is set in the Club tree too from wakeUpDBConnection()
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w(TAG, "setUserInDB: onCancelled", databaseError.toException());
             }
         });
 
-        mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-        mProgressView.animate().setDuration(shortAnimTime).alpha(
-                show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            }
-        });
     }
 }
 

@@ -63,7 +63,7 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
 
     private void setTitle(String tourna) {
         if (!TextUtils.isEmpty(tourna)) {
-            Log.d(TAG, "setTitle: " + tourna);
+            //Log.d(TAG, "setTitle: " + tourna);
             String tempString = Constants.APPNAME + "  " + tourna;
             SpannableString spanString = new SpannableString(tempString);
             spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPNAME.length(), 0);

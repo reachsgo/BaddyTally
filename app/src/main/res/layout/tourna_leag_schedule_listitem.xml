@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/header_ll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorGold"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/match_id"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:layout_weight="5"
+            android:gravity="center"
+            android:text="Id"
+            android:textColor="@android:color/black"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/match_desc"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
+            android:gravity="center"
+            android:text="Match"
+            android:textColor="@android:color/black"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:id="@+id/header_points_ll"
+            android:layout_width="80dp"
+            android:layout_gravity="center"
+            android:layout_margin="5dp"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/match_date"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textStyle="italic"
+                android:text="Date"
+                android:textColor="@android:color/black"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+    <Button
+        android:id="@+id/match_schedule_button"
+        style="?android:textAppearanceSmall"
+        android:layout_width="80dp"
+        android:layout_height="20dp"
+        android:layout_weight="50"
+        android:layout_gravity="center"
+        android:layout_margin="5dp"
+        android:background="@drawable/roundbtn"
+        android:text="schedule"
+        android:textAllCaps="false"
+        android:textColor="@android:color/black"
+        android:textStyle="bold" />
+
+    </LinearLayout>

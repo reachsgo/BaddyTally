@@ -16,8 +16,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,25 +25,14 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
     private static final String TAG = "TournaSummary";
-
-    private RecyclerView mRecyclerView;
     private TournaSummaryRecyclerViewAdapter mAdapter;
-    private DatabaseReference mDatabase;
-    private SharedData mCommon;
     private MatchInfo mSelectedMatch;
     private TournaUtil mTUtil;
     private String mTourna;
 
-
-    private void killActivity(){
-        Log.d(TAG, "SGO: killActivity: returning OK");
-        setResult(RESULT_OK);
-        finish();
-    }
-
     private void setTitle(String tourna) {
         if (!TextUtils.isEmpty(tourna)) {
-            Log.d(TAG, "setTitle: " + tourna);
+            //Log.d(TAG, "setTitle: " + tourna);
             String tempString = Constants.APPNAME + "  " + tourna;
             SpannableString spanString = new SpannableString(tempString);
             spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPNAME.length(), 0);
@@ -54,6 +41,20 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
             getSupportActionBar().setTitle(""); //workaround for title getting truncated.
             getSupportActionBar().setTitle(spanString);
         }
+    }
+
+    @Override
+    protected void onPause() {
+        Log.d(TAG, "onPause: ");
+        super.onPause();
+        ScoreTally.activityPaused();
+    }
+
+    @Override
+    protected void onResume() {
+        Log.d(TAG, "onResume: ");
+        super.onResume();
+        ScoreTally.activityResumed();
     }
 
     @Override
@@ -66,9 +67,6 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
         Intent myIntent = getIntent(); // gets the previously created intent
         mTourna = myIntent.getStringExtra("tournament");
         Log.v(TAG, "onCreate :" + mTourna);
-
-        mDatabase = FirebaseDatabase.getInstance().getReference();
-        mCommon = SharedData.getInstance();
         mSelectedMatch = new MatchInfo();
 
         findViewById(R.id.gold_parentview).setVisibility(View.GONE);
@@ -83,7 +81,7 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
                     //Show the drop down again for user to see summary of another match-set.
                     recreate();
                 } else {
-                    killActivity();
+                    SharedData.getInstance().killActivity(TournaSummary.this, RESULT_OK);
                 }
             }
         });
@@ -93,7 +91,7 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
         mHeader.setText(mTourna);
         TextView summaryHeader = findViewById(R.id.header);
 
-        mRecyclerView = findViewById(R.id.silver_journal_view);
+        RecyclerView mRecyclerView = findViewById(R.id.silver_journal_view);
         // use this setting to improve performance if you know that changes
         // in content do not change the layout size of the RecyclerView
         mRecyclerView.setHasFixedSize(true);

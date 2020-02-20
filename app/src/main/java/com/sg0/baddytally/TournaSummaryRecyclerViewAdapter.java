@@ -39,7 +39,7 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
         mMatchList = new ArrayList<>();
     }
 
-    public void setMatch(final String tournament, final MatchInfo mInfo) {
+    void setMatch(final String tournament, final MatchInfo mInfo) {
         this.mTourna = tournament;
         this.mMInfo = mInfo;
         if(mInfo==null) fetchAllGameJournals();
@@ -50,7 +50,7 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
         if(mTourna.isEmpty()) return;
         if(mMInfo==null || mMInfo.T1.isEmpty()) return;
 
-        Log.i(TAG, "fetchGameJournals:" + mTourna + "/../data/" + mMInfo.key);
+        //Log.i(TAG, "fetchGameJournals:" + mTourna + "/../data/" + mMInfo.key);
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
                 .child(mCommon.mClub).child(Constants.TOURNA)
                 .child(mTourna).child(Constants.MATCHES).child(Constants.DATA).child(mMInfo.key);
@@ -58,7 +58,7 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.d(TAG, "fetchGameJournals:" + dataSnapshot.getKey());
+                //Log.d(TAG, "fetchGameJournals:" + dataSnapshot.getKey());
                 mGameJournalMap.clear();
                 mMatchList.clear();
                 for (DataSnapshot child : dataSnapshot.getChildren()) {  //M1, M2, ..
@@ -69,7 +69,7 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
                         if(jEntry==null) continue;
                         if(jEntry.getmWS()<21) continue;
                         gameList.add(jEntry);
-                        Log.d(TAG, "fetchGameJournals:" + jEntry.toReadableString());
+                        //Log.d(TAG, "fetchGameJournals:" + jEntry.toReadableString());
                     }
                     if(gameList.size()>0) {
                         mGameJournalMap.put(matchId, gameList);
@@ -103,7 +103,7 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.d(TAG, "fetchGameJournals:" + dataSnapshot.getKey());
+                //Log.d(TAG, "fetchGameJournals:" + dataSnapshot.getKey());
                 mGameJournalMap.clear();
                 mMatchList.clear();
                 for (DataSnapshot msDS : dataSnapshot.getChildren()) {  //0, 1 ..
@@ -116,13 +116,13 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
                             if (jEntry == null) continue;
                             if (jEntry.getmWS() < 21) continue;
                             gameList.add(jEntry);
-                            Log.d(TAG, "fetchGameJournals:" + jEntry.toReadableString());
+                            //Log.d(TAG, "fetchGameJournals:" + jEntry.toReadableString());
                         }
                         if (gameList.size() > 0) {
                             String tmp = String.format(Locale.getDefault(),"%s-%s",matchSetId,matchId);
                             mGameJournalMap.put(tmp, gameList);
                             mMatchList.add(tmp);
-                            Log.d(TAG, "onDataChange: SGO added:" + tmp);
+                            //Log.d(TAG, "onDataChange: SGO added:" + tmp);
                             //mGameJournalMap.put(matchId, gameList);
                             //mMatchList.add(matchId);
                         } else {
@@ -161,7 +161,7 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
 
         for(String pShort: t1Info.p_nicks) {
             if (game1Entry.playerInvolved(pShort)) {
-                Log.d(TAG, "getPlayer1FromTeam1, Player found:" + pShort + " in " + mMInfo.T1);
+                //Log.d(TAG, "getPlayer1FromTeam1, Player found:" + pShort + " in " + mMInfo.T1);
                 return pShort;
             }
         }
@@ -183,7 +183,7 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
         ArrayList<GameJournalDBEntry> gameList = mGameJournalMap.get(matchId);
         GameJournalDBEntry game1Entry = gameList.get(0);
         String p1T1 = getPlayer1FromTeam1(game1Entry);
-        Log.d(TAG, "onBindViewHolder, getPlayer1FromTeam1:" + p1T1);
+        //Log.d(TAG, "onBindViewHolder, getPlayer1FromTeam1:" + p1T1);
 
         StringBuilder sb = new StringBuilder();
         sb.append(matchId); sb.append(":  ");

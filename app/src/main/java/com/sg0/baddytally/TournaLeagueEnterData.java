@@ -69,12 +69,18 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         mType = Constants.LEAGUE;
         mMatchAlreadyCompleted = false;
-        Log.d(TAG, "onCreate: ");
+        //Log.d(TAG, "onCreate: ");
         onCreateBase();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        //Log.d(TAG, "onDestroy: ");
+    }
+
     protected void onCreateBase() {
-        Log.i(TAG, "TournaLeagueEnterData::onCreateBase");
+        //Log.i(TAG, "TournaLeagueEnterData::onCreateBase");
         FloatingActionButton fab = findViewById(R.id.fab_cancel);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -89,7 +95,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
 
     @Override
     protected void onCreateExtra() {
-        Log.d(TAG, "onCreateExtra: ");
+        //Log.d(TAG, "onCreateExtra: ");
         Intent myIntent = getIntent(); // gets the previously created intent
         mGameType = myIntent.getStringExtra("gametype");
         mSingles = Constants.SINGLES.equals(mGameType);
@@ -173,7 +179,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
         //Log.v(TAG, "showMatchGames, matchkey:" + matchkey + " mNumOfMatches:" + mNumOfMatches);
         if (mNumOfMatches == 1) {
             mSelectedMatch = Constants.MATCHID_PREFIX + "1";
-            Log.d(TAG, "showMatchGames: mSelectedMatch = " + mSelectedMatch);
+            //Log.d(TAG, "showMatchGames: mSelectedMatch = " + mSelectedMatch);
             readPlayers(matchkey);
             return;
         }
@@ -286,17 +292,15 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
                     else {
                         mT2_players = tmpList;
                         fetchGames();
-                        Log.d(TAG, "fetchPlayers: mT1_players=" + mT1_players +
-                                        " mT2_players=" + mT2_players);
+                        //Log.d(TAG, "fetchPlayers: mT1_players=" + mT1_players +
+                        //                " mT2_players=" + mT2_players);
                     }
                 } else {
-                    Log.d(TAG, "onDataChange: No players!");
+                    //Log.d(TAG, "onDataChange: No players!");
                     mCommon.showToast(TournaLeagueEnterData.this, "No players found for team " + team, Toast.LENGTH_SHORT);
                     mCommon.killActivity(TournaLeagueEnterData.this, RESULT_OK);
                 }
-
             }
-
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
@@ -308,7 +312,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
 
     private void fetchGames() {
         //mGameNum = 1;
-        Log.i(TAG, "fetchGames:" + mChosenMatch.key + "/" + mSelectedMatch);
+        //Log.i(TAG, "fetchGames:" + mChosenMatch.key + "/" + mSelectedMatch);
         //Add selected match id (ex: MS2/M3) to title
         setTitle(String.format(Locale.getDefault(),"%s%s/%s", Constants.MATCHSETID_PREFIX, mChosenMatch.key,
                                mSelectedMatch));
@@ -351,7 +355,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
 
 
     private void populateGamePoints(ArrayList<GameJournalDBEntry> gameList) {
-        Log.d(TAG, "populateGamePoints: " + gameList.size());
+        //Log.d(TAG, "populateGamePoints: " + gameList.size());
         int num = 1;
         for (GameJournalDBEntry g : gameList) {
             if (g.getmWS() == 0) continue;
@@ -405,7 +409,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
         String p2 = "";
         String p4 = "";
 
-        Log.d(TAG, "enterData(" + dry_run + ") :" + p1 + "," + p2 + " vs " + p3 + "," + p4);
+        //Log.d(TAG, "enterData(" + dry_run + ") :" + p1 + "," + p2 + " vs " + p3 + "," + p4);
         if (!mSingles) {
             String tmp2 = mSpinner_P2.getSelectedItem().toString();
             String tmp4 = mSpinner_P4.getSelectedItem().toString();
@@ -535,8 +539,8 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
     }
 
     private void isMatchAlreadyCompleted() {
-        Log.d(TAG, "isMatchAlreadyCompleted: mMatchAlreadyCompleted=" + mMatchAlreadyCompleted +
-                String.format(Locale.getDefault()," [%s/%s/%s]", Constants.META, mChosenMatch.key, mSelectedMatch));
+        //Log.d(TAG, "isMatchAlreadyCompleted: mMatchAlreadyCompleted=" + mMatchAlreadyCompleted +
+        //        String.format(Locale.getDefault()," [%s/%s/%s]", Constants.META, mChosenMatch.key, mSelectedMatch));
         final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
                 .child(Constants.TOURNA)
                 .child(mCommon.mTournament).child(Constants.MATCHES).child(Constants.META)
@@ -547,8 +551,8 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
                 Boolean completed = dataSnapshot.getValue(Boolean.class);
                 if (completed != null) {
                     mMatchAlreadyCompleted = completed;
-                    Log.d(TAG, "isMatchAlreadyCompleted: mMatchAlreadyCompleted=" + mMatchAlreadyCompleted +
-                            String.format(Locale.getDefault()," [%s/%s/%s]", Constants.META, mChosenMatch.key,mSelectedMatch));
+                    //Log.d(TAG, "isMatchAlreadyCompleted: mMatchAlreadyCompleted=" + mMatchAlreadyCompleted +
+                    //        String.format(Locale.getDefault()," [%s/%s/%s]", Constants.META, mChosenMatch.key,mSelectedMatch));
                 } else {
                     Log.d(TAG, "isMatchAlreadyCompleted (null): mMatchAlreadyCompleted=" + mMatchAlreadyCompleted +
                             String.format(Locale.getDefault()," [%s/%s/%s]", Constants.META, mChosenMatch.key,mSelectedMatch));
@@ -567,7 +571,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                Log.i(TAG, mChosenMatch.key + ":isMatchAlreadyCompleted: DB error on read:" + databaseError.getMessage());
+                Log.w(TAG, mChosenMatch.key + ":isMatchAlreadyCompleted: DB error on read:" + databaseError.getMessage());
             }
         });
     }
@@ -603,10 +607,12 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
             */
         } else {
             for (GameJournalDBEntry jEntry : mDeltaGameList) {
-                Log.i(TAG, "WRITING jEntry: " + jEntry.toReadableString());
-                final DatabaseReference jDBEntryRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA)
-                        .child(mCommon.mTournament).child(Constants.MATCHES).child(Constants.DATA).child(mChosenMatch.key).
-                                child(mSelectedMatch).child(Integer.toString(jEntry.getmGNo() - 1));
+                //Log.i(TAG, "WRITING jEntry: " + jEntry.toReadableString());
+                final DatabaseReference jDBEntryRef = FirebaseDatabase.getInstance().getReference()
+                        .child(mCommon.mClub).child(Constants.TOURNA)
+                        .child(mCommon.mTournament).child(Constants.MATCHES).child(Constants.DATA)
+                        .child(mChosenMatch.key)
+                        .child(mSelectedMatch).child(Integer.toString(jEntry.getmGNo() - 1));
                 jDBEntryRef.setValue(jEntry);
                 Snackbar.make(findViewById(R.id.enterdata_ll), jEntry.getmW1() + "/" + jEntry.getmW2() + " won!", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
@@ -634,11 +640,11 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
     }
 
     private Boolean isMatchDone(final ArrayList<GameJournalDBEntry> newGameList) {
-        Log.i(TAG, "isMatchDone:" + newGameList.size());
+        //Log.i(TAG, "isMatchDone:" + newGameList.size());
         if (newGameList.size() == 0) return false;
         String randomPlayerT1 = newGameList.get(0).getmW1();   //we will see if this player has won best-of-N games.
         String randomPlayerT2 = newGameList.get(0).getmL1();   //take one from the other team too.
-        Log.i(TAG, "isMatchDone[0]: " + newGameList.get(0).toReadableString());
+        //Log.i(TAG, "isMatchDone[0]: " + newGameList.get(0).toReadableString());
         int randomPlayerT1_Wins = 0;
         int randomPlayerT2_Wins = 0;
         int gamesCompleted = 0;
@@ -648,13 +654,13 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
             if (jEntry.aWinner(randomPlayerT1)) randomPlayerT1_Wins++;
             if (jEntry.aWinner(randomPlayerT2)) randomPlayerT2_Wins++;
         }
-        Log.i(TAG, "isMatchDone: " +
-                String.format(Locale.getDefault(),"randomPlayerT1=%s randomPlayerT1_Wins=%d, randomPlayerT2=%s randomPlayerT2_Wins=%d",
-                        randomPlayerT1, randomPlayerT1_Wins, randomPlayerT2, randomPlayerT2_Wins));
+        //Log.i(TAG, "isMatchDone: " +
+        //        String.format(Locale.getDefault(),"randomPlayerT1=%s randomPlayerT1_Wins=%d, randomPlayerT2=%s randomPlayerT2_Wins=%d",
+        //                randomPlayerT1, randomPlayerT1_Wins, randomPlayerT2, randomPlayerT2_Wins));
         if (gamesCompleted == 1 && mBestOf == 1) {
-            Log.i(TAG, "isMatchDone: Best-of-1 " +
-                    String.format(Locale.getDefault(),"randomPlayerT1=%s randomPlayerT1_Wins=%d,%d",
-                            randomPlayerT1, randomPlayerT1_Wins, randomPlayerT2_Wins));
+            //Log.i(TAG, "isMatchDone: Best-of-1 " +
+            //        String.format(Locale.getDefault(),"randomPlayerT1=%s randomPlayerT1_Wins=%d,%d",
+            //                randomPlayerT1, randomPlayerT1_Wins, randomPlayerT2_Wins));
             if (randomPlayerT1_Wins == 1) mWinnerPlayer1 = randomPlayerT1;
             else if (randomPlayerT2_Wins == 1) mWinnerPlayer1 = randomPlayerT2;
             matchCompleted();
@@ -663,16 +669,16 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
 
         if (randomPlayerT1_Wins > (mBestOf / 2)) {
             mWinnerPlayer1 = randomPlayerT1;
-            Log.i(TAG, "isMatchDone: " + randomPlayerT1 + "=" + randomPlayerT1_Wins + " > " + mBestOf / 2 + " winner=" + mWinnerPlayer1);
+            //Log.i(TAG, "isMatchDone: " + randomPlayerT1 + "=" + randomPlayerT1_Wins + " > " + mBestOf / 2 + " winner=" + mWinnerPlayer1);
             matchCompleted();
             return true;
         } else if (randomPlayerT2_Wins > (mBestOf / 2)) {
             mWinnerPlayer1 = randomPlayerT2;
-            Log.i(TAG, "isMatchDone: " + randomPlayerT2 + "=" + randomPlayerT2_Wins + " > " + mBestOf / 2 + " winner=" + mWinnerPlayer1);
+            //Log.i(TAG, "isMatchDone: " + randomPlayerT2 + "=" + randomPlayerT2_Wins + " > " + mBestOf / 2 + " winner=" + mWinnerPlayer1);
             matchCompleted();
             return true;
         }
-        Log.i(TAG, "isMatchDone: NOPE");
+        //Log.i(TAG, "isMatchDone: NOPE");
         return false;
     }
 
@@ -693,7 +699,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
                 TeamScoreDBEntry score = dataSnapshot.getValue(TeamScoreDBEntry.class);
                 if (score == null) return;
                 //PlayerInfo newPI = new PlayerInfo();
-                Log.i(TAG, "collectTeamScoreDataFromDB:" + score.toString());
+                //Log.i(TAG, "collectTeamScoreDataFromDB:" + score.toString());
                 mDBTeamScoreData.put(team, score);
             }
 
@@ -710,7 +716,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
         PlayerInfo value = mDBPlayerData.get(player);
         if (value != null) {
             //assumption is that null is not a valid value, inserted into the map
-            Log.i(TAG, "collectPlayerDataFromDB already present:" + player);
+            //Log.i(TAG, "collectPlayerDataFromDB already present:" + player);
             return;
         }
         //Log.i(TAG, "collectPlayerDataFromDB Fetching:" + player);
@@ -722,7 +728,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
                 PlayerInfo pI = dataSnapshot.getValue(PlayerInfo.class);
                 if (pI == null) return;
                 //PlayerInfo newPI = new PlayerInfo();
-                Log.i(TAG, "collectPlayerDataFromDB:" + pI.toString() + " key=" + dataSnapshot.getKey() + " p=" + player + " winner=" + mWinnerPlayer1);
+                //Log.i(TAG, "collectPlayerDataFromDB:" + pI.toString() + " key=" + dataSnapshot.getKey() + " p=" + player + " winner=" + mWinnerPlayer1);
                 mDBPlayerData.put(player, pI);
                 collectTeamScoreDataFromDB(pI.T);
                 if (mWinnerPlayer1.equals(player)) {
@@ -830,7 +836,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
             if (won) pI.deleteGame(true);
             else pI.deleteGame(false);
         }
-        Log.i(TAG, "prepData_player new data:" + pI.toString());
+        //Log.i(TAG, "prepData_player new data:" + pI.toString());
         if (updateTeamScore) prepData_TeamScore_game(player, pI.T, won, winningScore, loosingScore);
     }
 
@@ -849,7 +855,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
             if (won) score.deleteGame(winningScore, loosingScore, true);
             else score.deleteGame(loosingScore, winningScore, false);
         }
-        Log.i(TAG, "prepData_TeamScore_game new data:" + score.toString());
+        //Log.i(TAG, "prepData_TeamScore_game new data:" + score.toString());
     }
 
     private void prepData_TeamScore_match() {
@@ -865,21 +871,23 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
                 if (mWinnerTeam.equals(key)) score.deleteMatch(true);
                 else score.deleteMatch(false);
             }
-            Log.i(TAG, "prepData_TeamScore_match new data:" + score.toString());
+            //Log.i(TAG, "prepData_TeamScore_match new data:" + score.toString());
         }
     }
 
     private void updateDB() {
-        Log.i(TAG, "updateDB Got Teams=" + mDBTeamScoreData.size() + ", Players=" + mDBPlayerData.size() +
-                " Match=" + mChosenMatch.key + "/" + mSelectedMatch);
+        //Log.i(TAG, "updateDB Got Teams=" + mDBTeamScoreData.size() + ", Players=" + mDBPlayerData.size() +
+        //        " Match=" + mChosenMatch.key + "/" + mSelectedMatch);
         //Log.d(TAG, "updateDB: SGO=" + mDBPlayerData.toString());
         StringBuffer scoreSB = new StringBuffer();
         for (Map.Entry<String, TeamScoreDBEntry> entry : mDBTeamScoreData.entrySet()) {
             final String team = entry.getKey();
             final TeamScoreDBEntry score = entry.getValue();
             //Log.i(TAG, "updateDB_TeamScore " + team + " new:" + score.toString());
-            DatabaseReference dbUpdateRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA)
-                    .child(mCommon.mTournament).child(Constants.TEAMS).child(team).child(Constants.SCORE);
+            DatabaseReference dbUpdateRef = FirebaseDatabase.getInstance().getReference()
+                    .child(mCommon.mClub).child(Constants.TOURNA)
+                    .child(mCommon.mTournament).child(Constants.TEAMS).child(team)
+                    .child(Constants.SCORE);
             dbUpdateRef.setValue(score);
             scoreSB.append(String.format(Locale.getDefault(),"%s:%d ", team, score.getPts()));
         }
@@ -893,29 +901,34 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
             dbPlayerRef.setValue(pInfo);
         }
 
-        DatabaseReference metaDBRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA)
-                .child(mCommon.mTournament).child(Constants.MATCHES).child(Constants.META).child(mChosenMatch.key).child(mSelectedMatch);
+        DatabaseReference metaDBRef = FirebaseDatabase.getInstance().getReference()
+                .child(mCommon.mClub).child(Constants.TOURNA)
+                .child(mCommon.mTournament).child(Constants.MATCHES).child(Constants.META)
+                .child(mChosenMatch.key).child(mSelectedMatch);
         if(!mDeleteMS) metaDBRef.setValue(true);
         else metaDBRef.setValue(false);  //match deleted
 
         if(mDeleteMS) {
-            final DatabaseReference jDBEntryRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA)
-                    .child(mCommon.mTournament).child(Constants.MATCHES).child(Constants.DATA).child(mChosenMatch.key).
-                            child(mSelectedMatch);
+            final DatabaseReference jDBEntryRef = FirebaseDatabase.getInstance().getReference()
+                    .child(mCommon.mClub).child(Constants.TOURNA)
+                    .child(mCommon.mTournament).child(Constants.MATCHES).child(Constants.DATA)
+                    .child(mChosenMatch.key).child(mSelectedMatch);
             jDBEntryRef.setValue(null);
             Log.d(TAG, "UpdateDB: deleted:" +
                     String.format(Locale.getDefault(),"%s/%s/%s/%s/%s [%s]",
-                            mCommon.mTournament,Constants.MATCHES,Constants.DATA,mChosenMatch.key,mSelectedMatch,
-                            scoreSB.toString()));
+                            mCommon.mTournament,Constants.MATCHES,Constants.DATA,mChosenMatch.key,
+                            mSelectedMatch, scoreSB.toString()));
 
             mCommon.addHistory(
-                    FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA).child(mCommon.mTournament),
+                    FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
+                            .child(Constants.TOURNA).child(mCommon.mTournament),
                     String.format(Locale.getDefault(),"DEL %s%s/%s [%s]",
                             Constants.MATCHSETID_PREFIX, mChosenMatch.key, mSelectedMatch,
                             scoreSB.toString()));
         } else {
             mCommon.addHistory(
-                    FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA).child(mCommon.mTournament),
+                    FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
+                            .child(Constants.TOURNA).child(mCommon.mTournament),
                     String.format(Locale.getDefault(),"UPD %s%s/%s [%s]",
                             Constants.MATCHSETID_PREFIX, mChosenMatch.key, mSelectedMatch,
                             scoreSB.toString()));
@@ -928,7 +941,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
     }
 
     private void auditIfAllMatchesInASetCompleted() {
-        Log.i(TAG, "auditIfAllMatchesInASetCompleted:" + mChosenMatch.key + "/" + mSelectedMatch);
+        //Log.i(TAG, "auditIfAllMatchesInASetCompleted:" + mChosenMatch.key + "/" + mSelectedMatch);
         final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA)
                 .child(mCommon.mTournament).child(Constants.MATCHES).child(Constants.META).child(mChosenMatch.key);
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {

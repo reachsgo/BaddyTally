@@ -391,7 +391,7 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
                     mCommon.showToast(mContext, "Internal error!" , Toast.LENGTH_SHORT);
                     return;
                 }
-                updateDB_removePlayer(parts[1]);
+                updateDB_removePlayer(parts[1], true);
             }
         } else if(in.equals(ADD_PLAYER)) {
             updateDB_addPlayer();
@@ -400,15 +400,32 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
 
     private void updateDB_deleteTeam(final String short_name) {
         if(!mCommon.isDBConnected()) {
-            Toast.makeText(mContext, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext,
+                    "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
             return;
         }
         Log.i(TAG, "updateDB_deleteTeam:" + short_name);
-        DatabaseReference teamsDBRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA)
+        DatabaseReference teamsDBRef = FirebaseDatabase.getInstance().getReference()
+                .child(mCommon.mClub).child(Constants.TOURNA)
                 .child(mCommon.mTournament).child(Constants.TEAMS);
         teamsDBRef.child(short_name).setValue(null);
         FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA)
                 .child(mCommon.mTournament).child(Constants.TEAMS_SUMMARY).child(short_name).setValue(null);
+
+        //Delete the players of this team.
+        TeamInfo tI = mCommon.getTeamInfo(short_name);
+        if (tI != null) {
+            for (String p: tI.p_nicks) {
+                updateDB_removePlayer(p, false);
+            }
+        }
+
+        mCommon.addHistory(
+                FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
+                        .child(Constants.TOURNA).child(mCommon.mTournament),
+                String.format(Locale.getDefault(),"DEL %s/%s",
+                        Constants.TEAMS, short_name));
+
         readDBTeam();
     }
 
@@ -419,30 +436,51 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
             return;
         }
         if(!mCommon.isDBConnected()) {
-            Toast.makeText(mContext, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext,
+                    "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        StringBuilder playerString = new StringBuilder();
         for(Map.Entry<String, PlayerInfo> entry : mNewPlayer.entrySet()) {
             String p = entry.getKey();
             PlayerInfo pInfo = entry.getValue();
             Log.i(TAG, "updateDB_addPlayer:" + p + " info:" + pInfo.toString());
-            DatabaseReference teamsDBRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA)
+            DatabaseReference teamsDBRef = FirebaseDatabase.getInstance().getReference()
+                    .child(mCommon.mClub).child(Constants.TOURNA)
                     .child(mCommon.mTournament).child(Constants.PLAYERS);
 
             teamsDBRef.child(p).setValue(pInfo);
+
+            playerString.append(' ');
+            playerString.append(p);
             readDBTeam();
         }
+
+        mCommon.addHistory(
+                FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
+                        .child(Constants.TOURNA).child(mCommon.mTournament),
+                String.format(Locale.getDefault(),"ADD %s/[%s]",
+                        Constants.PLAYERS, playerString));
     }
 
-    private void updateDB_removePlayer(final String short_name) {
+    private void updateDB_removePlayer(final String short_name, final boolean readDB) {
         if(!mCommon.isDBConnected()) {
-            Toast.makeText(mContext, "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext,
+                    "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
             return;
         }
         Log.i(TAG, "updateDB_removePlayer:" + short_name);
         FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA)
                 .child(mCommon.mTournament).child(Constants.PLAYERS).child(short_name).setValue(null);
-        readDBTeam();
+
+        mCommon.addHistory(
+                FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
+                        .child(Constants.TOURNA).child(mCommon.mTournament),
+                String.format(Locale.getDefault(),"DEL %s/%s",
+                        Constants.PLAYERS, short_name));
+
+        if(readDB) readDBTeam();
     }
 
     @Override

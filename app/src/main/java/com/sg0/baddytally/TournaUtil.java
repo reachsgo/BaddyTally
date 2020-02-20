@@ -47,7 +47,15 @@ public class TournaUtil {
         pActivity = parentActivity;
         cb = callback_interface;
         mCommon = SharedData.getInstance();
+        mMSStrList = new ArrayList<>();
+        mMSInfoMap = new HashMap<>();
+        mMatchesStatus = new HashMap<>();
+        mTourna = "";
+        mMSStr_chosen = "";
+        mNumOfMatches = 0;
+        mBestOf = 1;
         mPopup = null;
+
     }
 
     public void fetchActiveTournaments() {
@@ -87,6 +95,13 @@ public class TournaUtil {
     }
 
     public void showTournaments(final View popupView, final View snackbarView) {
+
+        //it could happen that the user moves this app to background while the background loop is running.
+        //In thats case, dialog will fail: "WindowManager$BadTokenException: Unable to add window"
+        //So, check if this activity is in foreground before displaying dialogue.
+        if (pActivity.isFinishing()) return;
+        if (!ScoreTally.isActivityVisible()) return;
+
         if(mCommon.mTournaMap.size()==0) {
             Toast.makeText(pActivity, "No tournaments to display", Toast.LENGTH_SHORT).show();
             return;
@@ -132,7 +147,8 @@ public class TournaUtil {
     }
 
     public void readDBMatchMeta(final String tourna, final Boolean ignoreDone) {
-        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub).child(Constants.TOURNA)
+        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                .child(mCommon.mClub).child(Constants.TOURNA)
                 .child(tourna).child(Constants.MATCHES).child(Constants.META);
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -166,16 +182,18 @@ public class TournaUtil {
                 HashMap<String,HashMap<String,Boolean>> tmpMatchesStatus = new HashMap<>();
                 for (DataSnapshot childSnapshot: dataSnapshot.getChildren()) {
                     final String key = childSnapshot.getKey();
-                    if(key.equals("info")) continue;   //meta/info
+                    if(key==null) break; //something wrong!
+                    if(key.equals(Constants.INFO)) continue;   //meta/info
                     //Log.i(TAG,   "readDBMatchMeta childSnapshot reading: " + key);
                     HashMap<String,Boolean> tmpStatusMap = new HashMap<>();
                     for (DataSnapshot gcDS: childSnapshot.getChildren()) {
                         final String mKey = gcDS.getKey();
+                        if(mKey==null) break; //something wrong!
                         if(mKey.equals("info")) { //meta/<match-key>/info  ex: meta/3/info
                             MatchInfo info = gcDS.getValue(MatchInfo.class);
+                            if(info==null) break; //something wrong!
                             if (ignoreDone && info.done) {
                                 Log.i(TAG, "Match already completed: " + info.toString());
-                                continue;
                             } else {
                                 final String match = Constants.MATCHSETID_PREFIX + key + Constants.TEAM_DELIM1 + info.T1 + Constants.TEAM_DELIM2 + info.T2;
                                 tmpList.add(match);
@@ -235,7 +253,41 @@ public class TournaUtil {
         return mI;
     }
 
+    //Retrieve Key String (eg: 11) from MatchSet key string (eg: MS11)
+    static public String getKeyFromMSKeyStr(final String matchKey) {
+        if (null==matchKey || matchKey.isEmpty()) {
+            Log.e(TAG, "getKeyFromMSKeyStr, matchKey is empty!");
+            return "";
+        }
+
+        if(!matchKey.contains(Constants.MATCHSETID_PREFIX)) {
+            Log.e(TAG, "getKeyFromMSKeyStr, wrong format:" + matchKey);
+            return "";
+        }
+
+        String[] parts = matchKey.split(Constants.MATCHSETID_PREFIX);
+
+        Log.i(TAG, "getKeyFromMSKeyStr, key:" + parts[parts.length-1]);
+        return parts[parts.length-1]; //parts[1]. parts[0] will be empty string
+    }
+
+    //Create MatchSet Key String (eg: MS11) from key (eg: 11)
+    static public String getMSKeyStrFromKey(final String key) {
+        if (null==key || key.isEmpty()) {
+            Log.e(TAG, "getKeyFromMSKeyStr, key is empty!");
+            return "";
+        }
+        return Constants.MATCHSETID_PREFIX + key;
+    }
+
     public void showMatches(final View v) {
+
+        //it could happen that the user moves this app to background while the background loop is running.
+        //In thats case, dialog will fail: "WindowManager$BadTokenException: Unable to add window"
+        //So, check if this activity is in foreground before displaying dialogue.
+        if (pActivity.isFinishing()) return;
+        if (!ScoreTally.isActivityVisible()) return;
+
         //final PopupMenu popup = new PopupMenu(pActivity, pActivity.findViewById(R.id.enterdata_header));
         if(mMSStrList.size()==0) return;
         if(mPopup!=null) {

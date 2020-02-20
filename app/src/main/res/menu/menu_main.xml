@@ -5,37 +5,46 @@
         android:orderInCategory="1"
         app:showAsAction="never"
         android:title="Enter score" />
-    <item
-        android:id="@+id/action_settings"
-        android:orderInCategory="50"
-        android:title="@string/action_settings"
-        app:showAsAction="never" />
+
     <item
         android:id="@+id/action_refresh"
-        android:orderInCategory="90"
+        android:orderInCategory="50"
         app:showAsAction="ifRoom"
         android:icon="@drawable/ic_baseline_autorenew_24px"
         android:title="Refresh"/>
 
     <item
         android:id="@+id/action_summary"
-        android:orderInCategory="99"
+        android:orderInCategory="60"
         app:showAsAction="never"
         android:title="Round Summary"/>
+    <item
+        android:id="@+id/action_settings"
+        android:orderInCategory="90"
+        android:title="@string/action_settings"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_new_tourna"
+        android:orderInCategory="100"
+        android:visible="false"
+        app:showAsAction="never"
+        android:title="Create tournament"/>
 
     <item
         android:id="@+id/action_rules"
-        android:orderInCategory="100"
+        android:orderInCategory="105"
         app:showAsAction="never"
         android:title="Rules"/>
+
     <item
         android:id="@+id/action_help"
-        android:orderInCategory="101"
+        android:orderInCategory="110"
         app:showAsAction="never"
         android:title="Help"/>
     <item
         android:id="@+id/action_about"
-        android:orderInCategory="102"
+        android:orderInCategory="120"
         app:showAsAction="never"
         android:title="About"/>
 </menu>

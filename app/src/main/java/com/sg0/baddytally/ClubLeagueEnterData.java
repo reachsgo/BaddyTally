@@ -66,7 +66,7 @@ public class ClubLeagueEnterData extends BaseEnterData {
         mGameType = myIntent.getStringExtra("gametype");
         mGroup = myIntent.getStringExtra("group");
         String mNewRoundFlag = myIntent.getStringExtra("new_round");
-        Log.w(TAG, "onCreate :" + SharedData.getInstance().toString() + "/" + mGroup + "/" + mGameType + "/" + mNewRoundFlag);
+
         mSingles = Constants.SINGLES.equals(mGameType);
         mGamePlayers = null;
         mRoundName = "";
@@ -79,7 +79,8 @@ public class ClubLeagueEnterData extends BaseEnterData {
                     Toast.LENGTH_LONG).show();
             finish();
         }
-        Log.w(TAG, "mRoundName=" + mRoundName);
+        Log.i(TAG, "onCreate :" + SharedData.getInstance().toString() + "/" + mGroup +
+                "/" + mGameType + "/" + mNewRoundFlag + "/" + mRoundName);
 
         String title = (String)((TextView)findViewById(R.id.enterdata_header)).getText();
         title += ": " + mGroup;
@@ -117,17 +118,20 @@ public class ClubLeagueEnterData extends BaseEnterData {
         }
 
         if(mSingles && players.size()<2){
-            Toast.makeText(ClubLeagueEnterData.this, "Not enough players to play Singles in group " + mGroup,
+            Toast.makeText(ClubLeagueEnterData.this,
+                    "Not enough players to play Singles in group " + mGroup,
                     Toast.LENGTH_LONG).show();
             killActivity();
         } else if(!mSingles && players.size()<4){
-            Toast.makeText(ClubLeagueEnterData.this, "Not enough players to play Doubles in group " + mGroup,
+            Toast.makeText(ClubLeagueEnterData.this,
+                    "Not enough players to play Doubles in group " + mGroup,
                     Toast.LENGTH_LONG).show();
             killActivity();
         }
 
         if(SharedData.getInstance().mInningsDBKey == -1) {
-            Toast.makeText(ClubLeagueEnterData.this, "No current innings, Create innings first!",
+            Toast.makeText(ClubLeagueEnterData.this,
+                    "No current innings, Create innings first!",
                     Toast.LENGTH_LONG).show();
             killActivity();
         }
@@ -137,11 +141,13 @@ public class ClubLeagueEnterData extends BaseEnterData {
             @Override
             public void onClick(View view) {
                 if(mSpinner_P1_selection.isEmpty() || mSpinner_P3_selection.isEmpty()) {
-                    Toast.makeText(ClubLeagueEnterData.this, "Enter both players...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ClubLeagueEnterData.this,
+                            "Enter both players...", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 if(!mSingles && (mSpinner_P2_selection.isEmpty() || mSpinner_P4_selection.isEmpty())) {
-                    Toast.makeText(ClubLeagueEnterData.this, "Enter all 4 players...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ClubLeagueEnterData.this,
+                            "Enter all 4 players...", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 if(!SharedData.getInstance().isDBConnected()) {
@@ -179,7 +185,7 @@ public class ClubLeagueEnterData extends BaseEnterData {
             }
         }
         playerList.add("");  //blank as the last name (default)
-        Log.w(TAG, "players:" + playerList.toString());
+        //Log.w(TAG, "players:" + playerList.toString());
 
         List<String> p1List = new ArrayList<>(playerList);
         ArrayAdapter<String> dataAdapterP1 = new ArrayAdapter<>(this,
@@ -215,7 +221,7 @@ public class ClubLeagueEnterData extends BaseEnterData {
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
                 mSpinner_P1_selection = (String) adapterView.getItemAtPosition(position);
                 // Notify the selected item text
-                Log.v(TAG, "mSpinner_P1 onItemSelected mSpinner_P1_selection:" + mSpinner_P1_selection);
+                //Log.v(TAG, "mSpinner_P1 onItemSelected mSpinner_P1_selection:" + mSpinner_P1_selection);
                 mSpinner_P2_selection = "";
                 mSpinner_P3_selection = "";
                 mSpinner_P4_selection = "";
@@ -235,7 +241,7 @@ public class ClubLeagueEnterData extends BaseEnterData {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
                 mSpinner_P2_selection = (String) adapterView.getItemAtPosition(position);
-                Log.v(TAG, "mSpinner_P2 onItemSelected mSpinner_P2_selection:" + mSpinner_P2_selection);
+                //Log.v(TAG, "mSpinner_P2 onItemSelected mSpinner_P2_selection:" + mSpinner_P2_selection);
                 mSpinner_P3_selection = "";
                 mSpinner_P4_selection = "";
                 rearrangeDropdownList(mSpinner_P3, dataAdapterP3, playerList);
@@ -251,7 +257,7 @@ public class ClubLeagueEnterData extends BaseEnterData {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int position, long id) {
                 mSpinner_P3_selection = (String) adapterView.getItemAtPosition(position);
-                Log.v(TAG, "mSpinner_P3 onItemSelected mSpinner_P3_selection:" + mSpinner_P3_selection);
+                //Log.v(TAG, "mSpinner_P3 onItemSelected mSpinner_P3_selection:" + mSpinner_P3_selection);
                 mSpinner_P4_selection = "";
                 if(!mSingles) rearrangeDropdownList(mSpinner_P4, dataAdapterP4, playerList);
             }
@@ -383,14 +389,15 @@ public class ClubLeagueEnterData extends BaseEnterData {
                     GameJournalDBEntry jEntry = child.getValue(GameJournalDBEntry.class);
                     if(null==jEntry) continue;
                     gameList.add(jEntry);
-                    Log.d(TAG, "fetchGames:" + jEntry.toReadableString());
+                    //Log.d(TAG, "fetchGames:" + jEntry.toReadableString());
                 }
                 checkData(gameList);
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                Toast.makeText(ClubLeagueEnterData.this, "DB error while fetching games: " + databaseError.toString(),
+                Toast.makeText(ClubLeagueEnterData.this,
+                        "DB error while fetching games: " + databaseError.toString(),
                         Toast.LENGTH_LONG).show();
                 killActivity();
             }
@@ -409,7 +416,8 @@ public class ClubLeagueEnterData extends BaseEnterData {
         String p4 = "";
 
         if (p1.isEmpty() || p3.isEmpty()) {
-            Toast.makeText(ClubLeagueEnterData.this, "Bad data!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(ClubLeagueEnterData.this,
+                    "Bad data!", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -417,7 +425,8 @@ public class ClubLeagueEnterData extends BaseEnterData {
             p2 = mSpinner_P2.getSelectedItem().toString();
             p4 = mSpinner_P4.getSelectedItem().toString();
             if (p2.isEmpty() || p4.isEmpty()) {
-                Toast.makeText(ClubLeagueEnterData.this, "Bad data!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(ClubLeagueEnterData.this,
+                        "Bad data!", Toast.LENGTH_SHORT).show();
                 return;
             }
         }
@@ -429,7 +438,7 @@ public class ClubLeagueEnterData extends BaseEnterData {
             else
                 numOfDoubles++;
         }
-        Log.d(TAG, "checkData: singles=" + numOfSingles + "doubles=" + numOfDoubles);
+        //Log.d(TAG, "checkData: singles=" + numOfSingles + "doubles=" + numOfDoubles);
 
         for (GameJournalDBEntry games : gameList) {
             if (!games.getmGT().equals(mGameType)) continue;
@@ -483,7 +492,8 @@ public class ClubLeagueEnterData extends BaseEnterData {
     @Override
     protected boolean enterData(boolean dry_run) {
         if(-1 == SharedData.getInstance().mInningsDBKey) {
-            Toast.makeText(ClubLeagueEnterData.this, "No current innings, Create innings first!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(ClubLeagueEnterData.this,
+                    "No current innings, Create innings first!", Toast.LENGTH_SHORT).show();
             return false;
         }
         String p1 = mSpinner_P1.getSelectedItem().toString();
@@ -527,14 +537,16 @@ public class ClubLeagueEnterData extends BaseEnterData {
         }
 
         if ((winningScore < 21) || s1.equals(s2) || winners.equals(losers)) {
-            Toast.makeText(ClubLeagueEnterData.this, "Bad data!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(ClubLeagueEnterData.this,
+                    "Bad data!", Toast.LENGTH_SHORT).show();
             return false;
         }
 
         //Do not proceed to do tha actual DB update, if this is a dry run.
         if (dry_run) return true;
 
-        Log.i(TAG, "enterData: " + winners + " vs " + losers + " : " + winningScore.toString() + "-" + losingScore.toString());
+        Log.i(TAG, "enterData: " + winners + " vs " + losers +
+                " : " + winningScore.toString() + "-" + losingScore.toString());
         mGamePlayers = null;
         mGamePlayers = new GamePlayers(winner1, winner2, loser1, loser2, winners, winningScore, losingScore);
 
@@ -571,7 +583,8 @@ public class ClubLeagueEnterData extends BaseEnterData {
         final String loser2 = mGamePlayers.loser2;
 
         if (winner1.isEmpty()) {
-            Toast.makeText(ClubLeagueEnterData.this, "winner name is empty!", Toast.LENGTH_LONG).show();
+            Toast.makeText(ClubLeagueEnterData.this,
+                    "winner name is empty!", Toast.LENGTH_LONG).show();
             killActivity();
         }
 
@@ -602,7 +615,9 @@ public class ClubLeagueEnterData extends BaseEnterData {
             dbRef_loser2.addListenerForSingleValueEvent(new UpdateScores(ClubLeagueEnterData.this, mSingles, false, dbRef_loser2, false,false));
         }
 
+        SharedData.getInstance().setDBUpdated(true);
         releaseLockAndCleanup();
+        killActivity();
     }
 
     class GamePlayers {
