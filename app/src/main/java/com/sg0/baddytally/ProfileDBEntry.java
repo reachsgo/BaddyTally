@@ -101,8 +101,7 @@ public class ProfileDBEntry {
     }
 
     boolean isValid() {
-        if(rootcode.isEmpty()) return false;
-        return true;
+        return !rootcode.isEmpty();
     }
 
     @Override

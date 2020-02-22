@@ -430,6 +430,8 @@ public class ClubLeagueEnterData extends BaseEnterData {
                 return;
             }
         }
+
+        /*
         int numOfSingles = 0;
         int numOfDoubles = 0;
         for (GameJournalDBEntry games : gameList) {
@@ -438,7 +440,8 @@ public class ClubLeagueEnterData extends BaseEnterData {
             else
                 numOfDoubles++;
         }
-        //Log.d(TAG, "checkData: singles=" + numOfSingles + "doubles=" + numOfDoubles);
+        Log.d(TAG, "checkData: singles=" + numOfSingles + "doubles=" + numOfDoubles);
+        */
 
         for (GameJournalDBEntry games : gameList) {
             if (!games.getmGT().equals(mGameType)) continue;

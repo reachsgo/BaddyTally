@@ -1,22 +1,19 @@
 package com.sg0.baddytally;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.annotation.TargetApi;
+
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
@@ -71,8 +68,6 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     private Handler mMainHandler;
     private SharedData mCommon;
     private int mVerCode;
-    private ProgressDialog progressDialog;
-
 
     private void killActivity(){
         finish();
@@ -80,21 +75,9 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
 
 
     @Override
-    public void finish() {
-        showProgress(false);
-        super.finish();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        ScoreTally.activityPaused();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        ScoreTally.activityResumed();
+    protected void onDestroy() {
+        mMainHandler.removeCallbacksAndMessages(null);
+        super.onDestroy();
     }
 
     @Override
@@ -232,7 +215,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
 
         String lockedTimeStr = prefs.getString(Constants.DATA_LOCKED, "");
         if(!lockedTimeStr.isEmpty()) {
-            Long lockTime = 0L;
+            Long lockTime;
             try {
                 lockTime = Long.parseLong(lockedTimeStr);
             } catch (NumberFormatException e) {
@@ -249,7 +232,23 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
             }
         }
 
+        // add back arrow to toolbar
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+    }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        //Log.d(TAG, "onOptionsItemSelected: ");
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     private void prepareForLogin(String club, String secpd) {
@@ -285,24 +284,25 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
                 inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
         }
 
-        showProgress(true);
+        mCommon.startProgressDialog(LoginActivity.this, "", "");
 
         mCommon.fetchProfile(LoginActivity.this, LoginActivity.this, mClub);
 
-        SharedData.showToastAndDieOnTimeout(mMainHandler, LoginActivity.this,
+        mCommon.showToastAndDieOnTimeout(mMainHandler, LoginActivity.this,
                 "Club not found!\nInvalid Club or bad network connectivity!",
-                true, 0);
-        //showProgress(false) will be called from finish();
+                false, true, 0); //dont die, but stop progress.
     }
 
     //CallbackRoutine Callback after profile is fetched from DB. See SharedData impl of fetchProfile()
     public void profileFetched() {
-        mMainHandler.removeCallbacksAndMessages(null);  //delete the toast runnables posted above
         Log.w(TAG, "profileFetched invoked ...." + mCommon.toString());
         mAdminCode = mCommon.mProfile.getAdmincode();
         mMemCode = mCommon.mProfile.getMemcode();
         mRootCode = mCommon.mProfile.getRootcode();
-        showProgress(false);
+
+        mMainHandler.removeCallbacksAndMessages(null);  //delete the toast runnables posted above
+        mCommon.stopProgressDialog(LoginActivity.this);
+
         attemptLogin();
     }
 
@@ -546,39 +546,6 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine{
     private boolean isPasswordValid(String password) {
         //TODO: Replace this with your own logic
         return password.length() > 3;
-    }
-
-    /**
-     * Shows the progress UI and hides the login form.
-     */
-
-    private void showProgress(final boolean show) {
-
-        if(show) {
-
-            //it could happen that the user moves this app to background while the background loop is running.
-            //In thats case, dialog will fail: "WindowManager$BadTokenException: Unable to add window"
-            //So, check if this activity is in foreground before displaying dialogue.
-            if (isFinishing()) return;
-            if (!ScoreTally.isActivityVisible()) return;
-
-            if (progressDialog != null) {
-                return;
-            }
-            //Log.d(TAG, "startProgressDialog: ");
-            progressDialog = new ProgressDialog(LoginActivity.this);
-            progressDialog.setTitle("Fetching club data"); // Setting Title
-            progressDialog.setMessage("Connecting..."); // Setting Message
-            progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
-            progressDialog.show(); // Display Progress Dialog
-            progressDialog.setCancelable(false);
-            progressDialog.setCanceledOnTouchOutside(false);
-        } else {
-            if (progressDialog != null) {
-                progressDialog.dismiss();
-                progressDialog = null;
-            }
-        }
     }
 
     void setUserInDB() {

@@ -64,11 +64,13 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
     private void setTitle(String tourna) {
         if (!TextUtils.isEmpty(tourna)) {
             //Log.d(TAG, "setTitle: " + tourna);
-            String tempString = Constants.APPNAME + "  " + tourna;
+            String tempString = Constants.APPSHORT + "  " + tourna;
             SpannableString spanString = new SpannableString(tempString);
-            spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPNAME.length(), 0);
-            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPNAME.length(), tempString.length(), 0);
-            spanString.setSpan(new RelativeSizeSpan(0.7f), Constants.APPNAME.length(), tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPSHORT.length(), 0);
+            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPSHORT.length(),
+                    tempString.length(), 0);
+            spanString.setSpan(new RelativeSizeSpan(0.7f), Constants.APPSHORT.length(),
+                    tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             getSupportActionBar().setTitle(""); //workaround for title getting truncated.
             getSupportActionBar().setTitle(spanString);
         }
@@ -212,6 +214,12 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
             }
         });
 
+        // add back arrow to toolbar
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+
         readDBTeamInfo();
 
     }
@@ -220,6 +228,7 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
     protected void onStart() {
         super.onStart();
     }
+
 
     void seedingCompleted() {
         if(mTeams.size()>0 && mSeededTeams.size()>0) {
@@ -343,7 +352,7 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
 
         mCommon.mTournament = mTourna;
         mCommon.killActivity(this, RESULT_OK);
-        Intent myIntent = new Intent(TournaSeeding.this, TournaLeague.class);
+        Intent myIntent = new Intent(TournaSeeding.this, TournaLanding.class);
         myIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         TournaSeeding.this.startActivity(myIntent);
     }
@@ -362,7 +371,7 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
 
         mCommon.mTournament = mTourna;
         mCommon.killActivity(this, RESULT_OK);
-        Intent myIntent = new Intent(TournaSeeding.this, TournaLeague.class);
+        Intent myIntent = new Intent(TournaSeeding.this, TournaLanding.class);
         myIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         TournaSeeding.this.startActivity(myIntent);
     }
@@ -418,16 +427,17 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
     void writeFixtureToDB(final HashMap<String,TournaFixtureDBEntry> fixtureMap,
                           final String fixLabel) {
         Log.e(TAG, "writeFixtureToDB:" + fixtureMap.toString() );
+
+        final DatabaseReference setDBRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
+                .child(Constants.TOURNA).child(mTourna).child(fixLabel);
+        setDBRef.setValue(fixtureMap);
+        /*
         Map<String, Object> childUpdates = new HashMap<>();
         for(Map.Entry<String,TournaFixtureDBEntry> entry : fixtureMap.entrySet()) {
             childUpdates.put(entry.getKey(),entry.getValue());
         }
-        final DatabaseReference setDBRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
-                .child(Constants.TOURNA).child(mTourna).child(fixLabel);
-        //dbRef.updateChildren(childUpdates);
-        setDBRef.setValue(fixtureMap);
-
-
+        dbRef.updateChildren(childUpdates);
+         */
     }
 
     void updateFixtureForExtLinks(final HashMap<String,TournaFixtureDBEntry> ubFixMap,
@@ -476,6 +486,8 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
         getMenuInflater().inflate(R.menu.text_menu_main, menu);
         mOptionsMenu = menu;
         mCountText = mOptionsMenu.findItem(R.id.action_text);
+
+
         return true;
     }
 
@@ -485,10 +497,13 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
             // action with ID action_refresh was selected
             case R.id.action_text:
                 break;
+            case android.R.id.home:
+                SharedData.getInstance().killActivity(TournaSeeding.this, RESULT_OK);
+                return true;
             default:
                 break;
         }
-        return true;
+        return super.onOptionsItemSelected(item);
     }
 
 }

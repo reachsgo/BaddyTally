@@ -41,6 +41,16 @@
     </HorizontalScrollView>
 
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminate="true"
+        android:background="@color/colorWhite"
+        android:visibility="gone"
+        />
+
     <View
         android:id="@+id/lower_header"
         android:layout_width="match_parent"

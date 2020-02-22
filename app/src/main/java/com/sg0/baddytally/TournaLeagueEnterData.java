@@ -494,8 +494,8 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
                 //Log.i(TAG, "Nothing to change for: " + jEntry.toReadableString());
                 mNewGameList.add(currentEntry);
             } else {
-                String msg = "Not same: NEW:" + jEntry.toReadableString();
-                if (currentEntry != null) msg += " OLD:" + currentEntry.toReadableString();
+                //String msg = "Not same: NEW:" + jEntry.toReadableString();
+                //if (currentEntry != null) msg += " OLD:" + currentEntry.toReadableString();
                 //Log.i(TAG, msg);
                 mDeltaGameList.add(jEntry);
                 mNewGameList.add(jEntry);
@@ -507,7 +507,11 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
             //         best-of-3: if 3 games: winner of game3 (last of the loop here) is the winner of the match
             mSpinner_Teams.clear();
             mSpinner_Teams.add(0, "none");
-            mSpinner_Teams.add(1, winner1 + "/" + winner2);
+            if(winner2.isEmpty()) {
+                mSpinner_Teams.add(1, winner1);
+            } else {
+                mSpinner_Teams.add(1, winner1 + "/" + winner2);
+            }
             mSpinner_W.setSelection(0);
             CheckBox checkbox = findViewById(R.id.completed);
             if (isMatchDone(mNewGameList)) {
@@ -879,7 +883,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
         //Log.i(TAG, "updateDB Got Teams=" + mDBTeamScoreData.size() + ", Players=" + mDBPlayerData.size() +
         //        " Match=" + mChosenMatch.key + "/" + mSelectedMatch);
         //Log.d(TAG, "updateDB: SGO=" + mDBPlayerData.toString());
-        StringBuffer scoreSB = new StringBuffer();
+        StringBuilder scoreSB = new StringBuilder();
         for (Map.Entry<String, TeamScoreDBEntry> entry : mDBTeamScoreData.entrySet()) {
             final String team = entry.getKey();
             final TeamScoreDBEntry score = entry.getValue();

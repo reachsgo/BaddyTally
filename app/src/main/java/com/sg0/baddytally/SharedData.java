@@ -5,6 +5,7 @@ import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -26,6 +27,8 @@ import android.text.style.RelativeSizeSpan;
 import android.text.style.StrikethroughSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
+import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
@@ -121,6 +124,7 @@ public class SharedData {
     int mCount;   //general purpose count
     ArrayList<String> mStrList;  //general purpose Str list for temp use
     boolean mOfflineMode;
+
     private boolean mDBUpdated;
     private boolean mUserNotifyEnabled;
     private boolean mDBConnected;
@@ -128,6 +132,7 @@ public class SharedData {
     private Long mDBLockAcqAttemptTime;
     private String mStoreHistory;
     private ValueEventListener mDBConnectListener;
+
 
     private SharedData() {
         //Prevent form the reflection api.
@@ -689,9 +694,20 @@ public class SharedData {
         return mDBConnected;
     }
 
+    void removeDBConnectionListener() {
+        DatabaseReference connectedRef = FirebaseDatabase.getInstance()
+                .getReference(".info/connected");
+        if (null != mDBConnectListener) {
+            connectedRef.removeEventListener(mDBConnectListener);
+            mDBConnectListener = null;
+            Log.d(TAG, "removeDBConnectionListener: removeEventListener");
+        }
+        Log.d(TAG, "removeDBConnectionListener: ");
+    }
     void setUpDBConnectionListener() {
         Log.d(TAG, "--------- setUpDBConnectionListener -----------");
-        DatabaseReference connectedRef = FirebaseDatabase.getInstance().getReference(".info/connected");
+        DatabaseReference connectedRef = FirebaseDatabase.getInstance()
+                .getReference(".info/connected");
         if (null != mDBConnectListener) connectedRef.removeEventListener(mDBConnectListener);
         /*
         /.info/connected is a boolean value which is not synchronized between Realtime Database clients because the value is dependent
@@ -1048,7 +1064,8 @@ public class SharedData {
 
     void fetchProfile(final CallbackRoutine cb, final Context context, final String club) {
         //club is passed in as SharedData will not be populated yet with club info when invoked from LoginActivity.
-        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(club).child(Constants.PROFILE);
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                .child(club).child(Constants.PROFILE);
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -1264,7 +1281,7 @@ public class SharedData {
             public int compare(String team1, String team2) {
                 TeamInfo tInfo1 = getTeamInfo(team1);
                 TeamInfo tInfo2 = getTeamInfo(team2);
-                int value1 = Integer.valueOf(tInfo2.score.getPts()).compareTo(tInfo1.score.getPts()); //descending
+                int value1 = Integer.compare(tInfo2.score.getPts(), tInfo1.score.getPts()); //descending
                 if (value1 == 0) {
                     int value2 = Integer.compare(tInfo2.score.getmW(), tInfo1.score.getmW());
                     if (value2 == 0) {
@@ -1280,20 +1297,26 @@ public class SharedData {
         //Log.d(TAG, "sortTeams: Sorted mTeams: " + mTeams.toString());
     }
 
-    public void showAlert(final CallbackRoutine cb, final Context context, final String title, final String msg) {
+    public void showAlert(final CallbackRoutine cb, final Context context,
+                          final String title, final String msg) {
+        showAlert(cb, context, new SpannableStringBuilder(title), msg);
+    }
+
+    public void showAlert(final CallbackRoutine cb, final Context context,
+                          final SpannableStringBuilder title, final String msg) {
         AlertDialog.Builder alertBuilder = new AlertDialog.Builder(context);
         alertBuilder.setTitle(title);
         alertBuilder.setMessage(msg);
         alertBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                if (null != cb) cb.alertResult(title, true, false);
+                if (null != cb) cb.alertResult(title.toString(), true, false);
             }
         });
         alertBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                if (null != cb) cb.alertResult(title, false, true);
+                if (null != cb) cb.alertResult(title.toString(), false, true);
             }
         });
         alertBuilder.show();
@@ -1399,7 +1422,10 @@ public class SharedData {
         dbRef.keepSynced(enable);
     }
     
-    static void delayedKillActivity(final Handler mainHandler, final Activity activity) {
+    void delayedKillActivity(final Handler mainHandler, final Activity activity,
+                                    int timeout) {
+        mainHandler.removeCallbacksAndMessages(null);
+        if(timeout==0) timeout = Constants.SHOWTOAST_TIMEOUT;
         Log.w(TAG, "delayedKillActivity: " + activity.getLocalClassName());
         mainHandler.postDelayed(new Runnable() {
             @Override
@@ -1407,13 +1433,14 @@ public class SharedData {
                 //Kill Activity only after showing the Toast
                 activity.finish();
             }
-        }, Constants.SHOWTOAST_TIMEOUT);
+        }, timeout);
     }
     
     //post an event to show a toast & kill self (activity) after a timeout.
     //Usually, in the success case, this event will be cancelled before timer fires.
-    static void showToastAndDieOnTimeout(final Handler mainHandler, final Activity activity,
-                                final String msg, final boolean die, int timeout) {
+    void showToastAndDieOnTimeout(final Handler mainHandler, final Activity activity,
+                                  final String msg, final boolean die,
+                                  final boolean stopProgress, int timeout) {
         //Log.d(TAG, "showToastAndDieOnTimeout: ");
         if(timeout==0) timeout = Constants.DB_READ_TIMEOUT;
         mainHandler.postDelayed(new Runnable() {
@@ -1422,7 +1449,8 @@ public class SharedData {
                 Toast.makeText(activity,
                         msg,
                         Toast.LENGTH_LONG).show();
-                if(die) delayedKillActivity(mainHandler, activity);
+                if(stopProgress) stopProgressDialog(activity);
+                if(die) delayedKillActivity(mainHandler, activity, 0);
             }
         }, timeout);
     }
@@ -1530,9 +1558,9 @@ public class SharedData {
                 intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
             }
         } else {
-            String mimeTypesStr = "";
+            StringBuilder mimeTypesStr = new StringBuilder();
             for (String mimeType : mimeTypes) {
-                mimeTypesStr += mimeType + "|";
+                mimeTypesStr.append(mimeType).append("|");
             }
             intent.setType(mimeTypesStr.substring(0,mimeTypesStr.length() - 1));
         }
@@ -1756,5 +1784,28 @@ public class SharedData {
         return retList;
     }
      */
+
+    //To use the below progress dialog routines, you have to override onResume and onPause to add
+    //ScoreTally.activityResumed() and ScoreTally.activityPaused()
+    void startProgressDialog(final Activity activity, final String title, final String msg) {
+        ProgressBar pgsBar = activity.findViewById(R.id.progressBar);
+        if(pgsBar!=null) pgsBar.setVisibility(View.VISIBLE);
+        Log.d(TAG, title + " :Progress: " + msg );
+
+        /*
+        Using ProgressDialog leads to issues if the parent activity is minimized (not visible)
+        Below error is seen in many situations:
+        java.lang.IllegalArgumentException: View=DecorView@c85a80c[Fetching data] not attached to window manager
+        Much better to use ProgressBar.
+        See more notes in ClubLeagueActivity about behavior when there is no internet.
+         */
+    }
+
+    void stopProgressDialog(final Activity activity) {
+        Log.d(TAG, "stopProgressDialog: vis="+ ScoreTally.isActivityVisible() +
+                ",fin=" + activity.isFinishing());
+        ProgressBar pgsBar = activity.findViewById(R.id.progressBar);
+        if(pgsBar!=null) pgsBar.setVisibility(View.GONE);
+    }
 }
 

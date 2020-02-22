@@ -11,6 +11,7 @@ import android.text.TextUtils;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -33,11 +34,11 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
     private void setTitle(String tourna) {
         if (!TextUtils.isEmpty(tourna)) {
             //Log.d(TAG, "setTitle: " + tourna);
-            String tempString = Constants.APPNAME + "  " + tourna;
+            String tempString = Constants.APPSHORT + "  " + tourna;
             SpannableString spanString = new SpannableString(tempString);
-            spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPNAME.length(), 0);
-            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPNAME.length(), tempString.length(), 0);
-            spanString.setSpan(new RelativeSizeSpan(0.7f), Constants.APPNAME.length(), tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPSHORT.length(), 0);
+            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPSHORT.length(), tempString.length(), 0);
+            spanString.setSpan(new RelativeSizeSpan(0.7f), Constants.APPSHORT.length(), tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             getSupportActionBar().setTitle(""); //workaround for title getting truncated.
             getSupportActionBar().setTitle(spanString);
         }
@@ -104,6 +105,12 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
         mAdapter = new TournaSummaryRecyclerViewAdapter(TournaSummary.this);
         mRecyclerView.setAdapter(mAdapter);
         //mAdapter.notifyDataSetChanged();
+
+        // add back arrow to toolbar
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
     }
 
     @Override
@@ -127,6 +134,18 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
             }
         });
 
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        //Log.d(TAG, "onOptionsItemSelected: ");
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                SharedData.getInstance().killActivity(TournaSummary.this, RESULT_OK);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     //CallbackRoutine Callback interfaces

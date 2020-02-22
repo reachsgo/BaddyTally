@@ -244,7 +244,7 @@ public class TournaUtil {
         String[] teams = parts1[1].split(Constants.TEAM_DELIM2);
 
         if (teams.length != 2) {
-            Log.e(TAG, "getMatchInfoFromString, 2 teams were expected:" + teams.toString());
+            Log.e(TAG, "getMatchInfoFromString, 2 teams were expected:" + teams.length);
             return null;
         }
         mI.T1 = teams[0];

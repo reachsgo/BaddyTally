@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -45,6 +46,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -263,6 +265,24 @@ public class ClubLeagueSettings extends AppCompatActivity {
                 inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
         }
 
+        // add back arrow to toolbar
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        //Log.d(TAG, "onOptionsItemSelected: ");
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     private void activateUserButton() {
@@ -632,7 +652,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
                 switch (which) {
                     case DialogInterface.BUTTON_POSITIVE:
                         //Yes button clicked
-                        if (mCommon.mNumOfGroups == Constants.NUM_OF_GROUPS) { //if 2
+                        if (Objects.equals(mCommon.mNumOfGroups, Constants.NUM_OF_GROUPS)) { //if 2
                             getNumOfPlayersToShuffle();
                         } else {  //only 1 group, no shuffling
                             identifyPlayersToShuffle(0); //mAllPlayers has to be filled before invoking createNewInningsWithoutShuffling
@@ -648,7 +668,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(ClubLeagueSettings.this);
         String msg;
-        if (mCommon.mNumOfGroups == Constants.NUM_OF_GROUPS) { //if 2
+        if (Objects.equals(mCommon.mNumOfGroups, Constants.NUM_OF_GROUPS)) { //if 2
             msg = "You are about to create a new Innings.\n" +
                     "Gold & Silver player lists will be updated as needed.\n\n" +
                     "Are you sure?";
@@ -900,7 +920,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
                 winPercSet.add(Integer.valueOf(pd.getWinPercentage_innings()));   //descending order
             }
             Log.i(funStr, winPercSet.toString());
-            Integer[] winPercArray = winPercSet.toArray(new Integer[winPercSet.size()]);  //convert to array, to iterate through the set
+            Integer[] winPercArray = winPercSet.toArray(new Integer[0]);  //convert to array, to iterate through the set
 
             //check if the Player with highest win% is in Gold group or already marked to be shuffled.
             Log.i(funStr, "Full PL:" + fullPL.toString());
@@ -1118,7 +1138,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            if (mCommon.mNumOfGroups == Constants.NUM_OF_GROUPS) { //if 2
+            if (Objects.equals(mCommon.mNumOfGroups, Constants.NUM_OF_GROUPS)) { //if 2
                 dialog.setMessage("Shuffling in progress....");
             } else {
                 dialog.setMessage("Creating new innings....");
@@ -1181,7 +1201,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
 
                         resetInningsData();  //do first before mAllPlayers list becomes stale. Thus, avoiding another DB read.
 
-                        if (mCommon.mNumOfGroups == Constants.NUM_OF_GROUPS) { //if 2 groups in the club, do shuffling
+                        if (Objects.equals(mCommon.mNumOfGroups, Constants.NUM_OF_GROUPS)) { //if 2 groups in the club, do shuffling
                             //Remove last 3 from silver, list is in ascending order. Player with most points at the end;
                             //Add last 3 from gold, Gold list is in descending order. Player with least points at the end;
                             shufflePlayers(tp.shufNumPlayers, Constants.SILVER, tp.goldOldPL, tp.silverNewPL, false); //not a dry_run, real thing!

@@ -259,11 +259,11 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
         AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
         builder.setTitle(SharedData.getInstance().getTitleStr( tI.name + " team info:", mContext));
         //Spanned spanString = (Spanned) TextUtils.concat(mPlayers.get(position).getPtsDetailFormat_innings(), "\n", mPlayers.get(position).getPtsDetailFormat_season());
-        String players = " Players:\n";
+        StringBuilder players = new StringBuilder(" Players:\n");
         for (int i=0; i<tI.p_nicks.size(); i++) {
-            players += "       " +  tI.getPlayerNameLong(i) + "\n";
+            players.append("       ").append(tI.getPlayerNameLong(i)).append("\n");
         }
-        if(tI.p_nicks.size()==0) players += "       None.";
+        if(tI.p_nicks.size()==0) players.append("       None.");
         SpannableString span1 = new SpannableString(tI.desc + "\n\n");
         SpannableString span2 = new SpannableString("\n\n" + players);
         span2.setSpan(new RelativeSizeSpan(0.8f), 0, players.length()+2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -375,7 +375,7 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
     public void alertResult(final String in, final Boolean ok, final Boolean ko) {
         if(in.contains(DELETE_TEAM)) {
             if(ok) {
-                String parts[] = in.split(Constants.COLON_DELIM);
+                String[] parts = in.split(Constants.COLON_DELIM);
                 if(parts.length != 2) {
                     Log.v(TAG, "alertResult Internal error:" + parts.length);
                     mCommon.showToast(mContext, "Internal error!" , Toast.LENGTH_SHORT);
@@ -385,7 +385,7 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
             }
         } else if(in.contains(REMOVE_PLAYER)) {
             if(ok) {
-                String parts[] = in.split(Constants.COLON_DELIM);
+                String[] parts = in.split(Constants.COLON_DELIM);
                 if(parts.length != 2) {
                     Log.v(TAG, "alertResult Internal error:" + parts.length);
                     mCommon.showToast(mContext, "Internal error!" , Toast.LENGTH_SHORT);

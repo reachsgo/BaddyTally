@@ -56,29 +56,34 @@ public class TeamInfo {
     }
 
     public String get1LineDesc() {
-        //String descStr = desc + " "; //Saving screen space to have multiple teams on the same page
-        String descStr = "";
-        if(p_nicks.size()>0) {
-            descStr += "(";
+        StringBuilder descStr = new StringBuilder();
+        //If there is only one player (hence the check ">1") in the team,
+        //usually the team name itself will be the player name.
+        //So, nothing to add here.
+        if(p_nicks.size()>1) {
+            descStr.append("(");
             int idx = 0;
             for (String p: p_nicks) {
-                if(idx>0) descStr += ", ";
-                descStr += p;
+                if(idx>0) descStr.append(", ");
+                descStr.append(p);
                 if(descStr.length()>40) {
-                    descStr += "..";
+                    descStr.append("..");
                     break; //save screen space
                 }
                 idx++;
             }
-            descStr += ")";
+            descStr.append(")");
         }
-        return descStr;
+        return descStr.toString();
     }
 
-    public SpannableString get2LinesDesc() {
-        String tempString = name + "\n" + get1LineDesc();
+    SpannableString get2LinesDesc() {
+        String firstLine = name;
+        String tempString = firstLine;
+        String secondLine = get1LineDesc();
+        if(!secondLine.isEmpty()) tempString += "\n" + secondLine;
         SpannableString spanString = new SpannableString(tempString);
-        spanString.setSpan(new RelativeSizeSpan(0.7f), name.length(),
+        spanString.setSpan(new RelativeSizeSpan(0.7f), firstLine.length(),
                 tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         return spanString;
     }

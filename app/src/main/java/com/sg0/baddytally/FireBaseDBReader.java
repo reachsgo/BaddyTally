@@ -30,7 +30,8 @@ class FireBaseDBReader {
     private final ArrayList<PlayerData> mPlayers;
     private final String mLogStr;
 
-    public FireBaseDBReader(Context context, String club, String group, String innings, RecyclerViewAdapter viewAdapter, RecyclerView view) {
+    public FireBaseDBReader(Context context, String club, String group, String innings,
+                            RecyclerViewAdapter viewAdapter, RecyclerView view) {
         mContext = context;
         mInnings = innings;
         mClub = club;

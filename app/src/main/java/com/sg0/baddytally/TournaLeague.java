@@ -128,16 +128,24 @@ public class TournaLeague extends AppCompatActivity implements CallbackRoutine {
                 return true;
             }
         });
+
+        // add back arrow to toolbar
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
     }
 
     private void setTitle(String tourna) {
         if (!TextUtils.isEmpty(tourna)) {
             //Log.d(TAG, "setTitle: " + tourna);
-            String tempString = Constants.APPNAME + "  " + tourna;
+            String tempString = Constants.APPSHORT + "  " + tourna;
             SpannableString spanString = new SpannableString(tempString);
-            spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPNAME.length(), 0);
-            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPNAME.length(), tempString.length(), 0);
-            spanString.setSpan(new RelativeSizeSpan(0.7f), Constants.APPNAME.length(), tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPSHORT.length(),0);
+            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPSHORT.length(),
+                    tempString.length(), 0);
+            spanString.setSpan(new RelativeSizeSpan(0.7f), Constants.APPSHORT.length(),
+                    tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             getSupportActionBar().setTitle(""); //workaround for title getting truncated.
             getSupportActionBar().setTitle(spanString);
         }
@@ -186,6 +194,9 @@ public class TournaLeague extends AppCompatActivity implements CallbackRoutine {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
             // action with ID action_refresh was selected
             case R.id.action_refresh:
                 finish();

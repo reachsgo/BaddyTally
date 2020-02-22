@@ -113,6 +113,14 @@
                     android:textColor="#fff"
                     android:textStyle="bold" />
 
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:indeterminate="true"
+                    android:visibility="gone"
+                    />
+
                 <LinearLayout
                     android:id="@+id/options_ll"
                     android:layout_width="match_parent"

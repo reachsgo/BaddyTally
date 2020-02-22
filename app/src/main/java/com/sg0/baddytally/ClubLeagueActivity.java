@@ -2,8 +2,6 @@ package com.sg0.baddytally;
 
 
 import android.app.AlertDialog;
-
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -32,6 +30,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -82,7 +81,8 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
     private RecyclerViewAdapter mGoldAdapter;
     private RecyclerViewAdapter mSilverAdapter;
     private Handler uiHandler;
-    private ProgressDialog progressDialog;
+    private SharedData mCommon;
+    private Runnable progressTimeOutRunnable;
 
     //private boolean[] mGoldCheckedItems = null;
     //private boolean[] mSilverCheckedItems = null;
@@ -93,15 +93,15 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
     private void setTitle(String club) {
         if (!TextUtils.isEmpty(club)) {
             //Log.d(TAG, "setTitle: " + club + ":" + SharedData.getInstance().toString());
-            String tempString = Constants.APPNAME + "  " + club;
+            String tempString = Constants.APPSHORT + "  " + club;
             if (SharedData.getInstance().isAdmin()) tempString += " +";
             else if (SharedData.getInstance().isRoot()) tempString += " *";
             else tempString += " ";
             SpannableString spanString = new SpannableString(tempString);
             spanString.setSpan(new StyleSpan(Typeface.BOLD), 0,
-                    Constants.APPNAME.length(), 0);
+                    Constants.APPSHORT.length(), 0);
             spanString.setSpan(new StyleSpan(Typeface.ITALIC),
-                    Constants.APPNAME.length(), tempString.length() - 1, 0);
+                    Constants.APPSHORT.length(), tempString.length() - 1, 0);
             spanString.setSpan(new SuperscriptSpan(), tempString.length() - 1,
                     tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             spanString.setSpan(new RelativeSizeSpan(0.5f), tempString.length() - 1,
@@ -141,9 +141,14 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
         mRefreshing = true;
         mGoldAdapter = null;
         mSilverAdapter = null;
-        SharedData.getInstance().mNumOfGroups = Constants.NUM_OF_GROUPS;
+        mCommon = SharedData.getInstance();
+        mCommon.mNumOfGroups = Constants.NUM_OF_GROUPS;
         //SGO: Test single user group
         //SharedData.getInstance().mNumOfGroups = 1;
+
+        //do initAdapter once here, to avoid below error:
+        //RecyclerView: No adapter attached; skipping layout
+        initAdapter(); //this will be done again from profileFetched()
 
         TextView mGoldHeader = findViewById(R.id.gold_group);
         TextView mSilverHeader = findViewById(R.id.silver_group);
@@ -245,8 +250,49 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
         ImageButton suggestion_btn = findViewById(R.id.suggestions);
         suggestion_btn.setOnClickListener(suggestionsOnClickListener);
 
+        //made a member to remove just this from the queue when DB read is successful.
+        //postDelayed with object as param is not supported before API 28.
+        progressTimeOutRunnable = new Runnable() {
+            @Override
+            public void run() {
+                //what to do in case of progress-bar timeout (DB_READ_TIMEOUT here)
+                mCommon.stopProgressDialog(ClubLeagueActivity.this);
+                if(!mCommon.isDBConnected()) {
+                    Toast.makeText(ClubLeagueActivity.this,
+                            "Check your internet connection",
+                            Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(ClubLeagueActivity.this,
+                            "No ongoing league innings for this club.",
+                            Toast.LENGTH_SHORT).show();
+                }
 
+                //doing a finish() here gives the below errors. Only seen in logs.
+                //Note that these errors are not visible to the app user.
+                //2020-02-20 18:40:33.001 1083-1099/com.sg0.baddytally E/System: Uncaught exception thrown by finalizer
+                //2020-02-20 18:40:33.003 1083-1099/com.sg0.baddytally E/System: java.lang.NullPointerException: Attempt to invoke virtual method 'boolean com.android.org.conscrypt.SslWrapper.isClosed()' on a null object reference
+                //at com.android.org.conscrypt.ConscryptFileDescriptorSocket.free(ConscryptFileDescriptorSocket.java:986)
+                //at com.android.org.conscrypt.ConscryptFileDescriptorSocket.finalize(ConscryptFileDescriptorSocket.java:1014)
 
+                //But, then that error is seen multiple times even when the app is
+                //minimized. May be its an issue in conscrypt?
+                //refer: https://github.com/google/conscrypt/issues/792
+                //Or if there is an issue in this app, it needs to be looked into.
+
+                //Looks like these are due to failing firebase calls.
+                // Note1: **Happens only when internet connection is not present.**
+                // Note2: Issue is not seen on Sony phone (5.1.1 android)
+                mCommon.delayedKillActivity(uiHandler, ClubLeagueActivity.this,
+                                Constants.SHOWTOAST_TIMEOUT);
+
+            }
+        };
+
+        // add back arrow to toolbar
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
     }
 
     private void selectedEffect2(final int selectedViewId, final int otherViewId) {
@@ -268,23 +314,16 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        ScoreTally.activityPaused();
-    }
-
-    @Override
     protected void onResume() {
         super.onResume();
-        ScoreTally.activityResumed();
         mInitialAttempt = false;
         setFooter();
         SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
         String club = prefs.getString(Constants.DATA_CLUB, "");
 
-        if (SharedData.getInstance().isDBUpdated()) {
+        if (mCommon.isDBUpdated()) {
             mRefreshing = true;
-            SharedData.getInstance().setDBUpdated(false);
+            mCommon.setDBUpdated(false);
         }
 
         if (club.isEmpty()) {
@@ -294,27 +333,15 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                     .show();
         } else {
             mClub = club;
-            SharedData.getInstance().mClub = mClub;
-            SharedData.getInstance().mUser = prefs.getString(Constants.DATA_USER, "");
-            SharedData.getInstance().mRole = prefs.getString(Constants.DATA_ROLE, "");
-            //SharedData.getInstance().mTournaMode = prefs.getBoolean(Constants.DATA_TMODE, false);
+            mCommon.mClub = mClub;
+            mCommon.mUser = prefs.getString(Constants.DATA_USER, "");
+            mCommon.mRole = prefs.getString(Constants.DATA_ROLE, "");
+            //mCommon.mTournaMode = prefs.getBoolean(Constants.DATA_TMODE, false);
             Log.d(TAG, mInitialAttempt + ":onResume: " + SharedData.getInstance().toString());
             setTitle(mClub);
-            startProgressDialog("Fetching data", "Connecting...");
+
             fetchInnings();
-            /*
-            if (SharedData.getInstance().mTournaMode) {
-                //Intent myIntent = new Intent(ClubLeagueActivity.this, TournaTableLayout.class);
-                Intent myIntent = new Intent(ClubLeagueActivity.this, TournaLeague.class);
-                ClubLeagueActivity.this.startActivity(myIntent);
-                //SharedData.getInstance().mTournaMode = false; //SGO
-                //TODO: Have to add ClubLeagueSettings to tournamode
-                return;
-            } else {
-                fetchInnings();
-            }
-            Log.d(TAG, "onCreate: back from tourna");
-            */
+
             if (mOptionsMenu != null) {
                 //For scenarios where onResume() is called after onCreateOptionsMenu()
                 //Log.d(TAG, "onResume() is called after onCreateOptionsMenu()");
@@ -322,8 +349,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 mOptionsMenu.findItem(R.id.action_summary).setVisible(true);
                 MenuItem mEnterDataItem = mOptionsMenu.findItem(R.id.action_enter);
                 mEnterDataItem.setTitle("Enter Score");  //coming back from initial sign in, change settings menu
-                if (Constants.MEMBER.equals(SharedData.getInstance().mRole))
-                    mEnterDataItem.setEnabled(false);
+                if (!mCommon.isAdminOrRoot()) mEnterDataItem.setEnabled(false);
             }
         }
     }
@@ -333,7 +359,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
     public void onBackPressed() {
         //killActivity is required here. If not, pressing back from MainSelection2
         //will take us back to this activity.
-        SharedData.getInstance().killActivity(this, RESULT_OK);
+        mCommon.killActivity(this, RESULT_OK);
         Intent intent = new Intent(ClubLeagueActivity.this, MainSelection2.class);
         /*If FLAG_ACTIVITY_CLEAR_TOP set, and the activity being launched is already running in
         the current task, then instead of launching a new instance of that activity, all of the
@@ -346,8 +372,9 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        uiHandler.removeCallbacksAndMessages(null);
         Log.d(TAG, "onDestroy: ");
+        super.onDestroy();
     }
 
     @Override
@@ -360,7 +387,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
 
         if (resultCode == Constants.RESTARTAPP) {
             Log.w(TAG, "onActivityResult: RESTARTING app");
-            SharedData.getInstance().restartApplication(ClubLeagueActivity.this, MainSigninActivity.class);
+            mCommon.restartApplication(ClubLeagueActivity.this, MainSigninActivity.class);
             /*Intent mStartActivity = new Intent(ClubLeagueActivity.this, MainSigninActivity.class);
             int mPendingIntentId = 3331;  //some random number.
             PendingIntent mPendingIntent = PendingIntent.getActivity(ClubLeagueActivity.this, 0, mStartActivity,
@@ -370,11 +397,11 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
             System.exit(0);*/
         }
 
-        if (SharedData.getInstance().isDBUpdated()) {
+        if (mCommon.isDBUpdated()) {
             // cache is cleared, refresh the main view
             finish();
             startActivity(getIntent());
-            SharedData.getInstance().setDBUpdated(false);
+            mCommon.setDBUpdated(false);
         }
     }
 
@@ -396,7 +423,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
             mEnterDataItem.setTitle("Enter Score");
             menu.findItem(R.id.action_settings).setVisible(true);
             menu.findItem(R.id.action_summary).setVisible(true);
-            if (Constants.MEMBER.equals(SharedData.getInstance().mRole))
+            if (Constants.MEMBER.equals(mCommon.mRole))
                 mEnterDataItem.setEnabled(false);
             menu.findItem(R.id.action_new_tourna).setVisible(true);
         }
@@ -407,6 +434,9 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
             // action with ID action_refresh was selected
             case R.id.action_refresh:
                 finish();
@@ -416,27 +446,26 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
             // action with ID action_settings was selected
             case R.id.action_settings:
                 //If DB connection is sleeping, wake it up!
-                SharedData.getInstance().wakeUpDBConnection_profile();
+                mCommon.wakeUpDBConnection_profile();
                 Intent myIntent = new Intent(ClubLeagueActivity.this, ClubLeagueSettings.class);
                 myIntent.putExtra(Constants.ACTIVITY, Constants.ACTIVITY_SETTINGS);
                 ClubLeagueActivity.this.startActivity(myIntent);
                 break;
             case R.id.action_enter:
                 //If DB connection is sleeping, wake it up!
-                SharedData.getInstance().wakeUpDBConnection();
+                mCommon.wakeUpDBConnection();
                 if (mInitialAttempt) {
                     myIntent = new Intent(ClubLeagueActivity.this, LoginActivity.class);
                     ClubLeagueActivity.this.startActivity(myIntent);
-                } else if (!SharedData.getInstance().mProfile.getMemcode().isEmpty()) {
+                } else if (!mCommon.mProfile.getMemcode().isEmpty()) {
                     myIntent = new Intent(ClubLeagueActivity.this, LoginActivity.class);
                     //Set the Player data in shared data structure. Player data is filled in a
                     //different (asynchronous) listener in FireBaseDBReader. Overwrite the player data
                     //every time, so that even if initial calls are done too fast (before player data is
                     //filled - which will not happen unless the DB is very slow), the later calls will
                     //set the latest player data from DB.
-                    SharedData data = SharedData.getInstance();
-                    data.mGoldPlayers = mGoldDB.getPlayers();
-                    if (mSilverDB != null) data.mSilverPlayers = mSilverDB.getPlayers();
+                    mCommon.mGoldPlayers = mGoldDB.getPlayers();
+                    if (mSilverDB != null) mCommon.mSilverPlayers = mSilverDB.getPlayers();
                     //Log.d(TAG, "Creating LoginActivity: data = " + data.toString());
                     ClubLeagueActivity.this.startActivityForResult(myIntent, Constants.LOGIN_ACTIVITY);
                 } else {
@@ -450,7 +479,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                             .show();
                 } else {
                     //If DB connection is sleeping, wake it up!
-                    SharedData.getInstance().wakeUpDBConnection();
+                    mCommon.wakeUpDBConnection();
                     Intent mySumIntent = new Intent(ClubLeagueActivity.this, ClubLeagueSummary.class);
                     ClubLeagueActivity.this.startActivityForResult(mySumIntent, Constants.SUMMARY_ACTIVITY);
                 }
@@ -460,24 +489,25 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 break;
             case R.id.action_new_tourna:
                 if (mInitialAttempt) {
-                    Toast.makeText(this, "You have to Sign-in first.", Toast.LENGTH_SHORT)
-                            .show();
-                    break;
-                }
-
-                //Log.w(TAG, "Create internal tournament for " + mClub);
-                if (!SharedData.getInstance().isRoot()) {
-                    Toast.makeText(ClubLeagueActivity.this, "You don't have permission to do this!" ,
+                    Toast.makeText(this, "You have to Sign-in first.",
                             Toast.LENGTH_SHORT).show();
                     break;
                 }
 
-                SharedData data = SharedData.getInstance();
-                data.mGoldPlayers = mGoldDB.getPlayers();
-                if (mSilverDB != null) data.mSilverPlayers = mSilverDB.getPlayers();
+                //Log.w(TAG, "Create internal tournament for " + mClub);
+                if (!mCommon.isRoot()) {
+                    Toast.makeText(ClubLeagueActivity.this,
+                            "You don't have permission to do this!" ,
+                            Toast.LENGTH_SHORT).show();
+                    break;
+                }
 
-                SharedData.getInstance().wakeUpDBConnection();
-                Intent myTournaIntent = new Intent(ClubLeagueActivity.this, ClubLeagueCreateTourna.class);
+                mCommon.mGoldPlayers = mGoldDB.getPlayers();
+                if (mSilverDB != null) mCommon.mSilverPlayers = mSilverDB.getPlayers();
+
+                mCommon.wakeUpDBConnection();
+                Intent myTournaIntent = new Intent(ClubLeagueActivity.this,
+                        ClubLeagueCreateTourna.class);
                 ClubLeagueActivity.this.startActivity(myTournaIntent);
 
                 /*
@@ -590,10 +620,11 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
         mGoldAdapter = new RecyclerViewAdapter(this, Constants.GOLD, players);
         mGoldAdapter.setBgColor("#eee8aa");  //pale gold as background for text
         mRecyclerGoldView.setAdapter(mGoldAdapter);
-        mGoldDB = new FireBaseDBReader(this, mClub, Constants.GOLD, mInnings, mGoldAdapter, mRecyclerGoldView);
+        mGoldDB = new FireBaseDBReader(this, mClub, Constants.GOLD, mInnings,
+                mGoldAdapter, mRecyclerGoldView);
         mGoldDB.fetchOverallScore();
 
-        if (SharedData.getInstance().mNumOfGroups == 1) {
+        if (mCommon.mNumOfGroups == 1) {
             //There is only one group, dont show silver group view.
             findViewById(R.id.silver_parentview).setVisibility(View.GONE);
             mSilverDB = null;
@@ -604,7 +635,9 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
             mRecyclerSilverView.setHasFixedSize(true);
             if (Build.VERSION.SDK_INT >= 21) {
                 //set the background image (smashing silhouette) tint to gold, only supported for API21+
-                mRecyclerSilverView.setBackgroundTintList(ContextCompat.getColorStateList(ClubLeagueActivity.this, R.color.colorSilver));
+                mRecyclerSilverView.setBackgroundTintList(
+                        ContextCompat.getColorStateList(
+                                ClubLeagueActivity.this, R.color.colorSilver));
             }
             // use a linear layout manager
             parent = findViewById(R.id.silver_parentview);
@@ -617,7 +650,8 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
             mSilverAdapter = new RecyclerViewAdapter(this, Constants.SILVER, players);
             mSilverAdapter.setBgColor("#eeeee0");  //color silver
             mRecyclerSilverView.setAdapter(mSilverAdapter);
-            mSilverDB = new FireBaseDBReader(this, mClub, Constants.SILVER, mInnings, mSilverAdapter, mRecyclerSilverView);
+            mSilverDB = new FireBaseDBReader(this, mClub, Constants.SILVER, mInnings,
+                    mSilverAdapter, mRecyclerSilverView);
             mSilverDB.fetchOverallScore();
         }
     }
@@ -625,61 +659,41 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
     private void fetchInnings() {
         //Read DB only on startup & refresh. Otherwise on every resume of app, data is read from DB and that adds to the DB traffic.
         if (!mRefreshing) {
-            stopProgressDialog();
             return;
         }
 
+        mCommon.startProgressDialog(ClubLeagueActivity.this,
+                "Fetching data", "Connecting...");
+        //postDelayed with object is supported only from API 28.
+        //timeout-event to be deleted from profileFetched()
+        uiHandler.postDelayed(progressTimeOutRunnable, Constants.DB_READ_TIMEOUT);
 
         //Log.v(TAG, "fetchInnings: ....");
 
-        final Handler handler = new Handler();
-
-
         //Using runTransaction instead of addListenerForSingleValueEvent, as the later was giving stale data.
         final DatabaseReference inningsDBRef = FirebaseDatabase.getInstance().getReference()
-                .child(SharedData.getInstance().mClub).child(Constants.INNINGS);
+                .child(mCommon.mClub).child(Constants.INNINGS);
         inningsDBRef.runTransaction(new Transaction.Handler() {
             @NonNull
             @Override
             public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
-
+                Log.d(TAG, "doTransaction: fetchInnings");
                 GenericTypeIndicator<List<InningsDBEntry>> t = new GenericTypeIndicator<List<InningsDBEntry>>() {
                 };
                 //In this impl, innings has to be a list, so the entries should be in sequence and should start at 0.
                 List<InningsDBEntry> innings = mutableData.getValue(t);
                 if (null == innings) {
                     //no innings in DB
-                    SharedData.getInstance().mInnings = "";
-                    //Log.v(TAG, "fetchInnings: .... null");
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            stopProgressDialog();
-                            if(!SharedData.getInstance().isDBConnected()) {
-                                Toast.makeText(ClubLeagueActivity.this,
-                                        "Check your internet connection",
-                                        Toast.LENGTH_LONG).show();
-                            } else {
-                                Toast.makeText(ClubLeagueActivity.this,
-                                        "No ongoing league innings for this club.",
-                                        Toast.LENGTH_SHORT).show();
-                            }
-                            SharedData.delayedKillActivity(handler, ClubLeagueActivity.this);
-                        }
-                    }, Constants.DB_READ_TIMEOUT);
+                    mCommon.mInnings = "";
+                    Log.v(TAG, "fetchInnings: .... null");
                     return Transaction.success(mutableData);
                 }
 
-                //Even for a profile present in DB, the above null case will be hit once.
-                //So, add the toast to handler queue and if there is another call back within
-                //that time (3s here), then the below code will cancel the first toast message.
-                handler.removeCallbacksAndMessages(null);
-
                 //reset the values to be read fresh from DB. This makes sure that DB is the master,
                 //in case of manual updates.
-                SharedData.getInstance().mInnings = "";
-                SharedData.getInstance().mRoundName = "";
-                SharedData.getInstance().mInningsDBKey = -1;
+                mCommon.mInnings = "";
+                mCommon.mRoundName = "";
+                mCommon.mInningsDBKey = -1;
                 for (int i = innings.size() - 1; i >= 0; i--) {  //reverse to get "true" value first
                     InningsDBEntry val = innings.get(i);
                     //if (null != val)
@@ -687,16 +701,16 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                     //            " data:" + val.toString());
                     if (null != val && val.current) {
                         mInnings = val.name;
-                        SharedData.getInstance().mInnings = mInnings;
+                        mCommon.mInnings = mInnings;
                         mRoundName = val.round;
-                        SharedData.getInstance().mRoundName = mRoundName;
-                        SharedData.getInstance().mInningsDBKey = innings.indexOf(val);
-                        Log.v(TAG, "fetchInnings: key:" + SharedData.getInstance().mInningsDBKey
+                        mCommon.mRoundName = mRoundName;
+                        mCommon.mInningsDBKey = innings.indexOf(val);
+                        Log.v(TAG, "fetchInnings: key:" + mCommon.mInningsDBKey
                                 + " data:" + val.toString());
 
                         if (mOptionsMenu == null) break;
 
-                        if (SharedData.getInstance().mInnings.isEmpty()) {
+                        if (mCommon.mInnings.isEmpty()) {
                             //no innings configured in DB yet
                             mOptionsMenu.findItem(R.id.action_enter).setVisible(false);
                             mOptionsMenu.findItem(R.id.action_summary).setVisible(false);
@@ -708,38 +722,36 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                     }
                 }
                 //do less in the firebase callback
-                handler.post(new Runnable() {
+                uiHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        fetchGames(Constants.GOLD, mGoldPlayedGames, SharedData.getInstance().mGoldPresentPlayerNames);
-                        fetchGames(Constants.SILVER, mSilverPlayedGames, SharedData.getInstance().mSilverPresentPlayerNames);
+                        fetchGames(Constants.GOLD, mGoldPlayedGames, mCommon.mGoldPresentPlayerNames);
+                        fetchGames(Constants.SILVER, mSilverPlayedGames, mCommon.mSilverPresentPlayerNames);
                     }
                 });
                 setFooter();
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        stopProgressDialog();
-                    }
-                }, 1000);
                 return Transaction.success(mutableData);
             }
 
             @Override
-            public void onComplete(@Nullable DatabaseError databaseError, boolean b, @Nullable DataSnapshot dataSnapshot) {
-
+            public void onComplete(@Nullable DatabaseError databaseError, boolean b,
+                                   @Nullable DataSnapshot dataSnapshot) {
+                Log.d(TAG, "onComplete: fetchInnings");
             }
         });
 
-        SharedData.getInstance().fetchProfile(ClubLeagueActivity.this, ClubLeagueActivity.this, mClub);
+        mCommon.fetchProfile(ClubLeagueActivity.this, ClubLeagueActivity.this, mClub);
     }
 
     //CallbackRoutine Callback after profile is fetched from DB. See SharedData impl of fetchProfile()
     public void profileFetched() {
-        SharedData data = SharedData.getInstance();
-        Log.w(TAG, "profileFetched invoked ...." + data.toString());
+        Log.w(TAG, "profileFetched invoked ...." + mCommon.toString());
         initAdapter();
         mRefreshing = false;
+
+        //stop progress and remove timeout messages
+        uiHandler.removeCallbacks(progressTimeOutRunnable);
+        mCommon.stopProgressDialog(ClubLeagueActivity.this);
     }
 
     public void alertResult(final String in, final Boolean ok, final Boolean ko) {
@@ -773,7 +785,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 " If Singles are not desired, then mix the pools and play random teams (points are not counted).\n\n" +
                 "9. If there are not enough players on a day, mix and match (after the singles). Points are not counted in that case.\n\n" +
                 "10. Scores and results can be entered into ScoreTally after each game.\n\n")
-                .setTitle(SharedData.getInstance().getTitleStr("Rules", ClubLeagueActivity.this))
+                .setTitle(mCommon.getTitleStr("Rules", ClubLeagueActivity.this))
                 .setNeutralButton("Ok", null)
                 .show();
     }
@@ -782,13 +794,13 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
     private View.OnClickListener suggestionsOnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            if (SharedData.getInstance().mGoldPresentPlayerNames != null) {
+            if (mCommon.mGoldPresentPlayerNames != null) {
                 showGroupPopup();
             } else {
                 //Probably the first time, user might not be aware of the button functionality, help him!
                 AlertDialog.Builder builder = new AlertDialog.Builder(ClubLeagueActivity.this);
                 builder.setMessage("To get game-suggestions, select group and the players present today for the games.")
-                        .setTitle(SharedData.getInstance().getTitleStr("Info!", ClubLeagueActivity.this))
+                        .setTitle(mCommon.getTitleStr("Info!", ClubLeagueActivity.this))
                         .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
@@ -822,7 +834,6 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
     }
 
     private void showPlayersPopup(final String group) {
-        final SharedData data = SharedData.getInstance();
         RecyclerViewAdapter adapter = null;
 
         //Players present on this game day
@@ -831,11 +842,11 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
         switch (group) {
             case Constants.GOLD:
                 adapter = mGoldAdapter;
-                presetPlayerNames = data.mGoldPresentPlayerNames;
+                presetPlayerNames = mCommon.mGoldPresentPlayerNames;
                 break;
             case Constants.SILVER:
                 adapter = mSilverAdapter;
-                presetPlayerNames = data.mSilverPresentPlayerNames;
+                presetPlayerNames = mCommon.mSilverPresentPlayerNames;
                 break;
             default:
                 break;
@@ -871,17 +882,18 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 Set<String> presetPlayerNames = null;  //Players present on this game day
                 switch (group) {
                     case Constants.GOLD:
-                        presetPlayerNames = data.mGoldPresentPlayerNames;
+                        presetPlayerNames = mCommon.mGoldPresentPlayerNames;
                         break;
                     case Constants.SILVER:
-                        presetPlayerNames = data.mSilverPresentPlayerNames;
+                        presetPlayerNames = mCommon.mSilverPresentPlayerNames;
                         break;
                     default:
                         break;
                 }
 
                 if(b) presetPlayerNames.add((String) playerNames[i]);   //Duplicates wont be added for Set data structure.
-                else presetPlayerNames.remove(playerNames[i]);
+                else //noinspection SuspiciousMethodCalls
+                    presetPlayerNames.remove(playerNames[i]);
                 //if(mCheckedItems[i] != b) mCheckedItems[i] = b;
                 //Log.v(TAG, "showPlayersPopup onClick: presetPlayerNames=" + presetPlayerNames.toString());
             }
@@ -896,11 +908,11 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 ArrayList<GameJournalDBEntry> playedGames = null;
                 switch (group) {
                     case Constants.GOLD:
-                        presetPlayerNames = data.mGoldPresentPlayerNames;
+                        presetPlayerNames = mCommon.mGoldPresentPlayerNames;
                         playedGames = mGoldPlayedGames;
                         break;
                     case Constants.SILVER:
-                        presetPlayerNames = data.mSilverPresentPlayerNames;
+                        presetPlayerNames = mCommon.mSilverPresentPlayerNames;
                         playedGames = mSilverPlayedGames;
                         break;
                     default:
@@ -921,11 +933,14 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 }
 
                 //We want to do the game suggestions as per season points.
-                SharedData.getInstance().sortPlayers(presentPlayers, Constants.SEASON_IDX, false, ClubLeagueActivity.this, false); //in ascending order
-                Log.v(TAG, "showPlayersPopup OK onClick, presentPlayers:" + presentPlayers.toString());
+                mCommon.sortPlayers(presentPlayers, Constants.SEASON_IDX, false,
+                        ClubLeagueActivity.this, false); //in ascending order
+                Log.v(TAG, "showPlayersPopup OK onClick, presentPlayers:" +
+                        presentPlayers.toString());
 
                 if (presentPlayers.size()<4) {
-                    Toast.makeText(ClubLeagueActivity.this, "Minimum of 4 players should be present for suggestions of doubles games!",
+                    Toast.makeText(ClubLeagueActivity.this,
+                            "Minimum of 4 players should be present for suggestions of doubles games!",
                             Toast.LENGTH_LONG).show();
                     return;
                 }
@@ -936,8 +951,8 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 SpannableStringBuilder extraGames = new SpannableStringBuilder(); //recommended extra games for the day, as string to print in dialog
 
                 for(GameJournalDBEntry game: games) {
-                    possibleGames.append(SharedData.getInstance().getColorString(
-                            SharedData.getInstance().getStrikethroughString(game.toPlayersString()), Color.GRAY));
+                    possibleGames.append(mCommon.getColorString(
+                            mCommon.getStrikethroughString(game.toPlayersString()), Color.GRAY));
                     for (PlayerData p : presentPlayers) {
                         // GamesPlayed_innings is used to count the number of games suggested for each player.
                         // This is not used in current code to balance the suggested games, but might be useful in the future.
@@ -976,8 +991,10 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 // Play few balanced games from players selected from either ends to form a team.
                 for (int x = 0; x < presentPlayers.size() / 2; x += 2) {
                     ArrayList<PlayerData> playerDataArrayList1 = new ArrayList<>(presentPlayers);
-                    SharedData.getInstance().sortPlayers(playerDataArrayList1, Constants.SEASON_IDX, true, ClubLeagueActivity.this, false);
-                    scatterPlayers(playerDataArrayList1.get(x), presentPlayers, games, playerDataArrayList1, possibleGames);
+                    mCommon.sortPlayers(playerDataArrayList1, Constants.SEASON_IDX,
+                            true, ClubLeagueActivity.this, false);
+                    scatterPlayers(playerDataArrayList1.get(x), presentPlayers, games,
+                            playerDataArrayList1, possibleGames);
                 }
 
                 // Add few more skillfully competitive games, select the players from bottom this time.
@@ -1045,7 +1062,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
             else break;
         }
         //Log.v(TAG, "pickLeastPlayedFour pList=" + pList.toString());
-        SharedData.getInstance().sortPlayers(pList, Constants.SEASON_IDX, true, ClubLeagueActivity.this, false);
+        mCommon.sortPlayers(pList, Constants.SEASON_IDX, true, ClubLeagueActivity.this, false);
         Log.v(TAG, "pickLeastPlayedFour pList descending=" + pList.toString());
         PlayerData tp1 = pList.get(0);
         scatterPlayers(tp1, presentPlayers, games, pList, possibleGames);
@@ -1146,11 +1163,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
         int t2_total = p3.getPointsInt_season() + p4.getPointsInt_season();
         if(t1_total+t2_total < 10) return false;
 
-        if((t1_total <= (t2_total/2)) || (t2_total <= (t1_total/2))) {
-            return true;
-        }
-
-        return false;
+        return (t1_total <= (t2_total / 2)) || (t2_total <= (t1_total / 2));
     }
 
     // These were used to balance out the number of games suggested for each player. But that becomes very complicated and not accurate at all.
@@ -1163,10 +1176,8 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
         for (PlayerData p : presentPlayers) {
             if (p.getGamesPlayed_innings_int() > maxNumOfGames) {
                 maxNumOfGames = p.getGamesPlayed_innings_int();
-                maxP = p;
             } else if (p.getGamesPlayed_innings_int() < minNumOfGames) {
                 minNumOfGames = p.getGamesPlayed_innings_int();
-                minP = p;
             }
         }
         String msg = TAG + " " + minNumOfGames + "/" + maxNumOfGames + ":";
@@ -1196,16 +1207,13 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
         for (PlayerData p : presentPlayers) {
             if (p.getGamesPlayed_innings_int() > maxNumOfGames) {
                 maxNumOfGames = p.getGamesPlayed_innings_int();
-                maxP = p;
             } else if (p.getGamesPlayed_innings_int() < minNumOfGames) {
                 minNumOfGames = p.getGamesPlayed_innings_int();
-                minP = p;
             }
         }
         String msg = TAG + " " + minNumOfGames + "/" + maxNumOfGames + ":";
         Log.v(TAG, msg + " enoughChances");
-        if (maxNumOfGames - minNumOfGames > 1) return false;
-        return true;
+        return maxNumOfGames - minNumOfGames <= 1;
     }
 
     private void sortByGamesPlayed(ArrayList<PlayerData> playersList) {
@@ -1257,20 +1265,22 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
 
             ArrayList<PlayerData> mGoldPlayers = mGoldDB.getPlayers();
             ArrayList<PlayerData> mSilverPlayers = mSilverDB.getPlayers();
-            String gold_msg = SharedData.getInstance().getShortRoundName(mRoundName) + "ST Gold>>\n";
+            StringBuilder gold_msg = new StringBuilder(mCommon.getShortRoundName(mRoundName) + "ST Gold>>\n");
             int len = gold_msg.length();
             for (PlayerData p : mGoldPlayers) {
-                if (len != gold_msg.length()) gold_msg += "\n";
-                gold_msg += p.getName() + ": " + p.getPoints_innings() + " (" + p.getWinPercentage_innings() + "%)";
+                if (len != gold_msg.length()) gold_msg.append("\n");
+                gold_msg.append(p.getName()).append(": ")
+                        .append(p.getPoints_innings())
+                        .append(" (").append(p.getWinPercentage_innings()).append("%)");
             }
-            String silver_msg = SharedData.getInstance().getShortRoundName(mRoundName) + "ST Silver>>\n";
+            StringBuilder silver_msg = new StringBuilder(mCommon.getShortRoundName(mRoundName) + "ST Silver>>\n");
             len = silver_msg.length();
             for (PlayerData p : mSilverPlayers) {
-                if (len != silver_msg.length()) silver_msg += "\n";
-                silver_msg += p.getName() + ": " + p.getPoints_innings() + " (" + p.getWinPercentage_innings() + "%)";
+                if (len != silver_msg.length()) silver_msg.append("\n");
+                silver_msg.append(p.getName()).append(": ").append(p.getPoints_innings()).append(" (").append(p.getWinPercentage_innings()).append("%)");
             }
-            final String gold_message = gold_msg;
-            final String silver_message = silver_msg;
+            final String gold_message = gold_msg.toString();
+            final String silver_message = silver_msg.toString();
 
                 /* SGO: attempt to send whatsapp message. But, it is not yet supported.
                 Uri uri = Uri.parse("https://chat.whatsapp.com/GA5MrdrfxPxBCMIeTq2yj6");
@@ -1332,8 +1342,8 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                     */
 
                     List<String> phNumList = Arrays.asList(phone_numbers.split(","));
-                    String tmpPhNums = "";
-                    String persistPhNums = "";
+                    StringBuilder tmpPhNums = new StringBuilder();
+                    StringBuilder persistPhNums = new StringBuilder();
 
                     String separator = ";";
                     if (android.os.Build.MANUFACTURER.equalsIgnoreCase("samsung")) {
@@ -1343,12 +1353,12 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                     }
                     for (String phNum : phNumList) {
                         if (!PhoneNumberUtils.isGlobalPhoneNumber(phNum)) continue;
-                        if (!persistPhNums.isEmpty()) {
-                            persistPhNums += ",";
-                            tmpPhNums += separator;
+                        if (persistPhNums.length() > 0) {
+                            persistPhNums.append(",");
+                            tmpPhNums.append(separator);
                         }
-                        tmpPhNums += phNum;
-                        persistPhNums += phNum;
+                        tmpPhNums.append(phNum);
+                        persistPhNums.append(phNum);
 
                         //Somehow sending to multiple recipients using ";" or "," delimiters is not working consistently.
                         //so, send one by one for now.
@@ -1384,11 +1394,11 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                     */
 
 
-                    if (!persistPhNums.equals(phnums)) {
+                    if (!persistPhNums.toString().equals(phnums)) {
                         Log.d(TAG, "New set of phone nums: " + persistPhNums);
                         SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
                         SharedPreferences.Editor editor = prefs.edit();
-                        editor.putString(Constants.DATA_PHNUMS, persistPhNums);
+                        editor.putString(Constants.DATA_PHNUMS, persistPhNums.toString());
                         editor.apply();
                     }
                 }
@@ -1404,33 +1414,4 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
         }
     };
 
-
-    public void startProgressDialog(final String title, final String msg) {
-        if (progressDialog != null) {
-            return;
-        }
-
-        //it could happen that the user moves this app to background while the background loop is running.
-        //In thats case, dialog will fail: "WindowManager$BadTokenException: Unable to add window"
-        //So, check if this activity is in foreground before displaying dialogue.
-        if (isFinishing()) return;
-        if (!ScoreTally.isActivityVisible()) return;
-
-        //Log.d(TAG, "startProgressDialog: ");
-        progressDialog = new ProgressDialog(ClubLeagueActivity.this);
-        progressDialog.setTitle(title); // Setting Title
-        progressDialog.setMessage(msg); // Setting Message
-        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
-        progressDialog.show(); // Display Progress Dialog
-        progressDialog.setCancelable(false);
-        progressDialog.setCanceledOnTouchOutside(false);
-    }
-
-    public void stopProgressDialog() {
-        if (progressDialog != null) {
-            //Log.d(TAG, "stopProgressDialog: 2");
-            progressDialog.dismiss();
-            progressDialog = null;
-        }
-    }
 }

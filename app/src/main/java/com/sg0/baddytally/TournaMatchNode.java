@@ -139,7 +139,7 @@ public class TournaMatchNode {
 
     public String getExtFixtureLabel() {
         if(!isExternalLink()) return "";
-        String parts[] = getDesc().split(L_DELIM);
+        String[] parts = getDesc().split(L_DELIM);
         if(parts.length==2) {
             return parts[0];
         }
@@ -148,7 +148,7 @@ public class TournaMatchNode {
 
     public String getExtMatchId() {
         if(!isExternalLink()) return "";
-        String parts[] = getDesc().split(L_DELIM);
+        String[] parts = getDesc().split(L_DELIM);
         if(parts.length==2) {
             return parts[1];
         }
@@ -157,7 +157,7 @@ public class TournaMatchNode {
 
     public String getExtMatchIdStr() {
         if(!isExternalLink()) return "";
-        String parts[] = getDesc().split(L_DELIM);
+        String[] parts = getDesc().split(L_DELIM);
         if(parts.length==2) {
             return parts[1] + Constants.DE_EXTLINK_INDICATOR;
         }

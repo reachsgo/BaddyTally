@@ -49,6 +49,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -124,6 +125,9 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
             // action with ID action_refresh was selected
             case R.id.action_refresh:
                 recreate();
@@ -418,6 +422,11 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             cancel = findViewById(R.id.cancel_button);
             cancel.setOnClickListener(this);
 
+            // add back arrow to toolbar
+            if (getSupportActionBar() != null){
+                getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+                getSupportActionBar().setDisplayShowHomeEnabled(true);
+            }
         }
 
 
@@ -615,7 +624,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             // Instead, a URI to that document will be contained in the return intent
             // provided to this method as a parameter.
             // Pull that URI using resultData.getData().
-            Uri uri = null;
+            Uri uri;
             if (resultData != null) {
                 uri = resultData.getData();
                 if(null == uri) return;
@@ -817,30 +826,36 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
         this.startActivity(myIntent);
     }
 
+    //Schedule a match or create fixture
     private void onClickNewMatch() {
-        Context wrapper = new ContextThemeWrapper(TournaSettings.this, R.style.WhitePopup);
-        final PopupMenu popup = new PopupMenu(wrapper, findViewById(R.id.addNewMatch_btn));
-        popup.getMenuInflater().inflate(R.menu.summary_popup_menu, popup.getMenu());
-        if (Build.VERSION.SDK_INT >= 23) {
-            popup.setGravity(Gravity.END);
+        if(mCommon.mTournaMap ==null || mCommon.mTournaMap.size()==0) {
+            Toast.makeText(TournaSettings.this, "No active tournaments!",
+                    Toast.LENGTH_SHORT).show();
+            return;
         }
-        popup.getMenu().clear();
-        Menu pMenu = popup.getMenu();
+
+        final ArrayList<String> tournaList = new ArrayList<>();
         for(Map.Entry<String,String> tourna : mCommon.mTournaMap.entrySet()) {
-            pMenu.add(tourna.getKey());
+            tournaList.add(tourna.getKey());
         }
-        popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem menuItem) {
-                //Log.v(TAG, "onMenuItemClick[" + menuItem.getItemId()+ "] :" + menuItem.getTitle().toString());
-                mTourna = menuItem.getTitle().toString();
+        Collections.sort(tournaList);  //sort the tournament list before adding to pop menu
+
+        final CharSequence[] items = new CharSequence[tournaList.size()];
+        int i = 0; for (String t: tournaList) {items[i] = t; i++;}
+
+        AlertDialog.Builder alt_bld = new AlertDialog.Builder(this);
+        alt_bld.setIcon(R.drawable.birdie02);
+        alt_bld.setTitle(mCommon.getStyleString("Select the tournament", Typeface.BOLD));
+        alt_bld.setSingleChoiceItems(items, -1, new DialogInterface
+                .OnClickListener() {
+            public void onClick(DialogInterface dialog, int item) {
+                mTourna = items[item].toString();
                 mCommon.readDBTeam(mTourna,TournaSettings.this, TournaSettings.this);
-                //callback is completed()
-                popup.dismiss();
-                return true;
+                dialog.dismiss();
             }
         });
-        popup.show();//showing popup menu
+        AlertDialog alert = alt_bld.create();
+        alert.show();
     }
 
     private void getMatchInputs(final String tourna) {
@@ -1364,8 +1379,9 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             StringBuilder matchesStr = new StringBuilder();
             for (int i = 0; i < mCommon.mTeams.size(); i++) {
                 for (int j = i+1; j < mCommon.mTeams.size(); j++) {
-                    matchesStr.append("Match" + nextKey + ": " +
-                            mCommon.mTeams.get(i) + " vs " + mCommon.mTeams.get(j) + "\n");
+                    matchesStr.append("Match").append(nextKey).append(": ")
+                            .append(mCommon.mTeams.get(i)).append(" vs ")
+                            .append(mCommon.mTeams.get(j)).append("\n");
                     nextKey++;
                 }
             }

@@ -33,9 +33,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Locale;
-import java.util.Set;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -340,9 +338,7 @@ public class TrackScores extends AppCompatActivity {
                 team1, t1p1, t1p2,
                 team2, t2p1, t2p2, scores));
 
-        if(null==team1 || null==team2 || team1.isEmpty() || team2.isEmpty()) {
-            mReturnResults = false;
-        } else mReturnResults = true;
+        mReturnResults = null != team1 && null != team2 && !team1.isEmpty() && !team2.isEmpty();
 
         //see if there is data on local disk.
         //Read the data from disk even if data is passed in from the DB. This is because
@@ -493,12 +489,10 @@ public class TrackScores extends AppCompatActivity {
                                  final String t2p1, final String t2p2,
                                  final String local_t1p1, final String local_t1p2,
                                  final String local_t2p1, final String local_t2p2) {
-        if( (t1p1.equals(local_t1p1) || t1p1.equals(local_t1p2)) &&
+        return (t1p1.equals(local_t1p1) || t1p1.equals(local_t1p2)) &&
                 (t1p2.equals(local_t1p1) || t1p2.equals(local_t1p2)) &&
                 (t2p1.equals(local_t2p1) || t2p1.equals(local_t2p2)) &&
-                (t2p2.equals(local_t2p1) || t2p2.equals(local_t2p2)) ) {
-            return true;
-        } else return false;
+                (t2p2.equals(local_t2p1) || t2p2.equals(local_t2p2));
     }
 
     @Override
@@ -1291,10 +1285,7 @@ public class TrackScores extends AppCompatActivity {
         }
 
         boolean validDataStringList(final ArrayList<String> dataStrList) {
-            if (null==dataStrList || dataStrList.size()!=2) {
-                return false;
-            }
-            return true;
+            return null != dataStrList && dataStrList.size() == 2;
         }
 
         public void fromDataString(final ArrayList<String> dataStrList) {
@@ -1479,8 +1470,7 @@ public class TrackScores extends AppCompatActivity {
             if(scores.size() > 1) {
                 //if there is score history, check the current index value.
                 //If current idx = 0 (only 0-0 entry), then return false.
-                if(historyIdx > 0) return true;
-                else return false;
+                return historyIdx > 0;
             } else return false;
         }
 
@@ -1878,26 +1868,6 @@ public class TrackScores extends AppCompatActivity {
             }
             //true if the event is consumed, else false
             return true;
-        }
-    }
-
-    public void startProgressDialog(final String title, final String msg) {
-        if (mProgressDialog != null) {
-            return;
-        }
-        mProgressDialog = new ProgressDialog(TrackScores.this);
-        mProgressDialog.setTitle(title); // Setting Title
-        mProgressDialog.setMessage(msg); // Setting Message
-        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
-        mProgressDialog.show(); // Display Progress Dialog
-        mProgressDialog.setCancelable(false);
-        mProgressDialog.setCanceledOnTouchOutside(false);
-    }
-
-    public void stopProgressDialog() {
-        if (mProgressDialog != null) {
-            mProgressDialog.dismiss();
-            mProgressDialog = null;
         }
     }
 

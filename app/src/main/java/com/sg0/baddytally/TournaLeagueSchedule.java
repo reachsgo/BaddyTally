@@ -10,6 +10,7 @@ import android.text.TextUtils;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -64,6 +65,12 @@ public class TournaLeagueSchedule extends AppCompatActivity implements CallbackR
                 mAdapter.sortOnDate();
             }
         });
+
+        // add back arrow to toolbar
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
     }
 
     private void setTitle(String tourna) {
@@ -72,13 +79,26 @@ public class TournaLeagueSchedule extends AppCompatActivity implements CallbackR
             String tempString = Constants.APPNAME + "  " + tourna;
             SpannableString spanString = new SpannableString(tempString);
             spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPNAME.length(), 0);
-            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPNAME.length(), tempString.length(), 0);
-            spanString.setSpan(new RelativeSizeSpan(0.7f), Constants.APPNAME.length(), tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPNAME.length(),
+                    tempString.length(), 0);
+            spanString.setSpan(new RelativeSizeSpan(0.7f), Constants.APPNAME.length(),
+                    tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             getSupportActionBar().setTitle(""); //workaround for title getting truncated.
             getSupportActionBar().setTitle(spanString);
         }
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        //Log.d(TAG, "onOptionsItemSelected: ");
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                SharedData.getInstance().killActivity(TournaLeagueSchedule.this, RESULT_OK);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
 
     //CallbackRoutine Callback interfaces
     public void profileFetched() {}

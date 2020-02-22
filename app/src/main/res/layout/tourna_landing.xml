@@ -13,6 +13,14 @@
         android:background="@drawable/birdie_close"
         android:orientation="vertical" >
 
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:indeterminate="true"
+            android:visibility="gone"
+            />
+
         <ListView
             android:id="@+id/tournaments_lv"
             android:layout_width="250dp"

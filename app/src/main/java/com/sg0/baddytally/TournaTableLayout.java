@@ -5,11 +5,9 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -78,6 +76,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 import androidx.annotation.NonNull;
@@ -104,7 +103,7 @@ class Coordinates {
     }
 
     public static Coordinates getCoordinates(final String key) {
-        String idx[] = key.split("-");
+        String[] idx = key.split("-");
         if (idx.length != 2) return null;
         Integer round = Integer.valueOf(idx[0]);
         Integer matchId = Integer.valueOf(idx[1]);
@@ -170,7 +169,7 @@ class Coordinates {
     public boolean equals(Object obj) {
         if (obj == null) return false;
         Coordinates o = (Coordinates) obj;
-        return X == o.X && Y == o.Y;
+        return Objects.equals(X, o.X) && Objects.equals(Y, o.Y);
     }
 
     @Override
@@ -548,7 +547,7 @@ class TournaTable implements View.OnClickListener {
                         //Node added from UB; gets a bye; to be added to the last row
                         //r=2 m=3>2-3:FixtureDBEntry{t1='UB3-1', t2='(bye)', pr1='', pr2='', W='UB3-1'}
                         //r=3 m=4>3-4:FixtureDBEntry{t1='UB3-1', t2='(bye)', pr1='', pr2='', W='UB3-1'}
-                        Integer rowIdx = 0; //need to calculate the row in which this cell needs to be added.
+                        Integer rowIdx; //need to calculate the row in which this cell needs to be added.
                         //If a bye node is placed in between, it should be added below
                         //last node's row (if thats also a bye) or below last node's prev2
                         rowIdx = lastNode.xy.getX() + 1;
@@ -583,7 +582,7 @@ class TournaTable implements View.OnClickListener {
             }
         }
 
-        Integer offset = 0;
+        Integer offset;
         Integer rowIdx = 0;
         Integer colIdx = 0;
         if (prev1 == null || prev2 == null) {
@@ -1117,7 +1116,7 @@ class TournaTable implements View.OnClickListener {
         for (Map.Entry<String, TournaDispMatchEntry> entry : mFixture.entrySet()) {
             TournaDispMatchEntry mE = entry.getValue();
             if (mE == null || mE.xy == null) continue;
-            if (mE.xy.getRound() == round) {
+            if (Objects.equals(mE.xy.getRound(), round)) {
                 tmpArr.put(mE.xy.getMatchId() - 1, mE);  //MatchId starts from 1
             }
         }
@@ -1133,7 +1132,7 @@ class TournaTable implements View.OnClickListener {
             if (rowData == null) continue;
             for (TournaDispMatchEntry mE : rowData) {
                 if (mE == null) continue;
-                if (mE.xy.getRound() == round) {
+                if (Objects.equals(mE.xy.getRound(), round)) {
                     tmpArr.put(mE.xy.getMatchId() - 1, mE);  //MatchId starts from 1
                 }
             }
@@ -1413,7 +1412,7 @@ class TournaTable implements View.OnClickListener {
             for (Map.Entry<String, TournaDispMatchEntry> entry : mFixture.entrySet()) {
                 TournaDispMatchEntry mE = entry.getValue();
                 if (mE == null || mE.xy == null) continue;
-                if (mE.xy.getRound() == roundNum) {
+                if (Objects.equals(mE.xy.getRound(), roundNum)) {
                     matchesInThisRound.put(mE.xy.getMatchId() - 1, mE);
                     //Log.d(TAG, FN + "[" + mE.xy.getMatchId() + "] Adding:" + mE.toString());
                     if (mE.xy.getMatchId() > largestMatchId) largestMatchId = mE.xy.getMatchId();
@@ -1755,22 +1754,15 @@ public class TournaTableLayout extends AppCompatActivity {
     private TournaFixtureDBEntry mDeFinalsDBEntry;
     //private View mainView = null;
     private Float zoomFactor;
-    private ProgressDialog progressDialog;
     private HandlerThread mWorker;
     private Handler mWorkerHandler;
     private Handler mMainHandler;
     private GestureDetector mDetector;
+    private boolean mTipsShown;
 
     public void killActivity() {
         Log.d(TAG, "killActivity: ");
         finish();
-    }
-
-    @Override
-    public void finish() {
-        //Log.d(TAG, "finish: calling stopProgressDialog");
-        stopProgressDialog(false);
-        super.finish();
     }
 
     public void restartActivity() {
@@ -1782,14 +1774,18 @@ public class TournaTableLayout extends AppCompatActivity {
     private void setTitle(String tourna) {
         if (!TextUtils.isEmpty(tourna)) {
             //Log.d(TAG, "setTitle: " + tourna);
-            String tempString = Constants.APPNAME + "  " + tourna;
+            String tempString = Constants.APPSHORT + "  " + tourna;
             SpannableString spanString = new SpannableString(tempString);
-            spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPNAME.length(), 0);
-            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPNAME.length(), tempString.length(), 0);
-            spanString.setSpan(new RelativeSizeSpan(0.7f), Constants.APPNAME.length(), tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            getSupportActionBar().setTitle(""); //workaround for title getting truncated.
-            getSupportActionBar().setTitle(spanString);
-            //getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPSHORT.length(), 0);
+            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPSHORT.length(),
+                    tempString.length(), 0);
+            spanString.setSpan(new RelativeSizeSpan(0.7f), Constants.APPSHORT.length(),
+                    tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().setTitle(""); //workaround for title getting truncated.
+                getSupportActionBar().setTitle(spanString);
+                //getSupportActionBar().setIcon(R.drawable.birdie02); //pushes out the title string
+            }
         }
     }
 
@@ -1810,13 +1806,13 @@ public class TournaTableLayout extends AppCompatActivity {
         mDeFinalsDBEntry = null;
         readDBTournaType();
         zoomFactor = 1.0f;
-        progressDialog = null;
         mCommon.wakeUpDBConnection_profile();
         mWorker = new HandlerThread("mainWorker");
         mWorker.start();
         Looper looper = mWorker.getLooper();
         mWorkerHandler = new Handler(looper);
         mMainHandler = new Handler();
+        mTipsShown = false;  //show Tips only once in the lifetime of this activity instance.
 
         findViewById(R.id.tourna_table_upper).setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -1904,11 +1900,17 @@ public class TournaTableLayout extends AppCompatActivity {
             }
         });
 
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+
         setUpGesture();
 
-        SharedData.showToastAndDieOnTimeout(mMainHandler, TournaTableLayout.this,
+        startProgressDialog("Sync database", "Loading...");
+        mCommon.showToastAndDieOnTimeout(mMainHandler, TournaTableLayout.this,
                 "Check your internet connection",
-                true, 0);
+                true, false,0);
     }
 
 
@@ -1958,66 +1960,54 @@ public class TournaTableLayout extends AppCompatActivity {
         if (null != mLowerTable) mLowerTable.onResume();
         if (null != mUpperTable) mUpperTable.onResume();
 
-        SharedData.showToastAndDieOnTimeout(mMainHandler, TournaTableLayout.this,
-                "Check your internet connection", true, 0);
-        //stopProgressDialog is called from finish()
+        mCommon.showToastAndDieOnTimeout(mMainHandler, TournaTableLayout.this,
+                "Check your internet connection", true, false,0);
     }
 
     public void startProgressDialog(final String title, final String msg) {
-        if (progressDialog != null) {
-            return;
-        }
-
-        //it could happen that the user moves this app to background while the background loop is running.
-        //In thats case, dialog will fail: "WindowManager$BadTokenException: Unable to add window"
-        //So, check if this activity is in foreground before displaying dialogue.
-        if (isFinishing()) return;
-        if (!ScoreTally.isActivityVisible()) return;
-
-        progressDialog = new ProgressDialog(TournaTableLayout.this);
-        progressDialog.setTitle(title); // Setting Title
-        progressDialog.setMessage(msg); // Setting Message
-        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
-        progressDialog.show(); // Display Progress Dialog
-        progressDialog.setCancelable(false);
-        progressDialog.setCanceledOnTouchOutside(false);
+        mCommon.startProgressDialog(TournaTableLayout.this, title, msg);
     }
 
     public void stopProgressDialog(final Boolean showTips) {
-        if (progressDialog != null) {
-            progressDialog.dismiss();
-            progressDialog = null;
-            final int countMax = 3;
-            if (showTips && mTournaType.equals(Constants.DE) &&
-                    !SharedData.getInstance().validFlag(Constants.DATA_FLAG_NAV_TELIM)) {
-                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaTableLayout.this);
-                alertBuilder.setTitle("Navigation Tips");
-                alertBuilder.setMessage(
-                        "(1) Long-press the fixture area to toggle between full screen and split screen.\n\n" +
-                        "(2) Swipe left or right to move between upper and lower bracket full screens.\n\n" +
-                        "(3) Press + or - buttons on top right of the screen to zoom in or out.\n\n" +
-                        "(4) Press on the match to see options to view match information or score.\n");
-                alertBuilder.setPositiveButton("Hmn...", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        //mCommon.mCount++;
-                    }
-                });
-                alertBuilder.setNegativeButton("Got it", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        SharedData.getInstance().addFlag(TournaTableLayout.this, Constants.DATA_FLAG_NAV_TELIM);
-                        //mCommon.mCount = countMax;
-                    }
-                });
-                alertBuilder.show();
-            }
+
+        mCommon.stopProgressDialog(TournaTableLayout.this);
+
+        if(mTipsShown) return; //already shown for this instance.
+
+        if (showTips && mTournaType.equals(Constants.DE) &&
+                !SharedData.getInstance().validFlag(Constants.DATA_FLAG_NAV_TELIM)) {
+            AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaTableLayout.this);
+            alertBuilder.setTitle("Navigation Tips");
+            alertBuilder.setMessage(
+                    "(1) Long-press the fixture area to toggle between full screen and split screen.\n\n" +
+                    "(2) Swipe left or right to move between upper and lower bracket full screens.\n\n" +
+                    "(3) Press + or - buttons on top right of the screen to zoom in or out.\n\n" +
+                    "(4) Press on the match to see options to view match information or score.\n");
+            alertBuilder.setPositiveButton("Hmn...", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    //mCommon.mCount++;
+                }
+            });
+            alertBuilder.setNegativeButton("Got it", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    SharedData.getInstance().addFlag(TournaTableLayout.this, Constants.DATA_FLAG_NAV_TELIM);
+                    //mCommon.mCount = countMax;
+                }
+            });
+            alertBuilder.show();
+            mTipsShown = true;
         }
+
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
             // action with ID action_refresh was selected
             case R.id.action_refresh:
                 readAndDisplay();
@@ -2247,7 +2237,7 @@ public class TournaTableLayout extends AppCompatActivity {
                                         "%s", p));
                         }
                         sb.append(String.format(Locale.getDefault(),
-                                "(%d) %.8s: %.16s\n",
+                                "(%d) %.8s: %.20s\n",
                                 team.getSeed(), team.getId(), players.toString()));
                     }
                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaTableLayout.this);
@@ -2306,7 +2296,6 @@ public class TournaTableLayout extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         //Log.d(TAG, "onResume: ");
-        ScoreTally.activityResumed();
         //Coming back from BaseEnterData, refresh the view, if there was
         //a DB update performed.
         if (mCommon.isDBUpdated()) {
@@ -2319,7 +2308,6 @@ public class TournaTableLayout extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        ScoreTally.activityPaused();
         //Log.d(TAG, "onPause: ");
         if (null != mLowerTable) mLowerTable.onPause();
         if (null != mUpperTable) mUpperTable.onPause();
@@ -2496,9 +2484,8 @@ public class TournaTableLayout extends AppCompatActivity {
         Date c = Calendar.getInstance().getTime();
         SimpleDateFormat df = new SimpleDateFormat(Constants.ROUND_DATEFORMAT, Locale.CANADA);
         String dateStr = df.format(c);
-        String fname = "scoretally" + dateStr + "_" + tableid + ".pdf";
         //Log.d(TAG, "getFileName: " + fname);
-        return fname;
+        return "scoretally" + dateStr + "_" + tableid + ".pdf";
     }
 
     /**
@@ -2528,7 +2515,6 @@ public class TournaTableLayout extends AppCompatActivity {
         final int HEIGHT_HARD_LIMIT = 9000;  //not tested. 9864 height lead to OOM on LG (54 teams)
 
         if (width > WIDTH_PAGE_LIMIT) divBy = 2.5f;
-        int heightPerPage = HEIGHT_PAGE_LIMIT;
 
         //Log.d(TAG, "createPDF: Measured W=" + mView.getMeasuredWidth() +
         //        "x H=" + mView.getMeasuredHeight());
@@ -2604,7 +2590,7 @@ public class TournaTableLayout extends AppCompatActivity {
 
         int pageNum = 0;
         int startHeight = 0;
-        int endHeight = heightPerPage;
+        int endHeight = HEIGHT_PAGE_LIMIT;
         float scale = 0;
 
         //Loop if you need multiple pages
@@ -2658,8 +2644,8 @@ public class TournaTableLayout extends AppCompatActivity {
             document.finishPage(page);
 
             pageNum++;
-            startHeight += heightPerPage;
-            endHeight += heightPerPage;
+            startHeight += HEIGHT_PAGE_LIMIT;
+            endHeight += HEIGHT_PAGE_LIMIT;
         }
 
         // write the document content
@@ -2667,9 +2653,7 @@ public class TournaTableLayout extends AppCompatActivity {
 
         //close the document
         document.close();
-        document = null;
         screen.recycle();
-        screen = null;
 
         Log.d(TAG, "createPDF: done");
         return true;
@@ -2702,8 +2686,7 @@ public class TournaTableLayout extends AppCompatActivity {
         PrintAttributes.Builder builder = new PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.ISO_A2)
                 .setResolution(new PrintAttributes.Resolution("res1", "Resolution", 50, 50))
                 .setMinMargins(new PrintAttributes.Margins(5, 5, 5, 5));
-        PrintAttributes printAttributes = builder.build();
-        return printAttributes;
+        return builder.build();
     }
 
     void makeOtherBracketVisible() {

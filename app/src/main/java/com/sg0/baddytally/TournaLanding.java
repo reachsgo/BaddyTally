@@ -1,15 +1,16 @@
 package com.sg0.baddytally;
 
 import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 
 import android.text.Html;
+import android.text.SpannableStringBuilder;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
@@ -31,6 +32,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 
@@ -48,23 +50,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     private ListView mTournaLV;
     private ArrayAdapter mTournaLA;
     private ArrayList<String> mTournaList;
-    private ProgressDialog progressDialog;
     private Handler mMainHandler;
-
-    @Override
-    public void finish() {
-        //Log.d(TAG, "finish: calling stopProgressDialog");
-        stopProgressDialog();
-        super.finish();
-    }
-
-    @Override
-    protected void onPause() {
-        //Log.d(TAG, "onPause: ");
-        super.onPause();
-        ScoreTally.activityPaused();
-    }
-
 
 
     @Override
@@ -162,16 +148,23 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
             }
         });
 
+        // add back arrow to toolbar
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+
         refresh();
     }
 
     private void refresh() {
 
-        startProgressDialog("Fetching data", "Connecting...");
+        mCommon.startProgressDialog(TournaLanding.this,
+                "Fetching data", "Connecting...");
 
-        SharedData.showToastAndDieOnTimeout(mMainHandler, TournaLanding.this,
-                "Check your internet connection", true, 0);
-        //stopProgressDialog will be called from overridden finish()
+        //what to do in case of progress-bar timeout
+        mCommon.showToastAndDieOnTimeout(mMainHandler, TournaLanding.this,
+                "Check your internet connection", true, false,0);
 
         mTUtil.fetchActiveTournaments(); //CB_READTOURNA
     }
@@ -203,11 +196,17 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "onResume: [" + mCommon.mClub + "/" + mCommon.mTournament + "]");
-        ScoreTally.activityResumed();
         if (mCommon.isDBUpdated()) {
             refresh();
             mCommon.setDBUpdated(false);
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        mMainHandler.removeCallbacksAndMessages(null);
+        Log.d(TAG, "onDestroy: ");
+        super.onDestroy();
     }
 
     @Override
@@ -239,7 +238,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     public void alertResult(final String in, final Boolean ok, final Boolean ko) {
         if (in.contains(DELETE_TOURNA)) {
             if (ok) {
-                String parts[] = in.split(Constants.COLON_DELIM);
+                String[] parts = in.split(Constants.COLON_DELIM);
                 if (parts.length != 2) {
                     Log.w(TAG, "alertResult Internal error:" + parts.length);
                     mCommon.showToast(TournaLanding.this, "Internal error!", Toast.LENGTH_SHORT);
@@ -253,19 +252,23 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     public void completed(final String in, final Boolean ok) {
         //Log.w(TAG, "completed: " + in + ":" + ok);
         if (in.equals(Constants.CB_READTOURNA)) {
+
+            //DB-read successful. stop progress.
             mMainHandler.removeCallbacksAndMessages(null);
-            stopProgressDialog();
+            mCommon.stopProgressDialog(TournaLanding.this);
+
             if (ok) {
                 //Log.d(TAG, "completed: " + mCommon.mTournaMap.size());
                 ArrayList<String> tournaList = new ArrayList<>();
                 for (Map.Entry<String, String> entry : mCommon.mTournaMap.entrySet()) {
                     tournaList.add(entry.getKey());
                 }
-                mTournaLA.clear();
+                Collections.sort(tournaList);
+                mTournaLA.clear(); //clear existing list (mTournaList) in adapter
                 if (tournaList.size() > 0) {
                     mTournaLA.addAll(tournaList);
-                    //mTournaList = tournaList;
-                    //mTournaLV.setAdapter(mTournaLA);
+                    //list items are added to mTournaList here, as mTournaList is initialized as
+                    //the list in mTournaLA (see onCreate)
                 }
                 mTournaLA.notifyDataSetChanged();
             }
@@ -284,6 +287,9 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
             // action with ID action_refresh was selected
             case R.id.action_refresh:
                 refresh();
@@ -330,7 +336,10 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
         Log.v(TAG, "deleteTourna:" + tourna);
         SharedData.getInstance().wakeUpDBConnection();
         String msg = "Existing tournament data will be lost permanently. Are you sure? ";
-        mCommon.showAlert(this, TournaLanding.this, DELETE_TOURNA + Constants.COLON_DELIM + tourna, msg);
+        SpannableStringBuilder sb = mCommon.getColorString(
+                DELETE_TOURNA + Constants.COLON_DELIM + tourna, Color.RED);
+        mCommon.showAlert(this, TournaLanding.this,
+                sb, msg);
     }
 
     private void updateDB_deleteTourna(final String tourna) {
@@ -351,35 +360,6 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
                         Constants.TOURNA, tourna));
 
         refresh();
-    }
-
-    public void startProgressDialog(final String title, final String msg) {
-        if (progressDialog != null) {
-            return;
-        }
-
-        //it could happen that the user moves this app to background while the background loop is running.
-        //In thats case, dialog will fail: "WindowManager$BadTokenException: Unable to add window"
-        //So, check if this activity is in foreground before displaying dialogue.
-        if (isFinishing()) return;
-        if (!ScoreTally.isActivityVisible()) return;
-
-        //Log.d(TAG, "startProgressDialog: ");
-        progressDialog = new ProgressDialog(TournaLanding.this);
-        progressDialog.setTitle(title); // Setting Title
-        progressDialog.setMessage(msg); // Setting Message
-        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER); // Progress Dialog Style Spinner
-        progressDialog.show(); // Display Progress Dialog
-        progressDialog.setCancelable(false);
-        progressDialog.setCanceledOnTouchOutside(false);
-    }
-
-    public void stopProgressDialog() {
-        if (progressDialog != null) {
-            //Log.d(TAG, "stopProgressDialog: 2");
-            progressDialog.dismiss();
-            progressDialog = null;
-        }
     }
 
 }

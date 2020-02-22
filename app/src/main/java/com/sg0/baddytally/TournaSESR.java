@@ -214,7 +214,7 @@ public class TournaSESR {
         for (int i = 1; i <= MAX_ROUNDS; i++) {
             List<TournaMatchNode> m = TournaMatchNode.getMatchesForThisRound(ubMatches, i);
             lowerMatches = seedLowerRound(lowerMatches, m, pickLowerHalfFirst, upperFixtureLabel, true);
-            pickLowerHalfFirst = pickLowerHalfFirst ? false: true;
+            pickLowerHalfFirst = !pickLowerHalfFirst;
             lowerMatches = createRegularMatchesForThisRound(lowerMatches, false);
             if (lowerMatches == null) return null;
             while(m.size() == lowerMatches.size()) {

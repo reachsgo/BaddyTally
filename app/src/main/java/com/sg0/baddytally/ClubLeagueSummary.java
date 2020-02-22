@@ -68,14 +68,16 @@ public class ClubLeagueSummary extends AppCompatActivity {
     private void setTitle(String round) {
         if (!TextUtils.isEmpty(round)) {
             round = SharedData.getInstance().getShortRoundName(round);
-            final String title = Constants.APPSHORT + "  ClubLeagueSummary";
+            final String title = Constants.APPSHORT + " " + SharedData.getInstance().mClub;
             String tempString = title + "\n";
-            if(!SharedData.getInstance().mInnings.isEmpty()) tempString += SharedData.getInstance().mInnings;
+            if(!SharedData.getInstance().mInnings.isEmpty())
+                tempString += SharedData.getInstance().mInnings;
             tempString += "/" + round;
             SpannableString spanString = new SpannableString(tempString);
             spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, title.length(), 0);
             spanString.setSpan(new StyleSpan(Typeface.ITALIC), title.length(), tempString.length(), 0);
-            spanString.setSpan(new RelativeSizeSpan(0.8f), title.length(), tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spanString.setSpan(new RelativeSizeSpan(0.8f), title.length(),
+                    tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             TextView header = findViewById(R.id.header);
             header.setText(spanString);
         }
@@ -137,12 +139,30 @@ public class ClubLeagueSummary extends AppCompatActivity {
                 return true;
             }
         });
+
+        // add back arrow to toolbar
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
     }
 
     @Override
     protected void onStart() {
         super.onStart();
         drawViews(SharedData.getInstance().mRoundName);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        //Log.d(TAG, "onOptionsItemSelected: ");
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
      private void drawViews(final String round) {

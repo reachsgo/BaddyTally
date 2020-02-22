@@ -1,11 +1,6 @@
 package com.sg0.baddytally;
 
 import android.app.Application;
-import android.content.SharedPreferences;
-import android.util.Log;
-
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 
 public class ScoreTally extends Application {
     private static final String TAG = "ScoreTally.app";
@@ -54,6 +49,7 @@ public class ScoreTally extends Application {
             SharedData.getInstance().setOfflineMode(false, true);
         }
     }
+
 
     public static boolean isActivityVisible() {
         return activityVisible;

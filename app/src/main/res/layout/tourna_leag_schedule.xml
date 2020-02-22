@@ -8,7 +8,7 @@
     android:orientation="vertical">
 
 
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <LinearLayout
         android:id="@+id/header_ll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

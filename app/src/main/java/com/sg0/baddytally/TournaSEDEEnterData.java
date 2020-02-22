@@ -354,8 +354,8 @@ public class TournaSEDEEnterData extends BaseEnterData {
         mGameList.clear();
 
         for (int gameNum = 1; gameNum <= mBestOf; gameNum++) {
-            Integer s1 = 0;
-            Integer s2 = 0;
+            Integer s1;
+            Integer s2;
             //Spinner tmpS = getRespectiveSpinner(gameNum, 1);
             //if (tmpS != null) s1 = (Integer) tmpS.getSelectedItem();
             s1 = getGamePoint(getRespectiveSpinner(gameNum, 1));

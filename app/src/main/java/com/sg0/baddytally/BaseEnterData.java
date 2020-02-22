@@ -14,6 +14,7 @@ import android.text.TextUtils;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -111,6 +112,12 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         mDeleteMS = false;
         mT1_players = new ArrayList<>();
         mT2_players = new ArrayList<>();
+
+        // add back arrow to toolbar
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
     }
 
     //OnCreate() is expected to be implemented in the derived class.
@@ -128,6 +135,18 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
             }
         });
         onCreateExtra();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        //Log.d(TAG, "onOptionsItemSelected: ");
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     protected void initializeSpinners() {
@@ -187,6 +206,14 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         enterButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
+                if (!mCommon.isAdminOrRoot()) {
+                    Toast.makeText(BaseEnterData.this, "You don't have permission to do this!" ,
+                            Toast.LENGTH_SHORT).show();
+                    view.setEnabled(false);
+                    return;
+                }
+
                 //Log.d(TAG, "enterButton.onClick: " +
                 //        String.format("%s,%s vs %s,%s", mSpinner_P1_selection, mSpinner_P2_selection,
                 //                mSpinner_P3_selection, mSpinner_P4_selection));
@@ -598,11 +625,11 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
 
     protected String printSpinnerItems(final Spinner spinner)
     {
-        String items = "";
+        StringBuilder items = new StringBuilder();
         for(int pos=0; pos < spinner.getCount(); pos++) {
-            items += String.format("%s:%s ", pos, spinner.getItemAtPosition(pos).toString());
+            items.append(String.format("%s:%s ", pos, spinner.getItemAtPosition(pos).toString()));
         }
-        return items;
+        return items.toString();
     }
 
     protected void populateGamePoints() {
@@ -758,11 +785,13 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     protected void setTitle(String title) {
         if (!TextUtils.isEmpty(title)) {
             //Log.d(TAG, "setTitle: " + title);
-            String tempString = Constants.APPNAME + "  " + title;
+            String tempString = Constants.APPSHORT + "  " + title;
             SpannableString spanString = new SpannableString(tempString);
-            spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPNAME.length(), 0);
-            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPNAME.length(), tempString.length(), 0);
-            spanString.setSpan(new RelativeSizeSpan(0.7f), Constants.APPNAME.length(), tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            spanString.setSpan(new StyleSpan(Typeface.BOLD), 0, Constants.APPSHORT.length(), 0);
+            spanString.setSpan(new StyleSpan(Typeface.ITALIC), Constants.APPSHORT.length(),
+                    tempString.length(), 0);
+            spanString.setSpan(new RelativeSizeSpan(0.7f), Constants.APPSHORT.length(),
+                    tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             getSupportActionBar().setTitle(""); //workaround for title getting truncated.
             getSupportActionBar().setTitle(spanString);
         }
