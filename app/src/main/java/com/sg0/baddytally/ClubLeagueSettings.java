@@ -119,7 +119,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
         mDatabase = FirebaseDatabase.getInstance().getReference();
         mCommon = SharedData.getInstance();
         mWinPercInfo = "";
-        Log.i(TAG, "onCreate :" + mCommon.toString());
+        //Log.i(TAG, "onCreate :" + mCommon.toString());
 
         if (!mCommon.isPermitted(ClubLeagueSettings.this)) return;
 

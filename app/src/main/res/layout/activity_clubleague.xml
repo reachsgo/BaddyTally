@@ -7,6 +7,7 @@
     tools:context=".ClubLeagueActivity">
 
     <LinearLayout
+        android:id="@+id/outer_ll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
@@ -99,17 +100,7 @@
                         android:textColor="@android:color/white"
                         android:textSize="16sp" />
                 </LinearLayout>
-
             </LinearLayout>
-
-            <ProgressBar
-                android:id="@+id/progressBar"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:indeterminate="true"
-                android:visibility="gone"
-                />
-
 
             <androidx.recyclerview.widget.RecyclerView
 
@@ -120,7 +111,13 @@
                 android:scrollbars="vertical" />
         </LinearLayout>
 
-
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:indeterminate="true"
+            android:visibility="gone"
+            />
 
         <LinearLayout
             android:id="@+id/silver_parentview"

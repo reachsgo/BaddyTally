@@ -5,7 +5,6 @@ import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
-import android.app.ProgressDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -104,10 +103,6 @@ public class SharedData {
     String mInnings;
     String mRoundName;
     ProfileDBEntry mProfile;
-    //String mAdminCode;
-    //String mMemCode;
-    //String mRootCode;
-    //String mNews;
     String mReadNews;
     ArrayList<PlayerData> mGoldPlayers;
     ArrayList<PlayerData> mSilverPlayers;
@@ -115,15 +110,19 @@ public class SharedData {
     Integer mWinPercNum;
     Set<String> mGoldPresentPlayerNames;
     Set<String> mSilverPresentPlayerNames;
-    //public boolean mTournaMode;
     HashMap<String, String> mTournaMap;
     List<String> mTeams;
     HashMap<String, TeamInfo> mTeamInfoMap;
     String mFlags;
     int mTable_view_resid;
-    int mCount;   //general purpose count
     ArrayList<String> mStrList;  //general purpose Str list for temp use
     boolean mOfflineMode;
+    //mCount: general purpose count; used today for:
+    //1. Login failure attempts
+    int mCount;
+    //mTime: general purpose Long variable; used today for:
+    //1. No of continuous refreshs done in ClubLeague/TournaLeague/TournaTableLayout
+    Long mTime;
 
     private boolean mDBUpdated;
     private boolean mUserNotifyEnabled;
@@ -239,14 +238,24 @@ public class SharedData {
         return getInstance();
     }
 
-    public void clear() {
-        Log.w(TAG, "SharedData: CLEAR");
-        mNumOfGroups = Constants.NUM_OF_GROUPS;
-        mUser = "";
+    public void clearMain() {
+        //clear all the critical members.
+        Log.w(TAG, "SharedData: clearMain");
         mClub = "";
+        mTournament = "";
         mRole = "unknown";
         mInnings = "";
         mRoundName = "";
+        mDBLock = false;
+        mDBLockAcqAttemptTime = 0L;
+        if(mProfile!=null) mProfile.clear();
+    }
+
+    public void clear() {
+        Log.w(TAG, "SharedData: CLEAR");
+        clearMain();
+        mNumOfGroups = Constants.NUM_OF_GROUPS;
+        mUser = "";
         mProfile = new ProfileDBEntry();
         mReadNews = "";
         mGoldPlayers = null;
@@ -256,14 +265,10 @@ public class SharedData {
         mDBUpdated = false;
         mUserNotifyEnabled = true;
         mDBConnected = false;
-        mDBLock = false;
-        mDBLockAcqAttemptTime = 0L;
         mStoreHistory = "";
         mGoldPresentPlayerNames = new HashSet<>();  //initialize for the first time.
         mSilverPresentPlayerNames = new HashSet<>();  //initialize for the first time.
-        //mTournaMode = false;
         mTournaMap = null;
-        mTournament = "";
         mTeams = null;
         mTeams = new ArrayList<>();
         mTeamInfoMap = null;
@@ -273,6 +278,7 @@ public class SharedData {
         mCount = 0;
         mStrList = null;
         mOfflineMode = false;
+        mTime = 0L;
     }
 
     public boolean isRoot() {
@@ -313,6 +319,7 @@ public class SharedData {
             mOfflineMode = prefs.getBoolean(Constants.DATA_OFFLINE_MODE, false);
             mFlags = prefs.getString(Constants.DATA_FLAGS, "");
         }
+        Log.d(TAG, "initData: " + toString());
     }
 
     void addFlag(final Activity activity, final String flag) {
@@ -336,14 +343,15 @@ public class SharedData {
         editor.apply();
     }
 
-    void clearData(final Context context, final boolean showToast) {
+    void clearLocalStoredData(final Context context) {
+        Log.d(TAG, "clearLocalStoredData: ");
         SharedPreferences prefs = context.getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.clear();
-        //keep club/user so that last value remains in the login screen.
-        editor.putString(Constants.DATA_CLUB, mClub);
-        editor.putString(Constants.DATA_USER, mUser);
         editor.commit();  //using commit instead of apply for immediate write
+    }
+    void clearData(final Context context, final boolean showToast) {
+        clearLocalStoredData(context);
         clear();
         if(showToast)
             Toast.makeText(context, "Cache cleared!", Toast.LENGTH_SHORT).show();
@@ -364,6 +372,7 @@ public class SharedData {
             uID = prefs.getString(Constants.DATA_USER, "");
             //Log.d(TAG, "getUserID: stored:" + mUser);
         }
+
         if (uID.isEmpty()) {
             //User ID is not saved yet
             //Try to get android_id
@@ -760,6 +769,8 @@ public class SharedData {
         But, then it was changed to read user-data:
         Instead of simply doing a mock write to wakeup DB connection, lets keep tab of the last login from this user.
         */
+
+        Log.d(TAG, "wakeUpDBConnection:" + toString());
         if (mClub.isEmpty() || mUser.isEmpty()) return;
 
         if (null == mDBConnectListener) setUpDBConnectionListener();
@@ -1063,21 +1074,21 @@ public class SharedData {
     }
 
     void fetchProfile(final CallbackRoutine cb, final Context context, final String club) {
+        Log.d(TAG, club + ":fetchProfile: " + context.getClass().getName());
         //club is passed in as SharedData will not be populated yet with club info when invoked from LoginActivity.
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
                 .child(club).child(Constants.PROFILE);
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                //Log.w(TAG, "fetchProfile: onDataChange");
-
                 ProfileDBEntry userData = dataSnapshot.getValue(ProfileDBEntry.class);
-                if (userData == null) return;
-                else {
-                    userData.copyProfile(mProfile);
-                    //Log.d(TAG, "fetchProfile: onDataChange:" + mProfile.toString());
+                if (userData == null) {
+                    //this is hit if the DB is NOT connected
+                    Log.i(TAG, "fetchProfile: null");
+                    return;
                 }
-                //Log.w(TAG, "fetchProfile: onDataChange:" + mAdminCode + "/" + mRootCode);
+                userData.copyProfile(mProfile);
+                Log.v(TAG, "fetchProfile: " + mProfile.toString());
                 cb.profileFetched();
             }
 
@@ -1802,8 +1813,8 @@ public class SharedData {
     }
 
     void stopProgressDialog(final Activity activity) {
-        Log.d(TAG, "stopProgressDialog: vis="+ ScoreTally.isActivityVisible() +
-                ",fin=" + activity.isFinishing());
+        //Log.d(TAG, "stopProgressDialog: vis="+ ScoreTally.isActivityVisible() +
+        //        ",fin=" + activity.isFinishing());
         ProgressBar pgsBar = activity.findViewById(R.id.progressBar);
         if(pgsBar!=null) pgsBar.setVisibility(View.GONE);
     }

@@ -46,16 +46,16 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
 
     @Override
     protected void onPause() {
-        Log.d(TAG, "onPause: ");
+        //Log.d(TAG, "onPause: ");
         super.onPause();
-        ScoreTally.activityPaused();
+        ScoreTally.activityPaused(); //needed for showTournaments()
     }
 
     @Override
     protected void onResume() {
-        Log.d(TAG, "onResume: ");
+        //Log.d(TAG, "onResume: ");
         super.onResume();
-        ScoreTally.activityResumed();
+        ScoreTally.activityResumed(); //needed for showTournaments()
     }
 
     @Override
@@ -67,7 +67,7 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
 
         Intent myIntent = getIntent(); // gets the previously created intent
         mTourna = myIntent.getStringExtra("tournament");
-        Log.v(TAG, "onCreate :" + mTourna);
+        //Log.v(TAG, "onCreate :" + mTourna);
         mSelectedMatch = new MatchInfo();
 
         findViewById(R.id.gold_parentview).setVisibility(View.GONE);
@@ -76,7 +76,7 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "onClick: " + mTUtil.mNumOfMatches);
+                //Log.d(TAG, "onClick: " + mTUtil.mNumOfMatches);
                 if(mTUtil.mNumOfMatches > 1) {
                     //More matches in a set, show summary for 1 match-set at a time.
                     //Show the drop down again for user to see summary of another match-set.
@@ -115,7 +115,7 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
 
     @Override
     protected void onStart() {
-        Log.d(TAG, "onStart: ");
+        //Log.d(TAG, "onStart: ");
         super.onStart();
         //drawViews(SharedData.getInstance().mRoundName);
         mTUtil = null;
@@ -127,7 +127,7 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
         findViewById(R.id.silver_journal_view).post(new Runnable() {
             public void run() {
                 if(mTourna==null || mTourna.isEmpty())
-                    mTUtil.showTournaments(findViewById(R.id.header), findViewById(R.id.silver_journal_view));
+                    mTUtil.showTournaments(TournaSummary.this);
                 else
                     mTUtil.readDBMatchMeta(mTourna, false);  //invoked from tourna main activity, no need to ask for tournament choice
 
@@ -167,7 +167,7 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
                 //callback after reading DB for meta data
                 if (ok)
                 {
-                    Log.d(TAG, "completed: " + in + ", nNum=" + mTUtil.mNumOfMatches);
+                    //Log.d(TAG, "completed: " + in + ", nNum=" + mTUtil.mNumOfMatches);
                     if(mTUtil.mNumOfMatches > 1) {
                         //More matches in a set, show summary for 1 match-set at a time.
                         mTUtil.showMatches(findViewById(R.id.header));
@@ -186,7 +186,7 @@ public class TournaSummary extends AppCompatActivity implements CallbackRoutine{
                     String matchDesc = mSelectedMatch.T1 + Constants.TEAM_DELIM2 + mSelectedMatch.T2;
                     if (mSelectedMatch != null && !mSelectedMatch.desc.isEmpty())
                         matchDesc += "\n" + mSelectedMatch.desc;
-                    Log.d(TAG, "completed: " + in + ":" + mSelectedMatch.toString());
+                    //Log.d(TAG, "completed: " + in + ":" + mSelectedMatch.toString());
                     TextView mHeader = findViewById(R.id.silver_group);
                     mHeader.setText(matchDesc);
                     mAdapter.setMatch(mTourna, mSelectedMatch);

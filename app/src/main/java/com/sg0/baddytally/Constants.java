@@ -24,6 +24,7 @@ class Constants {
     static final String USERDATA = "Userdata";
     static final String USERDATA_ID = "UserdataID";
     static final String USERID_TMP = "ST-";
+    static final String USERDATA_LASTCLUB = "tmpClubdata";
     static final String DATA_CLUB = "club";
     static final String DATA_USER = "user";
     static final String DATA_USER2 = "uid2";
@@ -36,7 +37,8 @@ class Constants {
     static final String DATA_FLAGS = "stFlags";
     static final String DATA_FLAG_NAV_TELIM = "N_TEL";  //Navigation help for Tourna Elimination
     static final String DATA_FLAG_NAV_TRACK = "N_STR";  //Navigation help for Score Tracker
-    static final int DATA_LOCKED_COUNT_MAX = 5;
+    static final int DATA_LOCKED_COUNT_MAX = 9;
+    static final int REFRESH_TIMEOUT = 15000; //15s
     static final Integer NUM_OF_GROUPS = 2;
     static final int SEASON_IDX = 0;
     static final int INNINGS_IDX = 1;
@@ -57,6 +59,7 @@ class Constants {
 
     static final String ACTIVITY = "Activity";
     static final String ACTIVITY_SETTINGS = "ClubLeagueSettings";
+    static final String ACTIVITY_CLUB_ENTERDATA = "ClubLeagueEnterData";
     static final String ACTIVITY_TOURNA_SETTINGS = "TournaSettings";
     static final String INITIAL = "Initial";
     static final String TOURNA = "tournaments";

@@ -98,7 +98,7 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
         mTeamsFromDB = new ArrayList<>();
         mOptionsMenu = null;
         mCountText = null;
-        Log.d(TAG, "onCreate: "+ mTourna);
+        //Log.d(TAG, "onCreate: "+ mTourna);
 
         mTeamLV = this.findViewById(R.id.team_list);
         mSeedLV = this.findViewById(R.id.seed_list);

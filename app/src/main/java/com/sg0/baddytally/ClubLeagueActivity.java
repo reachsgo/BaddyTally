@@ -1,6 +1,7 @@
 package com.sg0.baddytally;
 
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -26,9 +27,11 @@ import android.text.style.StyleSpan;
 import android.text.style.SuperscriptSpan;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
+import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
@@ -51,6 +54,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -89,6 +93,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
     //private boolean[] mCheckedItems = null;
     private ArrayList<GameJournalDBEntry> mGoldPlayedGames = new ArrayList<>();
     private ArrayList<GameJournalDBEntry> mSilverPlayedGames = new ArrayList<>();
+    private GestureDetector mDetector;
 
     private void setTitle(String club) {
         if (!TextUtils.isEmpty(club)) {
@@ -145,6 +150,8 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
         mCommon.mNumOfGroups = Constants.NUM_OF_GROUPS;
         //SGO: Test single user group
         //SharedData.getInstance().mNumOfGroups = 1;
+
+        //Log.d(TAG, "onCreate: ");
 
         //do initAdapter once here, to avoid below error:
         //RecyclerView: No adapter attached; skipping layout
@@ -293,6 +300,9 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
+
+        setUpGesture();
+        mCommon.mTime = Calendar.getInstance().getTime().getTime();
     }
 
     private void selectedEffect2(final int selectedViewId, final int otherViewId) {
@@ -313,13 +323,28 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
 
     }
 
+    void refresh() {
+        if(Calendar.getInstance().getTime().getTime() - mCommon.mTime > Constants.REFRESH_TIMEOUT) {
+            mCommon.mTime = Calendar.getInstance().getTime().getTime();
+            Toast.makeText(ClubLeagueActivity.this,
+                    "Refreshing...", Toast.LENGTH_SHORT).show();
+            recreate();
+            //Following is the sequence invoked after recreate() is called:
+            //02-24 20:00:25.843 31762-31762/com.sg0.baddytally D/ClubLeagueActivity: onDestroy:
+            //02-24 20:00:25.888 31762-31762/com.sg0.baddytally D/ClubLeagueActivity: onCreate:
+            //02-24 20:00:25.891 31762-31762/com.sg0.baddytally D/ClubLeagueActivity: onResume:
+        }
+    }
+
     @Override
     protected void onResume() {
+        //Log.d(TAG, "onResume: ");
         super.onResume();
         mInitialAttempt = false;
         setFooter();
-        SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
-        String club = prefs.getString(Constants.DATA_CLUB, "");
+        //SharedPreferences prefs = getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+        //String club = prefs.getString(Constants.DATA_CLUB, "");
+        String club = mCommon.mClub;
 
         if (mCommon.isDBUpdated()) {
             mRefreshing = true;
@@ -333,15 +358,15 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                     .show();
         } else {
             mClub = club;
-            mCommon.mClub = mClub;
-            mCommon.mUser = prefs.getString(Constants.DATA_USER, "");
-            mCommon.mRole = prefs.getString(Constants.DATA_ROLE, "");
+            //mCommon.mClub = mClub;
+            //mCommon.mUser = prefs.getString(Constants.DATA_USER, "");
+            //mCommon.mRole = prefs.getString(Constants.DATA_ROLE, "");
             //mCommon.mTournaMode = prefs.getBoolean(Constants.DATA_TMODE, false);
             Log.d(TAG, mInitialAttempt + ":onResume: " + SharedData.getInstance().toString());
             setTitle(mClub);
-
+            
             fetchInnings();
-
+            
             if (mOptionsMenu != null) {
                 //For scenarios where onResume() is called after onCreateOptionsMenu()
                 //Log.d(TAG, "onResume() is called after onCreateOptionsMenu()");
@@ -373,7 +398,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
     @Override
     protected void onDestroy() {
         uiHandler.removeCallbacksAndMessages(null);
-        Log.d(TAG, "onDestroy: ");
+        //Log.d(TAG, "onDestroy: " + mCommon.mCount);
         super.onDestroy();
     }
 
@@ -439,9 +464,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 return true;
             // action with ID action_refresh was selected
             case R.id.action_refresh:
-                finish();
-                mRefreshing = true;
-                startActivity(getIntent());
+                refresh();
                 break;
             // action with ID action_settings was selected
             case R.id.action_settings:
@@ -459,6 +482,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                     ClubLeagueActivity.this.startActivity(myIntent);
                 } else if (!mCommon.mProfile.getMemcode().isEmpty()) {
                     myIntent = new Intent(ClubLeagueActivity.this, LoginActivity.class);
+                    myIntent.putExtra(Constants.ACTIVITY, Constants.ACTIVITY_CLUB_ENTERDATA);
                     //Set the Player data in shared data structure. Player data is filled in a
                     //different (asynchronous) listener in FireBaseDBReader. Overwrite the player data
                     //every time, so that even if initial calls are done too fast (before player data is
@@ -685,7 +709,15 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 if (null == innings) {
                     //no innings in DB
                     mCommon.mInnings = "";
-                    Log.v(TAG, "fetchInnings: .... null");
+                    Log.v(TAG, "fetchInnings: null");
+                    //doTransaction with null input is called once always.
+                    //Even if the DB is not connected at this time, it will get connected
+                    //between this callback and the next one with real data.
+                    //02-24 16:58:04.978 11480-11525/com.sg0.baddytally D/ClubLeagueActivity: doTransaction: fetchInnings
+                    //02-24 16:58:04.980 11480-11525/com.sg0.baddytally V/ClubLeagueActivity: fetchInnings: null
+                    //02-24 16:58:05.338 11480-11480/com.sg0.baddytally D/SharedData: isDBConnected: connected
+                    //02-24 16:58:05.420 11480-11525/com.sg0.baddytally D/ClubLeagueActivity: doTransaction: fetchInnings
+                    //02-24 16:58:05.421 11480-11525/com.sg0.baddytally V/ClubLeagueActivity: fetchInnings: key:1 data:InningsEntry{name='Inn2', current=true, round='2020-02-23T17:31'}
                     return Transaction.success(mutableData);
                 }
 
@@ -721,10 +753,13 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                         break;
                     }
                 }
+
                 //do less in the firebase callback
                 uiHandler.post(new Runnable() {
                     @Override
                     public void run() {
+                        //when you are here, you are sure that DB is connected.
+                        mCommon.fetchProfile(ClubLeagueActivity.this, ClubLeagueActivity.this, mClub);
                         fetchGames(Constants.GOLD, mGoldPlayedGames, mCommon.mGoldPresentPlayerNames);
                         fetchGames(Constants.SILVER, mSilverPlayedGames, mCommon.mSilverPresentPlayerNames);
                     }
@@ -739,13 +774,11 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 Log.d(TAG, "onComplete: fetchInnings");
             }
         });
-
-        mCommon.fetchProfile(ClubLeagueActivity.this, ClubLeagueActivity.this, mClub);
     }
 
     //CallbackRoutine Callback after profile is fetched from DB. See SharedData impl of fetchProfile()
     public void profileFetched() {
-        Log.w(TAG, "profileFetched invoked ...." + mCommon.toString());
+        Log.i(TAG, "profileFetched invoked: " + mCommon.toString());
         initAdapter();
         mRefreshing = false;
 
@@ -1413,5 +1446,88 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
             alert.show();
         }
     };
+
+        /*
+    Below override of dispatchTouchEvent is needed for swipeLeft/Right to work
+    for a scroll view.
+    By default the touch listener for the scroll view get disabled and therefore scroll action
+    does not happen. In order to fix this you need to override the dispatchTouchEvent method of
+    the Activity and return the inherited version of this method after you're done with your own listener.
+     */
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        //Log.d(TAG, "dispatchTouchEvent: ");
+        mDetector.onTouchEvent(ev);
+        return super.dispatchTouchEvent(ev);
+    }
+
+    private void setUpGesture() {
+        mDetector = new GestureDetector(ClubLeagueActivity.this,
+                new ClubLeagueActivity.STGestureListener());
+
+        findViewById(R.id.outer_ll).setOnTouchListener(new View.OnTouchListener() {
+            @SuppressLint("ClickableViewAccessibility")
+            @Override
+            public boolean onTouch(final View v, final MotionEvent event) {
+                //Log.d(TAG, "onTouch: ");
+                return mDetector.onTouchEvent(event);
+            }
+        });
+    }
+
+    class STGestureListener implements GestureDetector.OnGestureListener {
+
+        //Keeping the threshold pretty high so that simple scroll also works on the
+        //UB and LB tables.
+        private static final long VELOCITY_THRESHOLD = 7000;
+        private static final String TAG = "TournaGesture";
+
+        @Override
+        public boolean onDown(final MotionEvent e) {
+            return false;
+        }
+
+        @Override
+        public void onShowPress(final MotionEvent e) {
+        }
+
+        @Override
+        public boolean onSingleTapUp(final MotionEvent e) {
+            return false;
+        }
+
+        @Override
+        public boolean onScroll(final MotionEvent e1, final MotionEvent e2, final float distanceX,
+                                final float distanceY) {
+            return false;
+        }
+
+        @Override
+        public void onLongPress(final MotionEvent e) {
+        }
+
+        @Override
+        public boolean onFling(final MotionEvent e1, final MotionEvent e2,
+                               final float velocityX,
+                               final float velocityY) {
+
+            //Log.d(TAG, "onFling: velocityX=" + velocityX + " velocityY=" + velocityY);
+            if (Math.abs(velocityX) < VELOCITY_THRESHOLD
+                    && Math.abs(velocityY) < VELOCITY_THRESHOLD) {
+                return false;//if the fling is not fast enough then it's just like drag
+            }
+
+            //if velocity in Y direction is higher than velocity in X direction,
+            //then the fling is vertical
+            if (Math.abs(velocityY) > Math.abs(velocityX)) {
+                if (velocityY >= 0) {
+                    //Log.i(TAG, "swipe down");
+                    refresh();
+                }
+            }
+            return true;
+        }
+    }
 
 }

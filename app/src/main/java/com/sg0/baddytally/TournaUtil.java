@@ -1,8 +1,11 @@
 package com.sg0.baddytally;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Build;
 
 import android.text.SpannableStringBuilder;
@@ -23,6 +26,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,7 +98,8 @@ public class TournaUtil {
         });
     }
 
-    public void showTournaments(final View popupView, final View snackbarView) {
+    public void showTournaments(final Activity activity) {
+        Log.d(TAG, "showTournaments: ");
 
         //it could happen that the user moves this app to background while the background loop is running.
         //In thats case, dialog will fail: "WindowManager$BadTokenException: Unable to add window"
@@ -106,7 +111,33 @@ public class TournaUtil {
             Toast.makeText(pActivity, "No tournaments to display", Toast.LENGTH_SHORT).show();
             return;
         }
-        if(popupView==null || snackbarView==null) {
+
+
+        final ArrayList<String> tournaList = new ArrayList<>();
+        for(Map.Entry<String,String> tourna : mCommon.mTournaMap.entrySet()) {
+            tournaList.add(tourna.getKey());
+        }
+        Collections.sort(tournaList);  //sort the tournament list before adding to pop menu
+
+        final CharSequence[] items = new CharSequence[tournaList.size()];
+        int i = 0; for (String t: tournaList) {items[i] = t; i++;}
+
+        AlertDialog.Builder alt_bld = new AlertDialog.Builder(activity);
+        alt_bld.setIcon(R.drawable.birdie02);
+        alt_bld.setTitle(mCommon.getStyleString("Select the tournament", Typeface.BOLD));
+        alt_bld.setSingleChoiceItems(items, -1, new DialogInterface
+                .OnClickListener() {
+            public void onClick(DialogInterface dialog, int item) {
+                mTourna = items[item].toString();
+                cb.completed(Constants.CB_SHOWTOURNA, true);
+                dialog.dismiss();
+            }
+        });
+        AlertDialog alert = alt_bld.create();
+        alert.show();
+
+        /*
+                if(popupView==null || snackbarView==null) {
             Log.i(TAG, "view is null!!");
             return;
         }
@@ -144,6 +175,8 @@ public class TournaUtil {
             }
         });
         mPopup.show();//showing popup menu
+
+         */
     }
 
     public void readDBMatchMeta(final String tourna, final Boolean ignoreDone) {

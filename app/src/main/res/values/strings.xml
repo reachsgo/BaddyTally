@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">ScoreTally</string>
-    <string name="app_name_enterdata">ST  Enter scores</string>
+    <string name="app_name_enterdata">Enter scores</string>
     <string name="app_name_settings">ST  Settings</string>
     <string name="app_name_summary">ST  Summary</string>
     <string name="app_name_login">ST  Login</string>
@@ -16,7 +16,7 @@
     <string name="action_sign_in">Sign in</string>
     <string name="action_sign_in_short">Sign in</string>
     <string name="error_invalid_password">This password is too short</string>
-    <string name="error_incorrect_password">Club or User or Password is incorrect</string>
+    <string name="error_incorrect_password">Club or Password is incorrect</string>
     <string name="radio_singles">singles</string>
     <string name="radio_doubles">doubles</string>
     <string name="radio_gold">gold</string>

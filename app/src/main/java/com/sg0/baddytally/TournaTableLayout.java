@@ -359,7 +359,7 @@ class TournaTable implements View.OnClickListener {
                         });
                     }
                 }
-                printData();
+                //printData();
                 loopThruFixture();
 
                 //SGO: Filling the display rows with newly created views is a time consuming process (~1s for 27 teams DE)
@@ -432,7 +432,7 @@ class TournaTable implements View.OnClickListener {
 
     void createDisplayData() {
 
-        Log.d(TAG, "createDisplayData: start");
+        //Log.d(TAG, "createDisplayData: start");
         for (int c = 1; c <= mMaxRounds; c++) {
             SparseArray<TournaDispMatchEntry> rMatches = getMatchesForThisRound(c);  //this from mFixture
             TournaDispMatchEntry lastNode = null;
@@ -451,7 +451,7 @@ class TournaTable implements View.OnClickListener {
         markVerticalLines();
         //Log.d(TAG, "createDisplayData: about to displayTable");
         displayTable();
-        Log.d(TAG, "createDisplayData: end");
+        //Log.d(TAG, "createDisplayData: end");
     }
 
     void insertANode(final int round, final TournaDispMatchEntry matchEntry, final TournaDispMatchEntry lastNode) {
@@ -1906,6 +1906,7 @@ public class TournaTableLayout extends AppCompatActivity {
         }
 
         setUpGesture();
+        mCommon.mTime = Calendar.getInstance().getTime().getTime();
 
         startProgressDialog("Sync database", "Loading...");
         mCommon.showToastAndDieOnTimeout(mMainHandler, TournaTableLayout.this,
@@ -2223,23 +2224,34 @@ public class TournaTableLayout extends AppCompatActivity {
                                 Toast.LENGTH_LONG).show();
                         return;
                     }
+
                     StringBuilder sb = new StringBuilder();
                     sb.append("\n");
-                    for(TeamDBEntry team: mTeams) {
+                    for (int i = 0; i < mTeams.size(); i++) {
+                        TeamDBEntry team = getTeam(i+1); //input is seed id
+                        if(team==null) continue;
                         StringBuilder players = new StringBuilder();
-                        for(String p: team.getP()){
-                            if(players.length()>0) players.append(", ");
-                            if(p.length()>6)
-                                players.append(String.format(Locale.getDefault(),
-                                    "%.6s..", p));
-                            else
-                                players.append(String.format(Locale.getDefault(),
-                                        "%s", p));
+                        if(team.getP().size()==1) {
+                            //only one player in the team
+                            players.append(String.format(Locale.getDefault(),
+                                    "%s", team.getP().get(0)));
+                        } else {
+                            //mote than one player in the team
+                            for (String p : team.getP()) {
+                                if (players.length() > 0) players.append(", ");
+                                if (p.length() > 6)
+                                    players.append(String.format(Locale.getDefault(),
+                                            "%.6s..", p));
+                                else
+                                    players.append(String.format(Locale.getDefault(),
+                                            "%s", p));
+                            }
                         }
                         sb.append(String.format(Locale.getDefault(),
                                 "(%d) %.8s: %.20s\n",
                                 team.getSeed(), team.getId(), players.toString()));
                     }
+
                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaTableLayout.this);
                     alertBuilder.setTitle("(Seeding) and Teams for " + mCommon.mTournament);
                     alertBuilder.setMessage(sb.toString());
@@ -2287,10 +2299,26 @@ public class TournaTableLayout extends AppCompatActivity {
         return null;
     }
 
+    TeamDBEntry getTeam(final int seed) {
+        if (mTeams == null) return null;
+        for (TeamDBEntry team : mTeams) {
+            if (team.getSeed() == seed) return team;
+        }
+        return null;
+    }
+
     private void redrawEverything() {
         //Log.e(TAG, "  ----------- redrawEverything ------------ ");
     }
 
+    void refresh() {
+        if(Calendar.getInstance().getTime().getTime() - mCommon.mTime > Constants.REFRESH_TIMEOUT) {
+            mCommon.mTime = Calendar.getInstance().getTime().getTime();
+            Toast.makeText(TournaTableLayout.this,
+                    "Refreshing...", Toast.LENGTH_SHORT).show();
+            readAndDisplay();
+        }
+    }
 
     @Override
     protected void onResume() {
@@ -2799,14 +2827,18 @@ public class TournaTableLayout extends AppCompatActivity {
                     //Log.i(TAG, "swipe left");
                     makeOtherBracketVisible();
                 }
-            } /*
+            }
             else {
                 if (velocityY >= 0) {
                     //Log.i(TAG, "swipe down");
-                } else {
+                    refresh();
+                }
+                /*
+                else {
                     //Log.i(TAG, "swipe up");
                 }
-            }*/
+                */
+            }
             return true;
         }
     }

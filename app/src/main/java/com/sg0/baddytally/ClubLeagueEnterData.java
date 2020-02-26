@@ -79,8 +79,8 @@ public class ClubLeagueEnterData extends BaseEnterData {
                     Toast.LENGTH_LONG).show();
             finish();
         }
-        Log.i(TAG, "onCreate :" + SharedData.getInstance().toString() + "/" + mGroup +
-                "/" + mGameType + "/" + mNewRoundFlag + "/" + mRoundName);
+        //Log.i(TAG, "onCreate :" + SharedData.getInstance().toString() + "/" + mGroup +
+        //        "/" + mGameType + "/" + mNewRoundFlag + "/" + mRoundName);
 
         String title = (String)((TextView)findViewById(R.id.enterdata_header)).getText();
         title += ": " + mGroup;

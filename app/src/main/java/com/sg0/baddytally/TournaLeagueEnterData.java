@@ -130,8 +130,8 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
         findViewById(R.id.completed).setEnabled(false);
         findViewById(R.id.winner).setEnabled(false);
 
-        Log.i(TAG, "onCreateExtra :" + mTeams + "/"
-                + mT1_players + "/" + mT2_players);
+        //Log.i(TAG, "onCreateExtra :" + mTeams + "/"
+        //        + mT1_players + "/" + mT2_players);
 
         ((TextView)findViewById(R.id.enterdata_matchinfo)).setText("");
         //teams not known yet. Fill this in once the match to enter data is chosen.
@@ -1000,13 +1000,13 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
     }
 
     public void completed(final String in, final Boolean ok) {
-        Log.w(TAG, "completed: " + in + ":" + ok);
+        //Log.w(TAG, "completed: " + in + ":" + ok);
         if (in.equals(Constants.CB_READMATCHMETA)) {
             //callback after reading DB for meta data
             if (ok) {
                 mNumOfMatches = mTUtil.mNumOfMatches;
                 mBestOf = mTUtil.mBestOf;
-                Log.i(TAG, "Num of Matches = " + mNumOfMatches.toString() + " bestof=" + mBestOf);
+                //Log.i(TAG, "Num of Matches = " + mNumOfMatches.toString() + " bestof=" + mBestOf);
                 mTUtil.showMatches(findViewById(R.id.enterdata_header));
             } else {
                 mCommon.showAlert(TournaLeagueEnterData.this, TournaLeagueEnterData.this, Constants.CB_NOMATCHFOUND,

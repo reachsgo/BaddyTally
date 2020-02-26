@@ -123,7 +123,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     //OnCreate() is expected to be implemented in the derived class.
     //which will invoke onCreateBase()
     protected void onCreateBase() {
-        Log.i(TAG, "BaseEnterData::onCreateBase");
+        //Log.i(TAG, "BaseEnterData::onCreateBase");
         FloatingActionButton fab = findViewById(R.id.fab_cancel);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -487,7 +487,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
 
 
     protected void matchCompleted() {
-        Log.d(TAG, "matchCompleted: ");
+        //Log.d(TAG, "matchCompleted: ");
         findViewById(R.id.scoretrack_button).setVisibility(View.GONE);
     }
 

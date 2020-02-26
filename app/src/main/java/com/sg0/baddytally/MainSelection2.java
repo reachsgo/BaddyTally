@@ -40,7 +40,7 @@ public class MainSelection2 extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main_selection2);
-        Log.d(TAG, "onCreate: ");
+        //Log.d(TAG, "onCreate: ");
 
         Button mTournaBtn = findViewById(R.id.tournaments);
         mTournaBtn.setOnClickListener(new View.OnClickListener() {

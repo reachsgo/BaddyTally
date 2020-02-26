@@ -53,16 +53,8 @@ public class ClubLeagueSummary extends AppCompatActivity {
     private String mCurrentRound;
 
     private void killActivity(){
-        /*
-        if(mDBUpdated) {
-            Intent resultIntent = new Intent();
-            //setResult(Activity.RESULT_FIRST_USER, resultIntent);  //hint to refresh the main page
-            setResult(Constants.RESULT_DBUPDATED);
-            Log.d(TAG, "SGO: DB updated: setting result");
-        }*/
-        Log.d(TAG, "SGO: killActivity: returning OK");
-        setResult(RESULT_OK);
-        finish();
+        onBackPressed();
+        //SharedData.getInstance().killActivity(ClubLeagueSummary.this, RESULT_OK);
     }
 
     private void setTitle(String round) {
@@ -78,8 +70,9 @@ public class ClubLeagueSummary extends AppCompatActivity {
             spanString.setSpan(new StyleSpan(Typeface.ITALIC), title.length(), tempString.length(), 0);
             spanString.setSpan(new RelativeSizeSpan(0.8f), title.length(),
                     tempString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            TextView header = findViewById(R.id.header);
-            header.setText(spanString);
+
+            getSupportActionBar().setTitle(""); //workaround for title getting truncated.
+            getSupportActionBar().setTitle(spanString);
         }
     }
 
@@ -88,7 +81,7 @@ public class ClubLeagueSummary extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_clubleague_summary);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        Log.v(TAG, "onCreate :" + SharedData.getInstance().toString());
+        //Log.v(TAG, "onCreate :" + SharedData.getInstance().toString());
 
         mDatabase = FirebaseDatabase.getInstance().getReference();
         mData = SharedData.getInstance();
@@ -98,6 +91,16 @@ public class ClubLeagueSummary extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 killActivity();
+            }
+        });
+        fab.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                //Log.d(TAG, "onLongClick: fab");
+                fetchAllRounds(view);
+                //TODO: show a drop down list with the round names
+                // when clicked, update the view for that round.
+                return true;
             }
         });
 
@@ -126,17 +129,6 @@ public class ClubLeagueSummary extends AppCompatActivity {
                 else
                     goldView.setVisibility(View.GONE);
                 return;
-            }
-        });
-
-        TextView summaryHeader = findViewById(R.id.header);
-        summaryHeader.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View view) {
-                fetchAllRounds(view);
-                //TODO: show a drop down list with the round names
-                // when clicked, update the view for that round.
-                return true;
             }
         });
 
@@ -250,7 +242,8 @@ public class ClubLeagueSummary extends AppCompatActivity {
     private void fetchAllRounds(final View view) {
         mRounds = new ArrayList<>();
         DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference();
-        DatabaseReference dbRef2 = mDatabase.child(mData.mClub).child(Constants.JOURNAL).child(mData.mInnings);
+        DatabaseReference dbRef2 = mDatabase.child(mData.mClub)
+                .child(Constants.JOURNAL).child(mData.mInnings);
         Query myQuery2 = dbRef2.orderByKey();
         myQuery2.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -258,7 +251,7 @@ public class ClubLeagueSummary extends AppCompatActivity {
                 for (DataSnapshot child : dataSnapshot.getChildren()) {
                     if(null == child) return;
                     mRounds.add(child.getKey());
-                    Log.w(TAG, "fetchAllRounds: added" + child.getKey());
+                    //Log.v(TAG, "fetchAllRounds: added:" + child.getKey());
                 }
                 if(mRounds.size()>1) showOptions(view);
             }
@@ -266,7 +259,9 @@ public class ClubLeagueSummary extends AppCompatActivity {
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
                 Log.w(TAG, "fetchAllRounds: dberror" + databaseError.getMessage());
-                Toast.makeText(ClubLeagueSummary.this, "DB error while fetching innings" + databaseError.getMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(ClubLeagueSummary.this,
+                        "DB error while fetching innings" + databaseError.getMessage(),
+                        Toast.LENGTH_LONG).show();
             }
         });
     }

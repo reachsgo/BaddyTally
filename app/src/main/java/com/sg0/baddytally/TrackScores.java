@@ -88,7 +88,7 @@ public class TrackScores extends AppCompatActivity {
         mLeftWinBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(TAG, "onClick: Left Win");
+                //Log.d(TAG, "onClick: Left Win");
                 if(mSetUpCount!=SETUP_DONE && !mGames.get(mGameNum).gameStarted()){
                     //if setup time and if game has not been started, dont enter scores
                     return;
@@ -111,7 +111,7 @@ public class TrackScores extends AppCompatActivity {
         mRightWinBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(TAG, "onClick: Right Win");
+                //Log.d(TAG, "onClick: Right Win");
                 if(mSetUpCount!=SETUP_DONE && !mGames.get(mGameNum).gameStarted()){
                     //if setup time and if game has not been started, dont enter scores
                     return;
@@ -183,7 +183,7 @@ public class TrackScores extends AppCompatActivity {
         mUndoBtn.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                Log.i(TAG, "onLongClick: CLEAR");
+                //Log.i(TAG, "onLongClick: CLEAR");
                 Toast.makeText(TrackScores.this, "Reset of Game-" + (mGameNum+1) + " ...",
                         Toast.LENGTH_LONG).show();
                 mGames.get(mGameNum).clear();
@@ -206,7 +206,7 @@ public class TrackScores extends AppCompatActivity {
         mSwapBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.i(TAG, "onClick: Switching sides:" + mGames.get(mGameNum).scores.size());
+                //Log.i(TAG, "onClick: Switching sides:" + mGames.get(mGameNum).scores.size());
                 mGames.get(mGameNum).switchSides(false);
             }
         });
@@ -334,9 +334,9 @@ public class TrackScores extends AppCompatActivity {
 
         //If there are existing scores read from DB, populate the same here.
         ArrayList<String> scores = myIntent.getStringArrayListExtra("scores");
-        Log.d(TAG, String.format("onCreate: from DB: %s(%s,%s) vs %s(%s,%s): [%s]",
-                team1, t1p1, t1p2,
-                team2, t2p1, t2p2, scores));
+        //Log.d(TAG, String.format("onCreate: from DB: %s(%s,%s) vs %s(%s,%s): [%s]",
+        //        team1, t1p1, t1p2,
+        //        team2, t2p1, t2p2, scores));
 
         mReturnResults = null != team1 && null != team2 && !team1.isEmpty() && !team2.isEmpty();
 
@@ -354,9 +354,9 @@ public class TrackScores extends AppCompatActivity {
                 String local_t2p1 = prefs.getString(Constants.DATA_T2P1, "");
                 String local_t2p2 = prefs.getString(Constants.DATA_T2P2, "");
                 String local_g1 = prefs.getString(Constants.DATA_G1, "");
-                Log.d(TAG, String.format("onCreate: from disk: %s(%s,%s) vs %s(%s,%s): [%s]",
-                        local_team1, local_t1p1, local_t1p2,
-                        local_team2, local_t2p1, local_t2p2, local_g1));
+                //Log.d(TAG, String.format("onCreate: from disk: %s(%s,%s) vs %s(%s,%s): [%s]",
+                //        local_team1, local_t1p1, local_t1p2,
+                //        local_team2, local_t2p1, local_t2p2, local_g1));
                 //Give preference to local disk data if the team players are the same and there
                 //is some score saved. This might override data from DB, but that is needed
                 //to keep the player positions. Team/player positions are not saved in the DB.
@@ -377,9 +377,9 @@ public class TrackScores extends AppCompatActivity {
                     scores.add(local_g1);
                     scores.add(g2);
                     scores.add(g3);
-                    Log.d(TAG, "onCreate: read from disk:" +
-                            String.format("%s:%s,%s-%s:%s-%s [%s, %s, %s]",
-                                    team1, t1p1, t1p2, team2, t2p1, t2p2, local_g1, g2, g3));
+                    //Log.d(TAG, "onCreate: read from disk:" +
+                    //        String.format("%s:%s,%s-%s:%s-%s [%s, %s, %s]",
+                    //                team1, t1p1, t1p2, team2, t2p1, t2p2, local_g1, g2, g3));
                     Toast.makeText(this,
                             "Cached data imported, Check player positions and click start game button",
                             Toast.LENGTH_LONG).show();
@@ -400,7 +400,7 @@ public class TrackScores extends AppCompatActivity {
         SharedData.getInstance().mStrList = null;
 
         if(scores!=null && scores.size()>0) {
-            Log.d(TAG, "onCreate: existing scores=" + scores.toString());
+            //Log.d(TAG, "onCreate: existing scores=" + scores.toString());
             //If there are existing scores, set those
             for (int i = 0; i < scores.size(); i++) {
                 if(scores.get(i).isEmpty()) {
@@ -415,7 +415,7 @@ public class TrackScores extends AppCompatActivity {
 
                 switch(i) {
                     case 0:
-                        Log.i(TAG, "onCreate: Filling Game1");
+                        //Log.i(TAG, "onCreate: Filling Game1");
                         //first game is already created
                         mGame1.setAnimation(mShake);
                         mGames.get(0).leftTeam.score = t1Score;
@@ -428,7 +428,7 @@ public class TrackScores extends AppCompatActivity {
                         break;
 
                     case 1:
-                        Log.i(TAG, "onCreate: Filling Game2, " + t1Score + "-" + t2Score);
+                        //Log.i(TAG, "onCreate: Filling Game2, " + t1Score + "-" + t2Score);
                         if(mGames.size()>1) break;  //not expected
                         mGame2.setAnimation(mShake);
                         GameData g2 = new GameData(mGames.get(0), true);
@@ -443,7 +443,7 @@ public class TrackScores extends AppCompatActivity {
                         break;
 
                     case 2:
-                        Log.i(TAG, "onCreate: Filling Game3");
+                        //Log.i(TAG, "onCreate: Filling Game3");
                         if(mGames.size()>2) break;  //not expected
                         mGame3.setAnimation(mShake);
                         GameData g3 = new GameData(mGames.get(0), true);
@@ -468,13 +468,13 @@ public class TrackScores extends AppCompatActivity {
     void setPositionsCorrect(final String leftTeam, final String servingTeam){
         //Set team and serving positions from local data
         if(!leftTeam.isEmpty() && !leftTeam.equals(mGames.get(mGameNum).leftTeam.getTeam())) {
-            Log.d(TAG, "setPositionsCorrect: Left team to be swapped");
+            //Log.d(TAG, "setPositionsCorrect: Left team to be swapped");
             mGames.get(mGameNum).switchSides(true);
         }
         mGames.get(mGameNum).leftTeam.setService(true);
         mGames.get(mGameNum).rightTeam.setService(false);
         if(!servingTeam.isEmpty() && !servingTeam.equals(mGames.get(mGameNum).leftTeam.getTeam())) {
-            Log.d(TAG, "setPositionsCorrect: Serving team to be swapped");
+            //Log.d(TAG, "setPositionsCorrect: Serving team to be swapped");
             mGames.get(mGameNum).leftTeam.setService(false);
             mGames.get(mGameNum).rightTeam.setService(true);
         }
@@ -497,7 +497,7 @@ public class TrackScores extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        Log.d(TAG, "onBackPressed: ");
+        //Log.d(TAG, "onBackPressed: ");
         killActivity();
         if(!mReturnResults) {
             Intent intent = new Intent(TrackScores.this, MainSigninActivity.class);
@@ -509,7 +509,7 @@ public class TrackScores extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume: ");
+        //Log.d(TAG, "onResume: ");
         swipeOpInProgress = false;
         mProgressDialog = null;
         mResetData = false;
@@ -518,7 +518,7 @@ public class TrackScores extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        Log.d(TAG, "onPause: ");
+        //Log.d(TAG, "onPause: ");
 
         //Reset All data is being done. Dont save data.
         if(mResetData || null==mGames) return;
@@ -604,9 +604,9 @@ public class TrackScores extends AppCompatActivity {
             //which team is serving?
             editor.putString(Constants.DATA_SRVCTEAM, gameData.getServingTeam());
 
-            Log.d(TAG, "onPause: write to disk:" +
-                    String.format("left=%s\n right=%s",
-                            gameData.leftTeam.toString(), gameData.rightTeam.toString()));
+            //Log.d(TAG, "onPause: write to disk:" +
+            //        String.format("left=%s\n right=%s",
+            //                gameData.leftTeam.toString(), gameData.rightTeam.toString()));
             editor.apply();
         }
     }
@@ -615,13 +615,13 @@ public class TrackScores extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         killActivity();
-        Log.d(TAG, "onStop: done");
+        //Log.d(TAG, "onStop: done");
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "onDestroy: ");
+        //Log.d(TAG, "onDestroy: ");
     }
 
     /* If the screen times-out, get locked. User presses ON button and starts again:
@@ -672,7 +672,7 @@ public class TrackScores extends AppCompatActivity {
         mGameNum = 0;
         mGames = new ArrayList<>();
 
-        Log.i(TAG, "setTeamData: init");
+        //Log.i(TAG, "setTeamData: init");
         //init; first game to be created
         GameData g = new GameData();
         //If not data entered, use default
@@ -738,9 +738,9 @@ public class TrackScores extends AppCompatActivity {
     void showGame(TeamData leftTeam, TeamData rightTeam) {
 
         if(mGameNum > mGames.size()-1) {  //mGameNum range is 0, 1 or 2
-            Log.i(TAG, "showGame: mGames=" + mGames.size());
+            //Log.i(TAG, "showGame: mGames=" + mGames.size());
             GameData g = new GameData(mGames.get(mGameNum-1), false);
-            Log.i(TAG, "showGame: Add Game=" + g.toString());
+            //Log.i(TAG, "showGame: Add Game=" + g.toString());
             mGames.add(g);
             return;
         }
@@ -748,7 +748,7 @@ public class TrackScores extends AppCompatActivity {
         if(mSetUpCount==SETUP_READY_TO_START) return; //nothing to do
 
         //Game is already created. Fetch and display.
-        Log.i(TAG, "showGame: fetch and display:" + mGameNum);
+        //Log.i(TAG, "showGame: fetch and display:" + mGameNum);
         mGames.get(mGameNum).leftTeam.setViews(true);
         mGames.get(mGameNum).rightTeam.setViews(false);
         mGames.get(mGameNum).display();
@@ -841,7 +841,7 @@ public class TrackScores extends AppCompatActivity {
             alertBuilder.show();
             mAnimHandler.removeCallbacksAndMessages(null);
         }
-        mGames.get(mGameNum).print();
+        //mGames.get(mGameNum).print();
         return true;
     }
 
@@ -933,7 +933,7 @@ public class TrackScores extends AppCompatActivity {
     }
 
     private void killActivity() {
-        Log.d(TAG, "killActivity: ");
+        //Log.d(TAG, "killActivity: ");
         if(null!=mCustomDialog) mCustomDialog.dismiss();
         if(mResetData) return;
         if(null==mGames) {
@@ -943,7 +943,7 @@ public class TrackScores extends AppCompatActivity {
         }
         mResults.remove(mGameNum);
         mResults.add(mGameNum, mGames.get(mGameNum).getScore());
-        Log.w(TAG, "killActivity: [" + mGameNum + "] mResults=" + mResults);
+        Log.d(TAG, "killActivity: [" + mGameNum + "] mResults=" + mResults);
         if(mReturnResults) {
             Intent returnIntent = new Intent();
             returnIntent.putStringArrayListExtra("gameResults", mResults);
@@ -1113,19 +1113,19 @@ public class TrackScores extends AppCompatActivity {
 
 
         boolean switchService(){
-            Log.i(TAG, "switchService: " + service);
+            //Log.i(TAG, "switchService: " + service);
             service = !service;
             displayService(true);
             return service;
         }
 
         public void setServiceChange() {
-            Log.i(TAG, "setServiceChange: " + service);
+            //Log.i(TAG, "setServiceChange: " + service);
             setService(false);
         }
 
         void switchSides() {
-            Log.i(TAG, "switchSides: " + toString());
+            //Log.i(TAG, "switchSides: " + toString());
 
             if(this.left) {
                 setViews(false);
@@ -1236,7 +1236,7 @@ public class TrackScores extends AppCompatActivity {
         }
 
         public void servedAndWon() {
-            Log.i(TAG, "servedAndWon: " + toString());
+            //Log.i(TAG, "servedAndWon: " + toString());
             if(players.size()==2) { //including index=0 empty
                 if(oddPlayerIdx==1) { oddPlayerIdx=0; evenPlayerIdx=1; }
                 else { oddPlayerIdx=1; evenPlayerIdx=0; }
@@ -1304,14 +1304,14 @@ public class TrackScores extends AppCompatActivity {
             service = Boolean.valueOf(parts[2]);
             oddPlayerIdx = Integer.valueOf(parts[3]);
             evenPlayerIdx = Integer.valueOf(parts[4]);
-            Log.i(TAG, "fromDataString: " + toString());
+            //Log.i(TAG, "fromDataString: " + toString());
             displayScore();
             displayPlayers(0);
             displayService(false);
         }
 
         void swapPlayers() {
-            Log.i(TAG, "swapPlayers: " + toString());
+            //Log.i(TAG, "swapPlayers: " + toString());
             if(left) {
                 Toast.makeText(TrackScores.this,
                         "Swapping players on the left...", Toast.LENGTH_SHORT).show();
@@ -1390,7 +1390,7 @@ public class TrackScores extends AppCompatActivity {
                         false);
             }
             display();
-            print();
+            //print();
         }
 
         String getWinner() {
@@ -1494,13 +1494,13 @@ public class TrackScores extends AppCompatActivity {
             //Log.i(TAG, "pushNewHistory: before Addition:" + scores.toString());
             scores.add(leftDataStr + DELIM2 + rightDataStr);
             historyIdx = scores.size()-1;
-            Log.i(TAG, historyIdx + "-pushNewHistory: after Addition:" + scores.toString());
+            //Log.i(TAG, historyIdx + "-pushNewHistory: after Addition:" + scores.toString());
         }
 
         ArrayList<String> pushHistory() {
             //if(historyIdx==-1) return null;
             if (historyIdx+1 > scores.size()-1) {
-                Log.i(TAG, "pushHistory: no more history:" + (historyIdx+1) + "/" + (scores.size()-1) );
+                //Log.i(TAG, "pushHistory: no more history:" + (historyIdx+1) + "/" + (scores.size()-1) );
                 return null;
             }
 
@@ -1802,7 +1802,7 @@ public class TrackScores extends AppCompatActivity {
             //then the fling is horizontal, else->vertical
             if (Math.abs(velocityX) > Math.abs(velocityY)) {
                 if (velocityX >= 0) {
-                    Log.i(TAG, "swipe right:" + swipeOpInProgress);
+                    //Log.i(TAG, "swipe right:" + swipeOpInProgress);
                     if(mGames.get(mGameNum)==null) return true;
                     if(mGames.get(mGameNum).gameStarted()){
                         //if not setup time or if game has already started, return
@@ -1816,7 +1816,7 @@ public class TrackScores extends AppCompatActivity {
                     //not switching for both sides to avoid double switch!
 
                 } else {//if velocityX is negative, then it's towards left
-                    Log.i(TAG, "swipe left:" + swipeOpInProgress);
+                    //Log.i(TAG, "swipe left:" + swipeOpInProgress);
                     if(mGames.get(mGameNum)==null) return true;
                     if(mGames.get(mGameNum).gameStarted()){
                         //if not setup time or if game has already started, return
@@ -1830,7 +1830,7 @@ public class TrackScores extends AppCompatActivity {
                 }
             } else {
                 if (velocityY >= 0) {
-                    Log.i(TAG, "swipe down:" + swipeOpInProgress);
+                    //Log.i(TAG, "swipe down:" + swipeOpInProgress);
                     if(mGames.get(mGameNum)==null) return true;
                     if(mGames.get(mGameNum).gameStarted()){
                         //if not setup time or if game has already started, return
@@ -1847,7 +1847,7 @@ public class TrackScores extends AppCompatActivity {
                     swipeOpInProgress = false;
 
                 } else {
-                    Log.i(TAG, "swipe up:" + swipeOpInProgress);
+                    //Log.i(TAG, "swipe up:" + swipeOpInProgress);
                     if(mGames.get(mGameNum)==null) return true;
                     if(mGames.get(mGameNum).gameStarted()){
                         //if not setup time or if game has already started, return

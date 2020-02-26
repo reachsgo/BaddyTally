@@ -94,9 +94,16 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
 
     @Override
     protected void onPause() {
-        Log.d(TAG, "onPause: ");
+        //Log.d(TAG, "onPause: ");
         super.onPause();
-        //killActivity();
+        ScoreTally.activityPaused(); //needed for showTournaments()
+    }
+
+    @Override
+    protected void onResume() {
+        //Log.d(TAG, "onResume: ");
+        super.onResume();
+        ScoreTally.activityResumed(); //needed for showTournaments()
     }
 
     @Override
@@ -163,7 +170,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
         mTUtil = new TournaUtil(TournaSettings.this, TournaSettings.this);
         mCustomDialog = null;
         // = new TournaEditTextDialog(TournaSettings.this, TournaSettings.this);
-        Log.w(TAG, "onCreate :" + mCommon.toString());
+        //Log.w(TAG, "onCreate :" + mCommon.toString());
         mMainHandler = new Handler();
         mNewTournaType = "";
         mScenario = "";
@@ -262,6 +269,12 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             }
         });
 
+        // add back arrow to toolbar
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+
         TournaUtil mTUtil = new TournaUtil(TournaSettings.this, TournaSettings.this);
         mTUtil.fetchActiveTournaments();
     }
@@ -358,7 +371,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
         @Override
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
-            requestWindowFeature(Window.FEATURE_NO_TITLE);
+            requestWindowFeature(Window.FEATURE_NO_TITLE);  //removes the action bar
             setContentView(R.layout.tourna_new_tourna_dialog);
             mNewTournaType = "";
             newTournaData = null;
@@ -422,11 +435,6 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             cancel = findViewById(R.id.cancel_button);
             cancel.setOnClickListener(this);
 
-            // add back arrow to toolbar
-            if (getSupportActionBar() != null){
-                getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-                getSupportActionBar().setDisplayShowHomeEnabled(true);
-            }
         }
 
 
@@ -604,7 +612,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
         Log.d(TAG, "importData: ");
         mCommon.performFileSearch(TournaSettings.this);
         Toast.makeText(TournaSettings.this,
-                "Choose the excel file to import team and player data",
+                "Choose the file (.xls or text) to import team and player data",
                 Toast.LENGTH_LONG).show();
     }
 
@@ -894,7 +902,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
         Log.w(TAG, "completed: " + in + ":" + ok);
         if(in.equals(Constants.CB_READTOURNA)) {
             //Callback from add new team
-            if(ok) mTUtil.showTournaments(findViewById(R.id.addNewTeam_btn), findViewById(R.id.settings_ll));
+            if(ok) mTUtil.showTournaments(TournaSettings.this);
         } else if(in.equals(Constants.CB_SHOWTOURNA)) {
             if(ok) {
                 mTourna = mTUtil.mTourna;

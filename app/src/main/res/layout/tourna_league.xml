@@ -104,6 +104,16 @@
                 android:scrollbars="vertical" />
         </LinearLayout>
 
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:indeterminate="true"
+            android:background="@android:color/transparent"
+            android:foregroundGravity="center_vertical"
+            android:visibility="gone"
+            />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

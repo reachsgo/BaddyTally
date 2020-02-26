@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -15,15 +16,6 @@
         android:paddingRight="@dimen/activity_horizontal_margin"
         android:paddingTop="@dimen/activity_vertical_margin">
 
-        <!-- Login progress -->
-        <ProgressBar
-            android:id="@+id/login_progress"
-            style="?android:attr/progressBarStyleLarge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:visibility="gone" />
-
         <TextView
             android:id="@+id/header"
             android:layout_width="match_parent"
@@ -35,175 +27,199 @@
             android:textSize="18sp"
             android:textStyle="bold" />
 
-        <ScrollView
-            android:id="@+id/login_form"
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp">
+            android:orientation="vertical">
 
-            <LinearLayout
+            <TextView
+                android:id="@+id/username"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:gravity="end"
+                android:layout_marginBottom="10dp"
+                android:hint="@string/prompt_user"
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:singleLine="true" />
 
-                <TextView
-                    android:id="@+id/username"
-                    android:layout_width="match_parent"
+            <LinearLayout
+                android:id="@+id/passwd_view_ll"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:gravity="end"
-                    android:layout_marginBottom="10dp"
-                    android:hint="@string/prompt_user"
-                    android:textSize="12sp"
-                    android:maxLines="1"
-                    android:singleLine="true" />
+                    android:layout_weight="50">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                    <EditText
+                        android:id="@+id/clubname"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginRight="10dp"
+                        android:hint="@string/prompt_club"
+                        android:imeActionId="6"
+                        android:imeActionLabel="@string/action_sign_in_short"
+                        android:imeOptions="actionUnspecified"
+                        android:inputType="text"
+                        android:maxLines="1"
+                        android:singleLine="true" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:baselineAligned="false"
-                    android:orientation="horizontal">
+                    android:layout_weight="50">
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="wrap_content"
+                    <EditText
+                        android:id="@+id/password"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="50">
+                        android:hint="@string/prompt_password"
+                        android:imeActionId="6"
+                        android:imeActionLabel="@string/action_sign_in_short"
+                        android:imeOptions="actionUnspecified"
+                        android:inputType="textPassword"
+                        android:maxLines="1"
+                        android:singleLine="true" />
 
-                        <EditText
-                            android:id="@+id/clubname"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginRight="10dp"
-                            android:hint="@string/prompt_club"
-                            android:imeActionId="6"
-                            android:imeActionLabel="@string/action_sign_in_short"
-                            android:imeOptions="actionUnspecified"
-                            android:inputType="text"
-                            android:maxLines="1"
-                            android:singleLine="true" />
-                    </com.google.android.material.textfield.TextInputLayout>
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="50">
+            <Button
+                android:id="@+id/email_sign_in_button"
+                style="?android:textAppearanceSmall"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginTop="30dp"
+                android:background="@drawable/roundedrect"
+                android:text="@string/action_sign_in"
+                android:textColor="#fff"
+                android:textStyle="bold" />
 
-                        <EditText
-                            android:id="@+id/password"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:hint="@string/prompt_password"
-                            android:imeActionId="6"
-                            android:imeActionLabel="@string/action_sign_in_short"
-                            android:imeOptions="actionUnspecified"
-                            android:inputType="textPassword"
-                            android:maxLines="1"
-                            android:singleLine="true" />
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:indeterminate="true"
+                android:visibility="gone" />
 
-                    </com.google.android.material.textfield.TextInputLayout>
-                </LinearLayout>
+            <LinearLayout
+                android:id="@+id/options_ll"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:orientation="horizontal">
 
-                <Button
-                    android:id="@+id/email_sign_in_button"
-                    style="?android:textAppearanceSmall"
-                    android:layout_width="match_parent"
-                    android:layout_height="40dp"
-                    android:layout_marginTop="16dp"
-                    android:background="@drawable/roundedrect"
-                    android:text="@string/action_sign_in"
-                    android:textColor="#fff"
-                    android:textStyle="bold" />
-
-                <ProgressBar
-                    android:id="@+id/progressBar"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:indeterminate="true"
-                    android:visibility="gone"
-                    />
-
-                <LinearLayout
-                    android:id="@+id/options_ll"
-                    android:layout_width="match_parent"
+                <RadioGroup
+                    android:id="@+id/gametype_radiogroup"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:layout_gravity="center_horizontal"
+                    android:layout_weight="50"
+                    android:paddingTop="30dp">
 
-                    <RadioGroup
-                        android:id="@+id/gametype_radiogroup"
+                    <RadioButton
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:layout_weight="50"
-                        android:paddingTop="30dp">
+                        android:text="@string/radio_singles"
+                        android:textSize="20sp" />
 
-                        <RadioButton
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/radio_singles"
-                            android:textColor="@color/colorPrimaryDark" />
-
-                        <RadioButton
-                            android:id="@+id/gametype_default"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/radio_doubles"
-                            android:textColor="@color/colorPrimaryDark" />
-                    </RadioGroup>
-
-                    <RadioGroup
-                        android:id="@+id/gamegroup_radiogroup"
+                    <RadioButton
+                        android:id="@+id/gametype_default"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:layout_weight="50"
-                        android:paddingTop="30dp">
+                        android:text="@string/radio_doubles"
+                        android:checked="true"
+                        android:textSize="20sp" />
+                </RadioGroup>
 
-                        <RadioButton
-                            android:id="@+id/gamegroup_gold"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/radio_gold"
-                            android:textColor="@color/colorGold"
-                            android:textStyle="bold" />
+                <RadioGroup
+                    android:id="@+id/gamegroup_radiogroup"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_weight="50"
+                    android:paddingTop="30dp">
 
-                        <RadioButton
-                            android:id="@+id/gamegroup_silver"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/radio_silver"
-                            android:textColor="@color/colorSilver"
-                            android:textStyle="bold" />
-                    </RadioGroup>
-                </LinearLayout>
+                    <RadioButton
+                        android:id="@+id/gamegroup_gold"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/radio_gold"
+                        android:textSize="20sp"
+                        android:textColor="@color/colorGold"
+                        android:textStyle="bold" />
+
+                    <RadioButton
+                        android:id="@+id/gamegroup_silver"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/radio_silver"
+                        android:textSize="20sp"
+                        android:textColor="@color/colorSilver"
+                        android:textStyle="bold" />
+                </RadioGroup>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/buttons_ll"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="30dp"
+                android:orientation="horizontal">
 
                 <Button
                     android:id="@+id/new_round_btn"
                     style="?android:textAppearanceSmall"
-                    android:layout_width="match_parent"
-                    android:layout_height="20dp"
-                    android:layout_marginTop="16dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="30dp"
+                    android:layout_marginEnd="9dp"
                     android:background="@drawable/roundedrect"
                     android:text="Create new round"
                     android:textColor="#fff"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/current_round"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Current round : "
-                    android:textColor="@android:color/black"
-                    android:textSize="11sp" />
-
-                <TextView
-                    android:id="@+id/time_now"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Time now : "
-                    android:textColor="@android:color/black"
-                    android:textSize="11sp" />
-
+                <Button
+                    android:id="@+id/next_btn"
+                    style="?android:textAppearanceSmall"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="30dp"
+                    android:layout_marginStart="9dp"
+                    android:background="@drawable/roundedrect"
+                    android:text="Next"
+                    android:textColor="#fff"
+                    android:textStyle="bold" />
             </LinearLayout>
-        </ScrollView>
+
+            <TextView
+                android:id="@+id/current_round"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Current round : "
+                android:layout_marginStart="16dp"
+                android:textColor="@android:color/black"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/time_now"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Time now : "
+                android:layout_marginStart="16dp"
+                android:textColor="@android:color/black"
+                android:textSize="11sp" />
+
+        </LinearLayout>
+
         <View
             android:layout_width="match_parent"
             android:layout_height="0dp"

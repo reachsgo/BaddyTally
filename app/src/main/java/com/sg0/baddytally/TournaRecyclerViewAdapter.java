@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.Build;
+import android.os.Handler;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -51,8 +52,10 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
     final private String mTourna;
     final private TournaEditTextDialog mCustomDialog;
     private HashMap<String, PlayerInfo> mNewPlayer;
+    private Handler mMainHandler;
 
-    public TournaRecyclerViewAdapter(final Context context,final Activity a, final String tournament, View ll_view) {
+    public TournaRecyclerViewAdapter(final Context context,final Activity a,
+                                     final String tournament, View ll_view, final Handler handler) {
         mContext = context;
         mParentActivity = a;
         mCommon = SharedData.getInstance();
@@ -60,23 +63,44 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
         mCommon.mTeamInfoMap.clear();
         mV = ll_view;
         mTourna = tournament;
+        mMainHandler = handler;
+
         mCustomDialog = new TournaEditTextDialog(mParentActivity, TournaRecyclerViewAdapter.this);
         mNewPlayer=null; mNewPlayer = new HashMap<>();
         Log.d(TAG, "TournaRecyclerViewAdapter:" + mTourna);
-        readDBTeam();
+        //readDBTeam(false);
     }
 
-    public void readDBTeam() {
-        if (mTourna.isEmpty()) return;
+    public void readDBTeam(final boolean showToast) {
+        if (mTourna.isEmpty()) {
+            if(showToast)
+                Toast.makeText(mContext,
+                    "Tournament not known!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if(!mCommon.isDBConnected()) {
+            if(showToast) //in init scenarios, there are other toasts shown
+                Toast.makeText(mContext,
+                    "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
+            return;
+        }
         final DatabaseReference teamScoreDBRef = FirebaseDatabase.getInstance().getReference()
                 .child(mCommon.mClub).child(Constants.TOURNA)
                 .child(mTourna).child(Constants.TEAMS);
         teamScoreDBRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                //Log.d(TAG, "onDataChange: readDBTeam");
+
+                mMainHandler.removeCallbacksAndMessages(null);
+                mCommon.stopProgressDialog(mParentActivity);
                 mCommon.mTeamInfoMap.clear();
                 mCommon.mTeams.clear();
                 for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
+                    if(childSnapshot==null) {
+                        Log.d(TAG, mTourna + ":readDBTeam: null");
+                        return;
+                    }
 
                     final String team = childSnapshot.getKey();
                     //Log.i(TAG, "onDataChange Got:" + team);
@@ -106,7 +130,8 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                mCommon.showToast(mContext, "DB error on read: " + databaseError.getMessage(), Toast.LENGTH_SHORT);
+                mCommon.showToast(mContext, "DB error on read: " + databaseError.getMessage(),
+                        Toast.LENGTH_SHORT);
             }
         });
     }
@@ -426,7 +451,7 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
                 String.format(Locale.getDefault(),"DEL %s/%s",
                         Constants.TEAMS, short_name));
 
-        readDBTeam();
+        readDBTeam(true);
     }
 
     private void updateDB_addPlayer() {
@@ -454,7 +479,7 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
 
             playerString.append(' ');
             playerString.append(p);
-            readDBTeam();
+            readDBTeam(true);
         }
 
         mCommon.addHistory(
@@ -480,7 +505,7 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
                 String.format(Locale.getDefault(),"DEL %s/%s",
                         Constants.PLAYERS, short_name));
 
-        if(readDB) readDBTeam();
+        if(readDB) readDBTeam(true);
     }
 
     @Override

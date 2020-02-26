@@ -48,7 +48,7 @@ public class TournaLeagueScheduleRecyclerViewAdapter extends RecyclerView.Adapte
 
     void setMatch(final String tournament, final ArrayList<MatchInfo> matchInfos) {
         this.mTourna = tournament;
-        Log.i(TAG, "setMatch: " + mTourna);
+        //Log.i(TAG, "setMatch: " + mTourna);
         this.msInfoList = new ArrayList<>(matchInfos);
     }
 
@@ -86,7 +86,7 @@ public class TournaLeagueScheduleRecyclerViewAdapter extends RecyclerView.Adapte
         if(msInfoList==null) return;
         reverseOrder = !reverseOrder;  //change the sort order
         Collections.sort(msInfoList, new StringDateComparator());
-        Log.d(TAG, "sortOnDate: " + msInfoList.toString());
+        //Log.d(TAG, "sortOnDate: " + msInfoList.toString());
         notifyDataSetChanged();
     }
 
@@ -165,8 +165,7 @@ public class TournaLeagueScheduleRecyclerViewAdapter extends RecyclerView.Adapte
                     String date = DateFormat.getDateInstance(DateFormat.MEDIUM).format(newDate.getTime());
                     final String mId = TournaUtil.getKeyFromMSKeyStr(matchId.getText().toString());
                     if(mId.isEmpty()) return;
-                    Log.d(TAG, mId + ": onDateSet: date=" + date);
-
+                    //Log.d(TAG, mId + ": onDateSet: date=" + date);
 
                     final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
                             .child(mCommon.mClub).child(Constants.TOURNA)
@@ -179,7 +178,7 @@ public class TournaLeagueScheduleRecyclerViewAdapter extends RecyclerView.Adapte
                     int matchIdx = getIdxToMatch(mId);
                     MatchInfo mInfo = msInfoList.get(matchIdx);
                     mInfo.setDate(date);
-                    Log.i(TAG, mId + ": onDateSet: mInfo=" + mInfo.toString());
+                    //Log.i(TAG, mId + ": onDateSet: mInfo=" + mInfo.toString());
                     msInfoList.set(matchIdx, mInfo);
                     TournaLeagueScheduleRecyclerViewAdapter.this.notifyDataSetChanged();
                 }
@@ -195,7 +194,7 @@ public class TournaLeagueScheduleRecyclerViewAdapter extends RecyclerView.Adapte
             matchScheduleButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    Log.d(TAG, "onClick: " + matchDesc.getText());
+                    //Log.d(TAG, "onClick: " + matchDesc.getText());
                     if(mCommon.isAdminOrRoot()) {
 
                         final String curDate = matchDate.getText().toString();

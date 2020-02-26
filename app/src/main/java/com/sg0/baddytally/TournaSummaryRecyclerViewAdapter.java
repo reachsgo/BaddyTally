@@ -1,5 +1,6 @@
 package com.sg0.baddytally;
 
+import android.app.Activity;
 import android.content.Context;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -24,7 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<TournaSummaryRecyclerViewAdapter.ViewHolder> {
     private static final String TAG = "TournaSummaryAdapter";
-    private final Context mContext;
+    private final Activity mContext;
     private String mTourna;
     private MatchInfo mMInfo;
     private final SharedData mCommon;
@@ -32,7 +33,7 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
     private ArrayList<String> mMatchList;
 
 
-    public TournaSummaryRecyclerViewAdapter(Context context) {
+    public TournaSummaryRecyclerViewAdapter(Activity context) {
         this.mContext = context;
         mCommon = SharedData.getInstance();
         mGameJournalMap = new HashMap<>();
@@ -131,7 +132,14 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
 
                     }
                 }
-                if(mGameJournalMap.size()>0) notifyDataSetChanged();
+
+                if(mGameJournalMap.size()>0) {
+                    notifyDataSetChanged();
+                } else {
+                    Toast.makeText(mContext, "Matches yet to be played!",
+                            Toast.LENGTH_LONG).show();
+                    mCommon.killActivity(mContext, Activity.RESULT_OK);
+                }
             }
 
             @Override

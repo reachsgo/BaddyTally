@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_nonbirdie_portrait">
+
+
 
     <LinearLayout
         android:id="@+id/tlanding_ll"
@@ -16,21 +19,27 @@
         <ProgressBar
             android:id="@+id/progressBar"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="100dp"
             android:indeterminate="true"
+            android:background="@android:color/transparent"
+            android:foregroundGravity="center_vertical"
             android:visibility="gone"
             />
 
         <ListView
             android:id="@+id/tournaments_lv"
             android:layout_width="250dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_gravity="center"
             android:background="@android:color/transparent"
             android:divider="@color/colorTealGreen"
             android:dividerHeight="5dp"
+            android:layout_weight="1"
             android:cacheColorHint="@color/colorTealGreen" >
         </ListView>
+
     </LinearLayout>
+
+
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
