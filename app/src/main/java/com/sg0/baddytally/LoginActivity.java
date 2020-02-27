@@ -111,7 +111,8 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
         if (mActToStart.equals(Constants.INITIAL)) {
             //Log.d(TAG, "onCreate initial mode");
             findViewById(R.id.options_ll).setVisibility(View.GONE);
-            findViewById(R.id.buttons_ll).setVisibility(View.GONE);
+            findViewById(R.id.next_btn).setVisibility(View.GONE);
+            findViewById(R.id.new_round_btn).setVisibility(View.GONE);
             findViewById(R.id.current_round).setVisibility(View.GONE);
             findViewById(R.id.time_now).setVisibility(View.GONE);
         } else if (mActToStart.equals(Constants.ACTIVITY_CLUB_ENTERDATA)) {
