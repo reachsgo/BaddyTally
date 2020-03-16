@@ -143,7 +143,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         holder.parent_layout.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
-                if (SharedData.getInstance().isRoot()) showOptions(view, holder);
+                if (SharedData.getInstance().isSuperPlus()) showOptions(view, holder);
                 return true;
             }
         });

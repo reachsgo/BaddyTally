@@ -195,7 +195,7 @@ public class TournaLeagueScheduleRecyclerViewAdapter extends RecyclerView.Adapte
                 @Override
                 public void onClick(View view) {
                     //Log.d(TAG, "onClick: " + matchDesc.getText());
-                    if(mCommon.isAdminOrRoot()) {
+                    if(mCommon.isAdminPlus()) {
 
                         final String curDate = matchDate.getText().toString();
                         if(curDate.isEmpty()) {

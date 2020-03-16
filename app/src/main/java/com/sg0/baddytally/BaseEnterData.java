@@ -96,7 +96,10 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         //NOTE: setContentView is expected to be invoked in the derived class.
         //and onCreateBase() should be invoked after that oif those initializations are needed.
 
+        //Log.d(TAG, "onCreate: ");
         mCommon = SharedData.getInstance();
+        mCommon.auditClub(BaseEnterData.this); //check if club still exists in DB
+        
         if (!mCommon.isPermitted(BaseEnterData.this))
             mCommon.killActivity(BaseEnterData.this, RESULT_OK);
 
@@ -124,6 +127,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     //which will invoke onCreateBase()
     protected void onCreateBase() {
         //Log.i(TAG, "BaseEnterData::onCreateBase");
+        
         FloatingActionButton fab = findViewById(R.id.fab_cancel);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -151,7 +155,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
 
     protected void initializeSpinners() {
 
-        mCommon.wakeUpDBConnection_profile();
+        mCommon.wakeUpDBConnectionProfile();
 
         if(mT1_players.size()==1 || mT2_players.size()==1) mSingles = true;
         else {
@@ -207,7 +211,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
             @Override
             public void onClick(View view) {
 
-                if (!mCommon.isAdminOrRoot()) {
+                if (!mCommon.isAdminPlus()) {
                     Toast.makeText(BaseEnterData.this, "You don't have permission to do this!" ,
                             Toast.LENGTH_SHORT).show();
                     view.setEnabled(false);
@@ -444,7 +448,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode,  resultCode,  data);
         //Log.d(TAG, "onActivityResult: " + requestCode + "," + resultCode);
-        mCommon.wakeUpDBConnection_profile();
+        mCommon.wakeUpDBConnectionProfile();
         if(requestCode==Constants.TRACKSCORES_ACTIVITY &&
                 (resultCode==RESULT_OK || resultCode==RESULT_CANCELED)){
             //for resultCode=RESULT_CANCELED (when app goes to background while tracking scores), data will be NULL
@@ -659,7 +663,7 @@ public class BaseEnterData extends AppCompatActivity implements AdapterView.OnIt
         if (!mCommon.isDBConnected()) {
             Toast.makeText(BaseEnterData.this,
                     "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
-            mCommon.wakeUpDBConnection_profile();
+            mCommon.wakeUpDBConnectionProfile();
             return false;
         }
 

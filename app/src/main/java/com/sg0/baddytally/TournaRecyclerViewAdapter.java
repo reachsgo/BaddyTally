@@ -227,7 +227,7 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
         holder.parent_layout.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
-                if(!mCommon.isRoot()) return false;
+                if(!mCommon.isSuperPlus()) return false;
                 Context wrapper = new ContextThemeWrapper(mContext, R.style.RegularPopup);
                 //PopupMenu popup = new PopupMenu(wrapper, view);
                 final PopupMenu popup = new PopupMenu(wrapper, view);

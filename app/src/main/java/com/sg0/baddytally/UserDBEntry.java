@@ -11,6 +11,7 @@ public class UserDBEntry {
     private String ts;
     private String ph;
     private int ver;  //versionCode
+    private int maxC; //Maximum num of clubs allowed
 
     //Firebase needs a no-argument constructor
     UserDBEntry() {
@@ -18,6 +19,7 @@ public class UserDBEntry {
         setTs("now");
         setPh("");
         ver = 0;
+        maxC = Constants.MAXNUM_CLUBS_PER_USER;
     }
 
     public String getClubs() {
@@ -63,6 +65,18 @@ public class UserDBEntry {
 
     public void setVer(int v) {
         this.ver = v;
+    }
+
+    public void setClubs(String clubs) {
+        this.clubs = clubs;
+    }
+
+    public int getMaxC() {
+        return maxC;
+    }
+
+    public void setMaxC(int maxC) {
+        this.maxC = maxC;
     }
 
     @Override

@@ -44,6 +44,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -288,8 +289,7 @@ class TournaTable implements View.OnClickListener {
         drawingInProgress = false;
         mMatchesMap = null;
 
-
-        Log.d(TAG, "Creating TournaTable..." + fixLabel);
+        //Log.d(TAG, "Creating TournaTable..." + fixLabel);
 
         mWorker = new HandlerThread("Worker");
         mWorker.start();
@@ -427,7 +427,7 @@ class TournaTable implements View.OnClickListener {
             //Log.d(TAG, "loopThruFixture: updating.. " + entry.getKey() + " " + entry.getValue().toString());
         }
         //Log.d(TAG, "loopThruFixture: " + mMaxRounds);
-        Log.d(TAG, "loopThruFixture: UPDATED=" + mFixture.toString());
+        //Log.d(TAG, "loopThruFixture: UPDATED=" + mFixture.toString());
     }
 
     void createDisplayData() {
@@ -628,8 +628,6 @@ class TournaTable implements View.OnClickListener {
             //Log.d(TAG, "insertANode: last else matchEntry=" + matchEntry.toString());
             setCell(matchEntry);
         }
-        return;
-
     }
 
     void updateCoordinates() {
@@ -748,7 +746,7 @@ class TournaTable implements View.OnClickListener {
 
     Boolean markVerticalLine(final Integer row_idx1, final Integer row_idx2, final Integer col_idx,
                              final TournaDispMatchEntry matchNode2) {
-        Integer centreLineRow = -1;
+        int centreLineRow = -1;
         for (int i = row_idx1; i <= row_idx2; i++) {
             ArrayList<TournaDispMatchEntry> rowData = mData.get(i);
             TournaDispMatchEntry mN = rowData.get(col_idx);
@@ -1182,7 +1180,7 @@ class TournaTable implements View.OnClickListener {
         showOptions(v, node);
     }
 
-    void resetMatch(final TournaDispMatchEntry node) {
+    private void resetMatch(final TournaDispMatchEntry node) {
         AlertDialog.Builder alertBuilder = new AlertDialog.Builder(mActivity);
         alertBuilder.setTitle("Are you sure?");
         String msg = "You are about delete the game-data (scores & winner) for this match.\n" +
@@ -1202,7 +1200,7 @@ class TournaTable implements View.OnClickListener {
                 mCommon.propogateTheWinner(mActivity, mFixtureLabel, node.getId(), "");
                 Toast.makeText(mActivity, "Match " + node.getId() + " of " + mCommon.mTournament + " is reset.",
                         Toast.LENGTH_LONG).show();
-                Log.w(TAG, "Match " + node.getId() + ", winner=" + node.getW() + " is reset!");
+                //Log.i(TAG, "Match " + node.getId() + ", winner=" + node.getW() + " is reset!");
                 mActivity.recreate();  //refreshing the screen
             }
         });
@@ -1214,7 +1212,7 @@ class TournaTable implements View.OnClickListener {
         alertBuilder.show();
     }
 
-    void showOptions(final View v, final TournaDispMatchEntry node) {
+    private void showOptions(final View v, final TournaDispMatchEntry node) {
         Context wrapper = new ContextThemeWrapper(mActivity, R.style.RegularPopup);
         final PopupMenu popup = new PopupMenu(wrapper, v);
         popup.getMenuInflater().inflate(R.menu.summary_popup_menu, popup.getMenu());
@@ -1224,8 +1222,8 @@ class TournaTable implements View.OnClickListener {
         popup.getMenu().clear();
         Menu pMenu = popup.getMenu();
         pMenu.add(MATCH_INFO);
-        if (mCommon.isAdminOrRoot()) pMenu.add(ENTER_SCORE);
-        if (mCommon.isRoot()) pMenu.add(RESET_MATCH);
+        if (mCommon.isAdminPlus()) pMenu.add(ENTER_SCORE);
+        if (mCommon.isSuperPlus()) pMenu.add(RESET_MATCH);
         pMenu.add(VIEW_SCORE);
 
         popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
@@ -1248,7 +1246,7 @@ class TournaTable implements View.OnClickListener {
                         TeamDBEntry team1DBEntry = getTeam(node.getT1(true));
                         TeamDBEntry team2DBEntry = getTeam(node.getT2(true));
                         if (null == team1DBEntry || null == team2DBEntry) {
-                            Log.e(TAG, "showOptions:onMenuItemClick: team1DBEntry null:" + node.toString());
+                            Log.i(TAG, "showOptions:onMenuItemClick: team1DBEntry null:" + node.toString());
                             Toast.makeText(mActivity, "It's a bye or Teams not known yet!",
                                     Toast.LENGTH_LONG).show();
                             return true;
@@ -1264,7 +1262,7 @@ class TournaTable implements View.OnClickListener {
                             return true;
                         }
 
-                        mCommon.wakeUpDBConnection_profile();
+                        mCommon.wakeUpDBConnectionProfile();
                         //Intent myIntent = new Intent(mActivity, LoginActivity.class);
                         Intent myIntent = new Intent(mActivity, TournaSEDEEnterData.class);
                         myIntent.putExtra(Constants.TOURNATYPE, mTournaType);
@@ -1285,7 +1283,7 @@ class TournaTable implements View.OnClickListener {
                         TeamDBEntry team1DBEntry = getTeam(node.getT1(true));
                         TeamDBEntry team2DBEntry = getTeam(node.getT2(true));
                         if (null == team1DBEntry || null == team2DBEntry) {
-                            Log.e(TAG, "showOptions:onMenuItemClick: team1DBEntry null:" + node.toString());
+                            //Log.i(TAG, "showOptions:onMenuItemClick: team1DBEntry null:" + node.toString());
                             Toast.makeText(mActivity, "It's a bye or Teams not known yet!",
                                     Toast.LENGTH_LONG).show();
                             return true;
@@ -1295,7 +1293,7 @@ class TournaTable implements View.OnClickListener {
                         ArrayList<String> team2Players = new ArrayList<>(team2DBEntry.getP());
 
                         if (node.isBye(true)) {
-                            Log.w(TAG, "showOptions:onMenuItemClick: BYE: " + node.toString());
+                            //Log.i(TAG, "showOptions:onMenuItemClick: BYE: " + node.toString());
                             Toast.makeText(mActivity, "Winner has got a bye!",
                                     Toast.LENGTH_LONG).show();
                             return true;
@@ -1340,7 +1338,7 @@ class TournaTable implements View.OnClickListener {
     }
 
     public void redrawEverything() {
-        Log.e(TAG, "  ----------- redrawEverything ------------ ");
+        Log.d(TAG, "  ----------- redrawEverything ------------ ");
         mActivity.findViewById(mTableResId).invalidate();
         mActivity.findViewById(mTableResId).refreshDrawableState();
         drawingInProgress = false;
@@ -1360,7 +1358,7 @@ class TournaTable implements View.OnClickListener {
         }
     }
 
-    public void onDestroy() {
+    void onDestroy() {
         mWorkerHandler.removeCallbacksAndMessages(null);
         mMainHandler.removeCallbacksAndMessages(null);
         mWorker.quit();
@@ -1371,7 +1369,7 @@ class TournaTable implements View.OnClickListener {
     }
 
     void fetchGames(final ArrayList<Integer> roundNum) {
-        Log.d(TAG, "fetchGames: " + mCommon.mTournament + "/" + mFixtureLabel);
+        //Log.d(TAG, "fetchGames: " + mCommon.mTournament + "/" + mFixtureLabel);
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
                 .child(Constants.TOURNA).child(mCommon.mTournament)
                 .child(Constants.MATCHES).child(mFixtureLabel);
@@ -1380,7 +1378,7 @@ class TournaTable implements View.OnClickListener {
         dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.d(TAG, "fetchGames:" + dataSnapshot.toString());
+                //Log.d(TAG, "fetchGames:" + dataSnapshot.toString());
                 GenericTypeIndicator<Map<String, List<GameJournalDBEntry>>> genericTypeIndicator =
                         new GenericTypeIndicator<Map<String, List<GameJournalDBEntry>>>() { };
                 mMatchesMap = dataSnapshot.getValue(genericTypeIndicator);
@@ -1389,7 +1387,7 @@ class TournaTable implements View.OnClickListener {
                             Toast.LENGTH_LONG).show();
                     return;
                 }
-                Log.d(TAG, "fetchGames: mMatchesMap.size=" + mMatchesMap.size());
+                //Log.d(TAG, "fetchGames: mMatchesMap.size=" + mMatchesMap.size());
                 createSubTournament(roundNum);
             }
 
@@ -1406,7 +1404,7 @@ class TournaTable implements View.OnClickListener {
         //Map does not allow duplicate keys. So, it has to be List<TeamDBEntry> as the value.
         int indx = 0;
         for(Integer roundNum: rounds) {
-            Log.d(TAG, FN + roundNum);
+            //Log.d(TAG, FN + roundNum);
             SparseArray<TournaDispMatchEntry> matchesInThisRound = new SparseArray<>();
             int largestMatchId = 0;
             for (Map.Entry<String, TournaDispMatchEntry> entry : mFixture.entrySet()) {
@@ -1420,7 +1418,7 @@ class TournaTable implements View.OnClickListener {
             }
 
             if (largestMatchId != matchesInThisRound.size()) {
-                Log.e(TAG, FN + " could not read all the matches: " + largestMatchId);
+                //Log.e(TAG, FN + " could not read all the matches: " + largestMatchId);
                 Toast.makeText(mActivity, "Could not read all the matches!",
                         Toast.LENGTH_LONG).show();
                 return;
@@ -1430,8 +1428,8 @@ class TournaTable implements View.OnClickListener {
                 TournaDispMatchEntry match = matchesInThisRound.get(i);
                 if (match == null) return;
                 if (!match.isThereAWinner(true)) {
-                    Log.e(TAG, FN + " All round-" + roundNum +
-                            " matches not done yet: " + match.toString());
+                    //Log.e(TAG, FN + " All round-" + roundNum +
+                    //        " matches not done yet: " + match.toString());
                     Toast.makeText(mActivity, "All round-" + roundNum + " matches are not done yet!",
                             Toast.LENGTH_LONG).show();
                     return;
@@ -1441,7 +1439,7 @@ class TournaTable implements View.OnClickListener {
                 List<String> players = losingTeam.getP();
                 if (players.size() == 1)
                     players.add("");  //if singles, just add another empty player
-                Log.d(TAG, FN + " players=" + players);
+                //Log.d(TAG, FN + " players=" + players);
 
                 List<GameJournalDBEntry> games = mMatchesMap.get(match.getId());
                 int score = 0;
@@ -1455,17 +1453,17 @@ class TournaTable implements View.OnClickListener {
                 //Expectation is that rounds list is in order: [1,2] or [2,3] or [1,2,3]
                 List<TeamDBEntry> tmpList = sortedTeams.get(score);
                 if(tmpList==null) {
-                    Log.d(TAG, FN + " [" + score + "] No teams yet, creating new");
+                    //Log.d(TAG, FN + " [" + score + "] No teams yet, creating new");
                     tmpList = new ArrayList<>();
                 }
                 tmpList.add(losingTeam);
-                Log.d(TAG, FN + " [" + score + "] Added one more:" + tmpList.size());
+                //Log.d(TAG, FN + " [" + score + "] Added one more:" + tmpList.size());
                 sortedTeams.put(score, tmpList);
             }
             indx++;
         }
 
-        Log.d(TAG, FN + " sorted losers=" + sortedTeams);
+        //Log.d(TAG, FN + " sorted losers=" + sortedTeams);
         List<TeamDBEntry> tmpList = new ArrayList<>();
         for(List<TeamDBEntry> values: sortedTeams.values()) {
             tmpList.addAll(values);
@@ -1516,7 +1514,7 @@ class TournaTable implements View.OnClickListener {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                 if (dataSnapshot.hasChild(newTourna)) {
-                                    Log.w(TAG, FN + " tournament already exists: " + newTourna);
+                                    //Log.w(TAG, FN + " tournament already exists: " + newTourna);
                                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(mActivity);
                                     alertBuilder.setTitle("Overwrite?");
                                     alertBuilder.setMessage(
@@ -1568,11 +1566,11 @@ class TournaTable implements View.OnClickListener {
         Toast.makeText(mActivity, newTourna +
                         " created successfully. Go ahead and 'create fixture' for the new sub tournament.",
                         Toast.LENGTH_LONG).show();
-        Log.i(TAG, "createSubTournamentInDB: created " + losingTeamDBEntries.size() + " teams");
+        //Log.i(TAG, "createSubTournamentInDB: created " + losingTeamDBEntries.size() + " teams");
         mMatchesMap = null;
 
         //wake up connection and read profile again from DB to check for password changes
-        mCommon.wakeUpDBConnection_profile();
+        mCommon.wakeUpDBConnectionProfile();
         Intent myIntent = new Intent(mActivity, TournaSettings.class);
         myIntent.putExtra("animation", "fixture");
         myIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -1689,7 +1687,7 @@ class TournaTable implements View.OnClickListener {
                         scoreSB.append(game.toScoreString(p1));
                     }
                 }
-                Log.d(TAG, "onStart: p1=" + p1 + " games=" + games);
+                //Log.d(TAG, "onStart: p1=" + p1 + " games=" + games);
             }
 
             sb.setLength(0);
@@ -1744,6 +1742,8 @@ class TournaTable implements View.OnClickListener {
 
 public class TournaTableLayout extends AppCompatActivity {
     private static final String TAG = "TournaTableLayout";
+    private static final Float MIN_ZOOM = 0.8f; //0.8, 1.0, 1.2, 1.4
+    private static final Float MAX_ZOOM = 1.4f; //0.8, 1.0, 1.2, 1.4
     private TournaTable mUpperTable;
     private TournaTable mLowerTable;
     private SharedData mCommon;
@@ -1758,12 +1758,8 @@ public class TournaTableLayout extends AppCompatActivity {
     private Handler mWorkerHandler;
     private Handler mMainHandler;
     private GestureDetector mDetector;
+    private ScaleGestureDetector mScaleDetector;
     private boolean mTipsShown;
-
-    public void killActivity() {
-        Log.d(TAG, "killActivity: ");
-        finish();
-    }
 
     public void restartActivity() {
         recreate();
@@ -1805,8 +1801,8 @@ public class TournaTableLayout extends AppCompatActivity {
         mTournaType = "";
         mDeFinalsDBEntry = null;
         readDBTournaType();
-        zoomFactor = 1.0f;
-        mCommon.wakeUpDBConnection_profile();
+        zoomFactor = 1.0f;  //0.8, 1.0, 1.2, 1.4
+        mCommon.wakeUpDBConnectionProfile();
         mWorker = new HandlerThread("mainWorker");
         mWorker.start();
         Looper looper = mWorker.getLooper();
@@ -1856,7 +1852,7 @@ public class TournaTableLayout extends AppCompatActivity {
                 ArrayList<String> team1Players = new ArrayList<>(team1DBEntry.getP());
                 ArrayList<String> team2Players = new ArrayList<>(team2DBEntry.getP());
 
-                mCommon.wakeUpDBConnection_profile();
+                mCommon.wakeUpDBConnectionProfile();
                 ArrayList<String> teams = new ArrayList<>(mDeFinalsDBEntry.getT());
                 Intent myIntent = new Intent(TournaTableLayout.this, TournaSEDEEnterData.class);
                 myIntent.putExtra(Constants.TOURNATYPE, mTournaType);
@@ -1887,7 +1883,7 @@ public class TournaTableLayout extends AppCompatActivity {
                 ArrayList<String> team1Players = new ArrayList<>(team1DBEntry.getP());
                 ArrayList<String> team2Players = new ArrayList<>(team2DBEntry.getP());
 
-                mCommon.wakeUpDBConnection_profile();
+                mCommon.wakeUpDBConnectionProfile();
                 ArrayList<String> teams = new ArrayList<>(mDeFinalsDBEntry.getT());
                 Intent myIntent = new Intent(TournaTableLayout.this, TournaSEDEEnterData.class);
                 myIntent.putExtra(Constants.TOURNATYPE, mTournaType);
@@ -1984,7 +1980,7 @@ public class TournaTableLayout extends AppCompatActivity {
                     "(2) Swipe left or right to move between upper and lower bracket full screens.\n\n" +
                     "(3) Press + or - buttons on top right of the screen to zoom in or out.\n\n" +
                     "(4) Press on the match to see options to view match information or score.\n");
-            alertBuilder.setPositiveButton("Hmn...", new DialogInterface.OnClickListener() {
+            alertBuilder.setPositiveButton("Remind me again", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
                     //mCommon.mCount++;
@@ -2018,11 +2014,7 @@ public class TournaTableLayout extends AppCompatActivity {
                 exportPDF();
                 break;
             case R.id.action_logout:
-                mCommon.clearData(TournaTableLayout.this, true);
-                mCommon.killActivity(this, RESULT_OK);
-                Intent intent = new Intent(TournaTableLayout.this, MainSigninActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
+                mCommon.logOut(TournaTableLayout.this, true);
                 break;
             case R.id.action_help:
                 AlertDialog.Builder hBuilder = new AlertDialog.Builder(TournaTableLayout.this);
@@ -2041,15 +2033,17 @@ public class TournaTableLayout extends AppCompatActivity {
                 break;
             case R.id.zoom_in:
                 zoomFactor += 0.2f;
+                if(zoomFactor>MAX_ZOOM) zoomFactor = MAX_ZOOM;
                 zoom(true, zoomFactor, zoomFactor, new PointF(0, 0));
                 break;
             case R.id.zoom_out:
                 zoomFactor -= 0.2f;
+                if(zoomFactor<MIN_ZOOM) zoomFactor = MIN_ZOOM;
                 zoom(false, zoomFactor, zoomFactor, new PointF(0, 0));
                 break;
             case R.id.action_new_tourna:
-                Log.w(TAG, "Create sub tournament for " + mCommon.mTournament);
-                if (!mCommon.isRoot()) {
+                //Log.w(TAG, "Create sub tournament for " + mCommon.mTournament);
+                if (!mCommon.isSuperPlus()) {
                     Toast.makeText(TournaTableLayout.this, "You don't have permission to do this!" ,
                             Toast.LENGTH_SHORT).show();
                     break;
@@ -2090,7 +2084,7 @@ public class TournaTableLayout extends AppCompatActivity {
                         } catch (NumberFormatException e) {
                             dataError = true;
                         }
-                        Log.d(TAG, "onClick: rounds=" + rounds + " str=" + roundStr);
+                        //Log.d(TAG, "onClick: rounds=" + rounds + " str=" + roundStr);
                         if(dataError || rounds.size() == 0) {
                             Toast.makeText(TournaTableLayout.this, "Bad entry!" ,
                                     Toast.LENGTH_SHORT).show();
@@ -2178,8 +2172,8 @@ public class TournaTableLayout extends AppCompatActivity {
                                 "Tournament completed, " + mDeFinalsDBEntry.getW() + " is the winner!",
                                 Snackbar.LENGTH_LONG)
                                 .setAction("Action", null).show();
-                        Log.d(TAG, "readDBDEFinals:" +
-                                "Tournament completed, " + mDeFinalsDBEntry.getW() + " is the winner!");
+                        //Log.d(TAG, "readDBDEFinals:" +
+                        //        "Tournament completed, " + mDeFinalsDBEntry.getW() + " is the winner!");
                     }
 
                 }
@@ -2204,7 +2198,7 @@ public class TournaTableLayout extends AppCompatActivity {
 
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.d(TAG, "readDBTeamInfo: onDataChange:" + dataSnapshot.getKey() + dataSnapshot.toString());
+                //Log.d(TAG, "readDBTeamInfo: onDataChange:" + dataSnapshot.getKey() + dataSnapshot.toString());
                 GenericTypeIndicator<List<TeamDBEntry>> genericTypeIndicator =
                         new GenericTypeIndicator<List<TeamDBEntry>>() {
                         };
@@ -2327,7 +2321,7 @@ public class TournaTableLayout extends AppCompatActivity {
         //Coming back from BaseEnterData, refresh the view, if there was
         //a DB update performed.
         if (mCommon.isDBUpdated()) {
-            Log.d(TAG, "onResume: DB updated");
+            //Log.d(TAG, "onResume: DB updated");
             readAndDisplay();
             mCommon.setDBUpdated(false);
         }
@@ -2734,6 +2728,8 @@ public class TournaTableLayout extends AppCompatActivity {
         }
     }
 
+
+
     // ------------------- Gesture implementation ----------------------
     // Swipe to go from UB to LB and vice versa
 
@@ -2748,19 +2744,22 @@ public class TournaTableLayout extends AppCompatActivity {
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         //Log.d(TAG, "dispatchTouchEvent: ");
+        mScaleDetector.onTouchEvent(ev);
         mDetector.onTouchEvent(ev);
         return super.dispatchTouchEvent(ev);
     }
 
-
     private void setUpGesture() {
         mDetector = new GestureDetector(TournaTableLayout.this, new STGestureListener());
+        mScaleDetector =
+                new ScaleGestureDetector(TournaTableLayout.this, new STPinchListener());
 
         findViewById(R.id.tourna_table_upper).setOnTouchListener(new View.OnTouchListener() {
             @SuppressLint("ClickableViewAccessibility")
             @Override
             public boolean onTouch(final View v, final MotionEvent event) {
                 //Log.d(TAG, "onTouch: ");
+                mScaleDetector.onTouchEvent(event);
                 return mDetector.onTouchEvent(event);
             }
         });
@@ -2770,11 +2769,47 @@ public class TournaTableLayout extends AppCompatActivity {
             @Override
             public boolean onTouch(final View v, final MotionEvent event) {
                 //Log.d(TAG, "onTouch: ");
+                mScaleDetector.onTouchEvent(event);
                 return mDetector.onTouchEvent(event);
             }
         });
     }
 
+    //mScaleDetector
+    private class STPinchListener
+            extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+        @Override
+        public boolean onScale(ScaleGestureDetector detector) {
+
+            float scaleFactor = detector.getScaleFactor();
+
+            if(scaleFactor > 1.1) {
+                zoomFactor += 0.2f;
+                if(zoomFactor>MAX_ZOOM) {
+                    zoomFactor = MAX_ZOOM;
+                    return true;
+                    //Whether or not the detector should consider this event as handled.
+                    //If an event was not handled, the detector will continue to accumulate
+                    //until an event is handled. This can be useful if an application, for example,
+                    //only wants to update scaling factors if the change is greater than 0.01.
+                }
+                //Log.d(TAG, "zooming in.." + zoomFactor);
+                zoom(true, zoomFactor, zoomFactor, new PointF(0, 0));
+            } else if(scaleFactor < 0.9) {
+                zoomFactor -= 0.2f;
+                if(zoomFactor < MIN_ZOOM) {
+                    zoomFactor = MIN_ZOOM;
+                    return true;
+                }
+                //Log.d(TAG, "zooming out.." + zoomFactor);
+                zoom(false, zoomFactor, zoomFactor, new PointF(0, 0));
+            }
+
+            return true;
+        }
+    }
+
+    //mDetector
     class STGestureListener implements GestureDetector.OnGestureListener {
 
         //Keeping the threshold pretty high so that simple scroll also works on the

@@ -33,7 +33,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -57,7 +56,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -94,13 +92,14 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
     private ArrayList<GameJournalDBEntry> mGoldPlayedGames = new ArrayList<>();
     private ArrayList<GameJournalDBEntry> mSilverPlayedGames = new ArrayList<>();
     private GestureDetector mDetector;
+    private AlertDialog mDemoAlert;
 
     private void setTitle(String club) {
         if (!TextUtils.isEmpty(club)) {
             //Log.d(TAG, "setTitle: " + club + ":" + SharedData.getInstance().toString());
             String tempString = Constants.APPSHORT + "  " + club;
             if (SharedData.getInstance().isAdmin()) tempString += " +";
-            else if (SharedData.getInstance().isRoot()) tempString += " *";
+            else if (SharedData.getInstance().isSuperPlus()) tempString += " *";
             else tempString += " ";
             SpannableString spanString = new SpannableString(tempString);
             spanString.setSpan(new StyleSpan(Typeface.BOLD), 0,
@@ -146,6 +145,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
         mRefreshing = true;
         mGoldAdapter = null;
         mSilverAdapter = null;
+        mDemoAlert = null;
         mCommon = SharedData.getInstance();
         mCommon.mNumOfGroups = Constants.NUM_OF_GROUPS;
         //SGO: Test single user group
@@ -289,8 +289,20 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 //Looks like these are due to failing firebase calls.
                 // Note1: **Happens only when internet connection is not present.**
                 // Note2: Issue is not seen on Sony phone (5.1.1 android)
-                mCommon.delayedKillActivity(uiHandler, ClubLeagueActivity.this,
-                                Constants.SHOWTOAST_TIMEOUT);
+                //mCommon.delayedKillActivity(uiHandler, ClubLeagueActivity.this,
+                //                Constants.SHOWTOAST_TIMEOUT);
+
+                /*
+                We should have the Club League up and running, even if there are no players or innings.
+                So that, user can go to settings and add players and start an innings.
+                uiHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        onBackPressed();  //go back to MainSelection2 screen
+                    }
+                }, Constants.SHOWTOAST_TIMEOUT);
+                 */
+
 
             }
         };
@@ -358,13 +370,8 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                     .show();
         } else {
             mClub = club;
-            //mCommon.mClub = mClub;
-            //mCommon.mUser = prefs.getString(Constants.DATA_USER, "");
-            //mCommon.mRole = prefs.getString(Constants.DATA_ROLE, "");
-            //mCommon.mTournaMode = prefs.getBoolean(Constants.DATA_TMODE, false);
-            Log.d(TAG, mInitialAttempt + ":onResume: " + SharedData.getInstance().toString());
+            //Log.d(TAG, mInitialAttempt + ":onResume: " + SharedData.getInstance().toString());
             setTitle(mClub);
-            
             fetchInnings();
             
             if (mOptionsMenu != null) {
@@ -374,9 +381,11 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 mOptionsMenu.findItem(R.id.action_summary).setVisible(true);
                 MenuItem mEnterDataItem = mOptionsMenu.findItem(R.id.action_enter);
                 mEnterDataItem.setTitle("Enter Score");  //coming back from initial sign in, change settings menu
-                if (!mCommon.isAdminOrRoot()) mEnterDataItem.setEnabled(false);
+                if (!mCommon.isAdminPlus()) mEnterDataItem.setEnabled(false);
             }
         }
+
+        showDemoDialogIfNeeded();
     }
 
 
@@ -469,7 +478,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
             // action with ID action_settings was selected
             case R.id.action_settings:
                 //If DB connection is sleeping, wake it up!
-                mCommon.wakeUpDBConnection_profile();
+                mCommon.wakeUpDBConnectionProfile();
                 Intent myIntent = new Intent(ClubLeagueActivity.this, ClubLeagueSettings.class);
                 myIntent.putExtra(Constants.ACTIVITY, Constants.ACTIVITY_SETTINGS);
                 ClubLeagueActivity.this.startActivity(myIntent);
@@ -480,7 +489,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 if (mInitialAttempt) {
                     myIntent = new Intent(ClubLeagueActivity.this, LoginActivity.class);
                     ClubLeagueActivity.this.startActivity(myIntent);
-                } else if (!mCommon.mProfile.getMemcode().isEmpty()) {
+                } else if (!mCommon.mProfile.getMc().isEmpty()) {
                     myIntent = new Intent(ClubLeagueActivity.this, LoginActivity.class);
                     myIntent.putExtra(Constants.ACTIVITY, Constants.ACTIVITY_CLUB_ENTERDATA);
                     //Set the Player data in shared data structure. Player data is filled in a
@@ -519,7 +528,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 }
 
                 //Log.w(TAG, "Create internal tournament for " + mClub);
-                if (!mCommon.isRoot()) {
+                if (!mCommon.isSuperPlus()) {
                     Toast.makeText(ClubLeagueActivity.this,
                             "You don't have permission to do this!" ,
                             Toast.LENGTH_SHORT).show();
@@ -1289,6 +1298,52 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                         Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if(mDemoAlert!=null) {
+            mDemoAlert.dismiss();
+            mDemoAlert=null;
+        }
+    }
+
+    private void showDemoDialogIfNeeded() {
+        if(!SharedData.getInstance().mDemoMode || mDemoAlert!=null) {
+            return;
+        }
+
+        if(!SharedData.getInstance().validFlag(Constants.DATA_FLAG_DEMO_MODE2)) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(ClubLeagueActivity.this);
+            builder.setTitle("Demo mode");
+            builder.setMessage(
+                    "You are exploring 'demo mode' of the Club League screen.\n\n" +
+                            " ++ Click on Gold or Silver header to maximise the group screen.\n\n" +
+                            " ++ Click on Innings or Season tab header to sort on that column.\n\n" +
+                            " ++ Click on a player to see statistics.\n\n" +
+                            " ++ On right top, you can see 'refresh' and settings (3 dots) icons. " +
+                            "From settings you can navigate to the below screens:\n" +
+                            "      > Enter Score: to enter scores for games.\n" +
+                            "      > Round Summary: to see summary of already played games.\n" +
+                            "      > Settings: Privileged users can perform club admin operations.\n" +
+                            "      > Create Tournament: Create an internal tournament from League players.\n\n" +
+                            " ++ On left top, you can see left arrow icon to go back to previous screen.\n\n"
+            );
+            builder.setPositiveButton("Remind me again", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                }
+            });
+            builder.setNegativeButton("Got it", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    SharedData.getInstance().addFlag(ClubLeagueActivity.this, Constants.DATA_FLAG_DEMO_MODE2);
+                }
+            });
+            mDemoAlert = builder.create();
+            mDemoAlert.show();
+        }
     }
 
     //send SMS to iPhone users (who don't have access to Android app)

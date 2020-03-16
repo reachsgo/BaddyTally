@@ -13,13 +13,21 @@ class Constants {
     static final String PROFILE = "profile";
     static final String NEWS = "news";
     static final String JOURNAL = "journal";
+    static final String ROUND = "round";
+    static final String NEWCLUBS = "newC";
+    static final String CLUBDETAILS = "detC";
+    static final String ACTIVECLUBS = "actC";
+    static final String STCLUB = "C1ub";
     static final String SINGLES = "singles";
     static final String DOUBLES = "doubles";
     static final String GOLD = "gold";
     static final String SILVER = "silver";
     static final String ADMIN = "admin";
     static final String MEMBER = "member";
+    static final String SUPERUSER = "super";
     static final String ROOT = "root";
+    static final String ROOTCLUB = "sgo";
+    static final String DEMO_CLUB = "demo";
     static final String NEWROUND = "start_new_round";
     static final String USERDATA = "Userdata";
     static final String USERDATA_ID = "UserdataID";
@@ -37,6 +45,15 @@ class Constants {
     static final String DATA_FLAGS = "stFlags";
     static final String DATA_FLAG_NAV_TELIM = "N_TEL";  //Navigation help for Tourna Elimination
     static final String DATA_FLAG_NAV_TRACK = "N_STR";  //Navigation help for Score Tracker
+    static final String DATA_FLAG_DEMO_MODE1 = "N_DEMO1";  //demo mode alert
+    static final String DATA_FLAG_DEMO_MODE2 = "N_DEMO2";  //demo mode alert
+    static final String DATA_FLAG_DEMO_MODE3 = "N_DEMO3";  //demo mode alert
+    static final String DATA_FLAG_DEMO_MODE4 = "N_DEMO4";  //demo mode alert
+    static final String DATA_FLAG_DEMO_MODE5 = "N_DEMO5";  //demo mode alert
+    static final String DATA_FLAG_DEMO_MODE6 = "N_DEMO6";  //demo mode alert
+    static final String DELETE = "delete";
+    static final String CREATE = "create";
+    static final String ACCESS = "access";
     static final int DATA_LOCKED_COUNT_MAX = 9;
     static final int REFRESH_TIMEOUT = 15000; //15s
     static final Integer NUM_OF_GROUPS = 2;
@@ -56,6 +73,9 @@ class Constants {
     static final int MAX_NUM_TEAMS = 64;
     static final int DB_READ_TIMEOUT = 5000;  //5s
     static final int SHOWTOAST_TIMEOUT = 3000;  //5s
+    static final int MAXNUM_CLUBS_PER_USER = 1;
+    static final int MAX_NUM_PLAYERS_DEFAULT = 16;
+    static final int TOO_MANY_ENTRIES = 500;
 
     static final String ACTIVITY = "Activity";
     static final String ACTIVITY_SETTINGS = "ClubLeagueSettings";
@@ -127,4 +147,14 @@ class Constants {
     static final String DATA_G3 = "ST_G3";
     static final String DATA_LEFTTEAM = "ST_LEFT";
     static final String DATA_SRVCTEAM = "ST_SRVC";
+
+    static final String SUBSC_FREE = "Free";
+    static final String SUBSC_PAID = "Paid";
+
+    static final String  CHANNEL_NEWCLUB = "ST_NEWCLUB";
+    static final String  CHANNEL_NEWCLUB_NAME = "New Club";  //name visible to user
+    static final String  INTENT_DATASTR1 = "INTENT_DATA_str_1";
+    static final String  INTENT_DATASTR2 = "INTENT_DATA_str_2";
+    static final String  INTENT_DATASTR3 = "INTENT_DATA_str_3";
+
 }

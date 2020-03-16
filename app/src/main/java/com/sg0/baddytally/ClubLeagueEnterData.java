@@ -85,6 +85,8 @@ public class ClubLeagueEnterData extends BaseEnterData {
         String title = (String)((TextView)findViewById(R.id.enterdata_header)).getText();
         title += ": " + mGroup;
         ((TextView)findViewById(R.id.enterdata_header)).setText(title);
+
+        onCreateBase();
     }
 
     @Override
@@ -153,7 +155,7 @@ public class ClubLeagueEnterData extends BaseEnterData {
                 if(!SharedData.getInstance().isDBConnected()) {
                     Toast.makeText(ClubLeagueEnterData.this,
                             "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
-                    mCommon.wakeUpDBConnection_profile();
+                    mCommon.wakeUpDBConnectionProfile();
                     return;
                 }
                 fetchGames();

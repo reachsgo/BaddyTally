@@ -141,7 +141,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
         delButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(mCommon.isRoot()) {
+                if(mCommon.isSuperPlus()) {
                     //double check if he really wants to delete
                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaLeagueEnterData.this);
                     alertBuilder.setTitle("Are you sure?");
@@ -564,7 +564,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
 
                 if(mMatchAlreadyCompleted) {
                     //Only completed matches to be deleted
-                    if(mCommon.isRoot()) {
+                    if(mCommon.isSuperPlus()) {
                         findViewById(R.id.delete).setVisibility(View.VISIBLE);
                     }
                 } else {

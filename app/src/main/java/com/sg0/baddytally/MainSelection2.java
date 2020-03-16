@@ -27,19 +27,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.database.FirebaseDatabase;
-
 import androidx.appcompat.app.AppCompatActivity;
-
 
 public class MainSelection2 extends AppCompatActivity {
 
     private static final String TAG = "MainSelection2";
+    private AlertDialog mDemoAlert;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main_selection2);
+        mDemoAlert = null;
         //Log.d(TAG, "onCreate: ");
 
         Button mTournaBtn = findViewById(R.id.tournaments);
@@ -74,23 +74,28 @@ public class MainSelection2 extends AppCompatActivity {
             }
         });
 
+        // add back arrow to toolbar
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
 
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        SharedData.getInstance().auditClub(MainSelection2.this); //check if club still exists in DB
         setTitle(SharedData.getInstance().mClub);
-        Log.d(TAG, "onResume: ");
+        //Log.d(TAG, "onResume: ");
         displayNews(false);
+        showDemoDialogIfNeeded();
     }
-
-
 
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.basic_menu_main, menu);
         menu.findItem(R.id.action_refresh).setVisible(false);
-        if (SharedData.getInstance().isRoot()) {
+        if (SharedData.getInstance().isSuperPlus()) {
             MenuItem offlineMode = menu.findItem(R.id.action_settings);
             if(SharedData.getInstance().mOfflineMode)
                 offlineMode.setTitle("Disable Offline mode");
@@ -112,13 +117,17 @@ public class MainSelection2 extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            // action with ID action_refresh was selected
+            case android.R.id.home:
+                if(SharedData.getInstance().mDemoMode) {
+                    SharedData.getInstance().logOut(MainSelection2.this, false);
+                } else onBackPressed();
+                return true;
             case R.id.action_refresh:
                 //nothing to do
                 break;
             // action with ID action_settings was selected
             case R.id.action_settings:
-                SharedData.getInstance().wakeUpDBConnection_profile();
+                SharedData.getInstance().wakeUpDBConnectionProfile();
                 if(SharedData.getInstance().mOfflineMode) {
                     //in offline mode, disable it
                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainSelection2.this);
@@ -170,14 +179,10 @@ public class MainSelection2 extends AppCompatActivity {
                         }
                     });
                     alertBuilder.show();
-
                 }
-
                 break;
             case R.id.action_logout:
-                SharedData.getInstance().clearData(MainSelection2.this, true);
-                Intent intent = new Intent(MainSelection2.this, MainSigninActivity.class);
-                startActivity(intent);
+                SharedData.getInstance().logOut(MainSelection2.this, false);
                 break;
             case R.id.action_help:
                 AlertDialog.Builder hBuilder = new AlertDialog.Builder(MainSelection2.this);
@@ -198,8 +203,8 @@ public class MainSelection2 extends AppCompatActivity {
                 
                 //Allow root user to broadcast info. This will be shown as popup window for every user.
                 final SharedData mCommon = SharedData.getInstance();
-                mCommon.wakeUpDBConnection_profile(); //read news again; might not be in time for this view, but atleast for future.
-                if (mCommon.isRoot()) {
+                mCommon.wakeUpDBConnectionProfile(); //read news again; might not be in time for this view, but atleast for future.
+                if (mCommon.isSuperPlus()) {
                     AlertDialog.Builder alert = new AlertDialog.Builder(MainSelection2.this);
                     final EditText edittext = new EditText(MainSelection2.this);
                     edittext.setTextColor(Color.WHITE);
@@ -222,7 +227,7 @@ public class MainSelection2 extends AppCompatActivity {
                                         .child(mCommon.mClub).child(Constants.PROFILE).child(Constants.NEWS)
                                         .setValue(new_msg);
                                 Log.i(TAG, "News set: [" + new_msg + "]");
-                                mCommon.wakeUpDBConnection_profile(); //read news again
+                                mCommon.wakeUpDBConnectionProfile(); //read news again
                             }
                         }
                     });
@@ -252,12 +257,6 @@ public class MainSelection2 extends AppCompatActivity {
         }
         return true;
     }
-
-    private void killActivity() {
-        setResult(RESULT_OK);
-        finish();
-    }
-
 
     @Override
     public void onBackPressed() {
@@ -307,7 +306,7 @@ public class MainSelection2 extends AppCompatActivity {
             String tempString = Constants.APPNAME + "  " + title;
             if(title.equals(SharedData.getInstance().mClub)) {
                 if (SharedData.getInstance().isAdmin()) tempString += " +";
-                else if (SharedData.getInstance().isRoot()) tempString += " *";
+                else if (SharedData.getInstance().isSuperPlus()) tempString += " *";
                 else tempString += " ";
             }
             SpannableString spanString = new SpannableString(tempString);
@@ -321,6 +320,47 @@ public class MainSelection2 extends AppCompatActivity {
             getSupportActionBar().setTitle(""); //workaround for title getting truncated.
             getSupportActionBar().setTitle(spanString);
             //getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if(mDemoAlert!=null) {
+            mDemoAlert.dismiss();
+            mDemoAlert=null;
+        }
+    }
+
+    private void showDemoDialogIfNeeded() {
+        if(!SharedData.getInstance().mDemoMode) {
+            findViewById(R.id.scroll_tv).setVisibility(View.GONE);
+            return;
+        }
+        if(!SharedData.getInstance().validFlag(Constants.DATA_FLAG_DEMO_MODE1)) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainSelection2.this);
+            builder.setTitle("Demo mode");
+            builder.setMessage(
+                    "You are exploring 'demo mode' of the app.\n\n" +
+                            " ++ Demo club has ongoing club league and tournaments.\n\n" +
+                            " ++ You can explore the club league and tournaments pages to get a feel of the app.\n\n" +
+                            " ++ You can browse points table, fixture, game scores, player statistics etc\n\n" +
+                            " ++ You have only 'member' role access. So no updates can be made.\n\n" +
+                            " ++ To exit the demo mode, go to settings and click 'Logout'.\n\n"
+            );
+            builder.setPositiveButton("Remind me again", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                }
+            });
+            builder.setNegativeButton("Got it", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    SharedData.getInstance().addFlag(MainSelection2.this, Constants.DATA_FLAG_DEMO_MODE1);
+                }
+            });
+            mDemoAlert = builder.create();
+            mDemoAlert.show();
         }
     }
 }

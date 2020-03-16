@@ -705,7 +705,7 @@ public class TrackScores extends AppCompatActivity {
                             " ++ Swipe Left/Right to move a team to the other side of the court.\n\n" +
                             " ++ Swipe Up/Down to adjust the player positions to serve or receive serve.\n\n" +
                             "Once ready, click on the Game button below to start the game.");
-            alertBuilder.setPositiveButton("Hmn...", new DialogInterface.OnClickListener() {
+            alertBuilder.setPositiveButton("Remind me again", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
                     getGoing();

@@ -2,6 +2,7 @@ package com.sg0.baddytally;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
@@ -51,6 +52,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     private ArrayAdapter mTournaLA;
     private ArrayList<String> mTournaList;
     private Handler mMainHandler;
+    private AlertDialog mDemoAlert;
 
 
     @Override
@@ -62,6 +64,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
         mTUtil = new TournaUtil(TournaLanding.this, TournaLanding.this);
         mCommon = SharedData.getInstance();
         mMainHandler = new Handler();
+        mDemoAlert = null;
 
         //mCustomDialog = new TournaEditTextDialog(TournaLanding.this, TournaLanding.this);
         mTournaList = new ArrayList<>();
@@ -104,9 +107,9 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
             @Override
             public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
 
-                if (!mCommon.isRoot()) return false;
+                if (!mCommon.isSuperPlus()) return false;
                 if (i >= mTournaList.size()) return false;
-                mCommon.wakeUpDBConnection_profile();
+                mCommon.wakeUpDBConnectionProfile();
 
 
                 //Log.d(TAG, "mTournaLV onItemClick: " + mTournaList.get(i));
@@ -195,23 +198,25 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "onResume: [" + mCommon.mClub + "/" + mCommon.mTournament + "]");
+        //Log.d(TAG, "onResume: [" + mCommon.mClub + "/" + mCommon.mTournament + "]");
         if (mCommon.isDBUpdated()) {
             refresh();
             mCommon.setDBUpdated(false);
         }
+        mCommon.auditClub(TournaLanding.this); //check if club still exists in DB
+        showDemoDialogIfNeeded();
     }
 
     @Override
     protected void onDestroy() {
         mMainHandler.removeCallbacksAndMessages(null);
-        Log.d(TAG, "onDestroy: ");
+        //Log.d(TAG, "onDestroy: ");
         super.onDestroy();
     }
 
     @Override
     public void onBackPressed() {
-        Log.d(TAG, "onBackPressed: ");
+        //Log.d(TAG, "onBackPressed: ");
         if (null!=mTournaList && mTournaList.size() > 0) {
             //If there were tournaments being shown, then kill the application.
             //mCommon.killApplication(TournaLanding.this);
@@ -297,16 +302,12 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
             // action with ID action_settings was selected
             case R.id.action_settings:
                 //wake up connection and read profile again from DB to check for password changes
-                mCommon.wakeUpDBConnection_profile();
+                mCommon.wakeUpDBConnectionProfile();
                 Intent myIntent = new Intent(TournaLanding.this, TournaSettings.class);
                 TournaLanding.this.startActivity(myIntent);
                 break;
             case R.id.action_logout:
-                mCommon.clearData(TournaLanding.this, true);
-                mCommon.killActivity(this, RESULT_OK);
-                Intent intent = new Intent(TournaLanding.this, MainSigninActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
+                mCommon.logOut(TournaLanding.this, true);
                 break;
             case R.id.action_help:
                 AlertDialog.Builder hBuilder = new AlertDialog.Builder(TournaLanding.this);
@@ -333,7 +334,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
         if (!mCommon.isPermitted(TournaLanding.this)) {
             return;
         }
-        Log.v(TAG, "deleteTourna:" + tourna);
+        //Log.v(TAG, "deleteTourna:" + tourna);
         SharedData.getInstance().wakeUpDBConnection();
         String msg = "Existing tournament data will be lost permanently. Are you sure? ";
         SpannableStringBuilder sb = mCommon.getColorString(
@@ -348,7 +349,7 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
                     "DB connection is stale, refresh and retry...", Toast.LENGTH_SHORT).show();
             return;
         }
-        Log.i(TAG, "updateDB_deleteTourna:" + tourna);
+        //Log.i(TAG, "updateDB_deleteTourna:" + tourna);
         DatabaseReference teamsDBRef = FirebaseDatabase.getInstance().getReference()
                 .child(mCommon.mClub).child(Constants.TOURNA);
         teamsDBRef.child(tourna).setValue(null);
@@ -360,6 +361,47 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
                         Constants.TOURNA, tourna));
 
         refresh();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if(mDemoAlert!=null) {
+            mDemoAlert.dismiss();
+            mDemoAlert=null;
+        }
+    }
+
+    private void showDemoDialogIfNeeded() {
+        if(!SharedData.getInstance().mDemoMode) {
+            return;
+        }
+        if(!SharedData.getInstance().validFlag(Constants.DATA_FLAG_DEMO_MODE3)) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(TournaLanding.this);
+            builder.setTitle("Demo mode");
+            builder.setMessage(
+                    "You are exploring 'demo mode' of the Club League screen.\n\n" +
+                            " ++ Click on any tournament to navigate to the tournament fixture screen.\n\n" +
+                            " ++ Super-user can 'long click' on any tournament and delete the tournament.\n\n" +
+                            " ++ On right top, you can see 'refresh' and settings (3 dots) icons. " +
+                            "From settings you can navigate to the below screens:\n" +
+                            "      > Settings: Privileged users can perform tournament admin operations.\n\n" +
+                            " ++ On left top, you can see left arrow icon to go back to previous screen.\n\n"
+            );
+            builder.setPositiveButton("Remind me again", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                }
+            });
+            builder.setNegativeButton("Got it", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    SharedData.getInstance().addFlag(TournaLanding.this, Constants.DATA_FLAG_DEMO_MODE3);
+                }
+            });
+            mDemoAlert = builder.create();
+            mDemoAlert.show();
+        }
     }
 
 }

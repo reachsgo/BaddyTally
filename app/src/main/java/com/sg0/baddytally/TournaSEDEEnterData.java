@@ -21,7 +21,6 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import androidx.annotation.NonNull;
 
@@ -186,7 +185,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
                     else if (mTeams.get(1).equals(winner)) mSpinner_W.setSelection(2);
                     CheckBox checkbox = findViewById(R.id.completed);
                     checkbox.setChecked(true);
-                    if (!mCommon.isRoot() && !mViewOnly) {
+                    if (!mCommon.isSuperPlus() && !mViewOnly) {
                         makeItViewOnly();
                         Toast.makeText(TournaSEDEEnterData.this, "Match already completed!",
                                 Toast.LENGTH_LONG).show();
@@ -301,7 +300,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
         if (winner_team_idx > 0) {
             //Log.i(TAG, "isMatchDone: YEP:");
 
-            if (mCommon.isRoot()) {
+            if (mCommon.isSuperPlus()) {
                 //change the winner only during initial phase.
                 //root is free to override the winner before clicking enter.
                 if (setWinner) mSpinner_W.setSelection(winner_team_idx);

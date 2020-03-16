@@ -8,11 +8,15 @@ import android.os.Bundle;
 
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -27,14 +31,6 @@ public class MainSigninActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main_selection1);
-        //Log.d(TAG, "onCreate: ");
-        //Toolbar myToolbar = findViewById(R.id.my_toolbar);
-        //setSupportActionBar(myToolbar);
-
-        //SharedData.getInstance().initData(MainSigninActivity.this);
-
-
-
 
         Button signin = findViewById(R.id.clubsignin);
         signin.setOnClickListener(new View.OnClickListener() {
@@ -57,6 +53,42 @@ public class MainSigninActivity extends AppCompatActivity {
 
         //forcefully setup the DB listener, even if this is a re-login.
         SharedData.getInstance().setUpDBConnectionListener();
+
+        Button floatingBtn = findViewById(R.id.ms_button);
+        //Log.d(TAG, "onCreate: check for root:" + SharedData.getInstance().toString());
+        if(SharedData.getInstance().isRoot()) {
+
+            //final Intent intent = getIntent();
+            //final String data1 = intent.getStringExtra(Constants.INTENT_DATASTR1);
+            //if(data1!=null && data1.equals(Constants.CHANNEL_NEWCLUB)) { }
+
+            Toast.makeText(MainSigninActivity.this,
+                    "........", Toast.LENGTH_SHORT).show();
+            floatingBtn.setText("Root Options");
+            floatingBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Intent myIntent = new Intent(MainSigninActivity.this, RootOptions.class);
+                    MainSigninActivity.this.startActivity(myIntent);
+                }
+            });
+
+            return; //for root.
+        }
+
+        floatingBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(MainSigninActivity.this,
+                        "Demo mode", Toast.LENGTH_LONG).show();
+                SharedData.getInstance().mClub = Constants.DEMO_CLUB;
+                SharedData.getInstance().mRole = Constants.MEMBER;
+                SharedData.getInstance().mDemoMode = true;
+                Intent myIntent = new Intent(MainSigninActivity.this, MainSelection2.class);
+                MainSigninActivity.this.startActivity(myIntent);
+            }
+        });
+
     }
 
     private void killActivity() {
@@ -73,6 +105,9 @@ public class MainSigninActivity extends AppCompatActivity {
         //MainSigninActivity.this.startActivity(myIntent);
         //dont keep this activity in stack to reduce heap usage (mainly due to background image)
         //history=false set in manifest
+
+        //Refresh root credentials, isPermitted() will find if there are discrepancies
+        SharedData.getInstance().wakeupdbconnectionProfileRoot();
 
         if(SharedData.getInstance().isDBServerConnected() && SharedData.getInstance().mOfflineMode) {
             //in offline mode, remind the user
@@ -109,11 +144,15 @@ public class MainSigninActivity extends AppCompatActivity {
     }
 
     void moveOn() {
-        if (!SharedData.getInstance().mClub.isEmpty()) {
+        if (!SharedData.getInstance().mClub.isEmpty() &&
+                !SharedData.getInstance().isRoot()) {
             Intent myIntent = new Intent(MainSigninActivity.this, MainSelection2.class);
             //dont keep this activity in stack to reduce heap usage (mainly due to background image)
             //history=false set in manifest
             MainSigninActivity.this.startActivity(myIntent);
+        } else {
+            Animation shake = AnimationUtils.loadAnimation(MainSigninActivity.this, R.anim.shake_long);
+            findViewById(R.id.ms_button).startAnimation(shake);
         }
     }
 
@@ -125,9 +164,10 @@ public class MainSigninActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.basic_menu_main, menu);
         menu.findItem(R.id.action_refresh).setVisible(false);
-        MenuItem settings = menu.findItem(R.id.action_settings);
-        settings.setTitle("New Club");
+        menu.findItem(R.id.action_settings).setTitle("New Club");
         menu.findItem(R.id.action_logout).setTitle("Privacy Policy");
+        menu.findItem(R.id.action_misc).setTitle("Contact us"); //contact us
+        menu.findItem(R.id.action_misc).setVisible(true);
         return true;
     }
 
@@ -139,21 +179,10 @@ public class MainSigninActivity extends AppCompatActivity {
             case R.id.action_refresh:
                 //nothing to do
                 break;
-            // action with ID action_settings was selected
+            // New Club
             case R.id.action_settings:
-                AlertDialog.Builder newclubDialog = new AlertDialog.Builder(MainSigninActivity.this);
-                newclubDialog.setMessage(
-                        "You are about to send a request to ScoreTally team to create a new club login for you.\n" +
-                        "ScoreTally team will get back to you after setting up your account.\n\n" +
-                        "You will now be directed to your favourite email client. Please fill in the template details before sending the email.")
-                        .setTitle(SharedData.getInstance().getTitleStr("Create new club:",
-                                MainSigninActivity.this))
-                        .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                sendEmail();
-                            }
-                        }).show();
+                Intent myIntent = new Intent(MainSigninActivity.this, NewClub.class);
+                MainSigninActivity.this.startActivity(myIntent);
                 break;
             case R.id.action_logout:
                 builder.setMessage(Html.fromHtml(
@@ -180,6 +209,21 @@ public class MainSigninActivity extends AppCompatActivity {
             case R.id.action_about:
                 SharedData.showAboutAlert(MainSigninActivity.this);
                 break;
+            case R.id.action_misc:
+                SharedData.getInstance().getUserID(MainSigninActivity.this);
+                AlertDialog.Builder newclubDialog = new AlertDialog.Builder(MainSigninActivity.this);
+                newclubDialog.setMessage(
+                        "You are about to send an email to ScoreTally team.\n\n" +
+                        "You will now be directed to your favourite email client.")
+                        .setTitle(SharedData.getInstance().getTitleStr("Contact us",
+                                MainSigninActivity.this))
+                        .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                sendEmail();
+                            }
+                        }).show();
+                break;
             default:
                 break;
         }
@@ -189,18 +233,16 @@ public class MainSigninActivity extends AppCompatActivity {
     private void sendEmail() {
         Intent email = new Intent(Intent.ACTION_SEND);
         email.putExtra(Intent.EXTRA_EMAIL, new String[]{"scoretallyteam@gmail.com"});
-        email.putExtra(Intent.EXTRA_SUBJECT, "ScoreTally: Request to create new club");
-        email.putExtra(Intent.EXTRA_TEXT, "Please fill in the below template and send the email. " +
-                        "ScoreTally team will get back to you after setting up your account.\n" +
+        email.putExtra(Intent.EXTRA_SUBJECT, "ScoreTally: support for " + SharedData.getInstance().mUser);
+        email.putExtra(Intent.EXTRA_TEXT,
+                "Please fill in the below template and send the email. " +
+                        "ScoreTally team will get back to you.\n" +
                 "\nMy Contact Info:\n" +
                 "        <name>\n        <phone>\n        <email>\n" +
-                "\n\nNew Club Info:\n" +
-                "        short name : <short name>\n" +
-                "        description : <long name>\n" +
-                "        max players : <N>\n" +
-                "\n\nNotes: <any queries/comments/suggestions>\n" +
-                "\n\nCheers,\n" +
-                "<yours truly>\n\n"
+                "\n\nClub Info:\n" +
+                "        name : <short name>\n" +
+                "\n\nQueries/Comments/Suggestions:\n" +
+                "        <your comments>\n"
         );
         email.setType("message/rfc822");
         startActivity(Intent.createChooser(email, "Choose an Email client :"));

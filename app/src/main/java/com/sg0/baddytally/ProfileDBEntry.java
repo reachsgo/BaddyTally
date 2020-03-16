@@ -2,12 +2,12 @@ package com.sg0.baddytally;
 
 public class ProfileDBEntry {
     final static int MAX_STR_LEN = 24;
-    private String admincode;
-    private String description;
-    private String memcode;
-    private String rootcode;
+    private String des;
+    private String rc;
+    private String ac;
+    private String mc;
+    private int ver;
     private Boolean wake;
-    private int minver;
     private String news;
 
     ProfileDBEntry() {
@@ -15,45 +15,45 @@ public class ProfileDBEntry {
     }
 
     void clear() {
-        this.admincode = "";
-        this.description = "";
-        this.memcode = "";
-        this.rootcode = "";
+        this.ac = "";
+        this.des = "";
+        this.mc = "";
+        this.rc = "";
         this.wake = false;
-        this.minver = 0;
+        this.ver = 0;
         this.news = "";
     }
 
-    public String getAdmincode() {
-        return admincode;
+    public String getAc() {
+        return ac;
     }
 
-    public void setAdmincode(String admincode) {
-        this.admincode = getValidStr(admincode);
+    public void setAc(String ac) {
+        this.ac = getValidStr(ac);
     }
 
-    public String getDescription() {
-        return description;
+    public String getDes() {
+        return des;
     }
 
-    public void setDescription(String description) {
-        this.description = getValidStr(description);
+    public void setDes(String des) {
+        this.des = getValidStr(des);
     }
 
-    public String getMemcode() {
-        return memcode;
+    public String getMc() {
+        return mc;
     }
 
-    public void setMemcode(String memcode) {
-        this.memcode = getValidStr(memcode);
+    public void setMc(String mc) {
+        this.mc = getValidStr(mc);
     }
 
-    public String getRootcode() {
-        return rootcode;
+    public String getRc() {
+        return rc;
     }
 
-    public void setRootcode(String rootcode) {
-        this.rootcode = getValidStr(rootcode);
+    public void setRc(String rc) {
+        this.rc = getValidStr(rc);
     }
 
     public Boolean getWake() {
@@ -64,12 +64,12 @@ public class ProfileDBEntry {
         this.wake = wake;
     }
 
-    public int getMinver() {
-        return minver;
+    public int getVer() {
+        return ver;
     }
 
-    public void setMinver(int minver) {
-        this.minver = minver;
+    public void setVer(int ver) {
+        this.ver = ver;
     }
 
     public String getNews() {
@@ -81,12 +81,12 @@ public class ProfileDBEntry {
     }
 
     public void copyProfile(final ProfileDBEntry other) {
-        other.admincode = this.admincode;
-        other.description = this.description;
-        other.memcode = this.memcode;
-        other.rootcode = this.rootcode;
+        other.ac = this.ac;
+        other.des = this.des;
+        other.mc = this.mc;
+        other.rc = this.rc;
         other.wake = this.wake;
-        other.minver = this.minver;
+        other.ver = this.ver;
         other.news = this.news;
     }
 
@@ -101,29 +101,29 @@ public class ProfileDBEntry {
     }
 
     boolean isValid() {
-        return !rootcode.isEmpty();
+        return !rc.isEmpty();
     }
 
     @Override
     public String toString() {
         return "ProfileDBEntry{" +
-                "admincode=" + admincode.length() +
-                ", description=" + description +
-                ", memcode=" + memcode.length() +
-                ", rootcode=" + rootcode.length()+
+                "ac=" + ac.length() +
+                ", des=" + des +
+                ", mc=" + mc.length() +
+                ", rc=" + rc.length()+
                 ", wake=" + wake +
-                ", minver=" + minver +
+                ", ver=" + ver +
                 '}';
     }
 
     public String toSecretString() {
         return "ProfileDBEntry{" +
-                "admincode='" + admincode + '\'' +
-                ", description='" + description + '\'' +
-                ", memcode='" + memcode + '\'' +
-                ", rootcode='" + rootcode + '\'' +
+                "ac='" + ac + '\'' +
+                ", des='" + des + '\'' +
+                ", mc='" + mc + '\'' +
+                ", rc='" + rc + '\'' +
                 ", wake=" + wake +
-                ", minver='" + minver + '\'' +
+                ", ver='" + ver + '\'' +
                 '}';
     }
 }

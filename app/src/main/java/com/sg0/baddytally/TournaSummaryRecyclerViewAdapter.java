@@ -213,7 +213,7 @@ public class TournaSummaryRecyclerViewAdapter extends RecyclerView.Adapter<Tourn
         holder.parentLayout.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
-                if (SharedData.getInstance().isRoot() || SharedData.getInstance().isAdmin())
+                if (SharedData.getInstance().isSuperPlus() || SharedData.getInstance().isAdmin())
                     showOptions(view, holder);
                 return true;
             }

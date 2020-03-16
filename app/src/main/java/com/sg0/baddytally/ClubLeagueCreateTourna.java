@@ -100,7 +100,7 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
         teamSelection(false);
 
         mCommon = SharedData.getInstance();
-        if(!mCommon.isRoot()) finish();
+        if(!mCommon.isSuperPlus()) finish();
 
         mGroups = new HashSet<>();
         mPlayers = new ArrayList<>();
@@ -592,7 +592,7 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
         killActivity();
 
         //wake up connection and read profile again from DB to check for password changes
-        mCommon.wakeUpDBConnection_profile();
+        mCommon.wakeUpDBConnectionProfile();
         Intent myIntent = new Intent(ClubLeagueCreateTourna.this, TournaSettings.class);
         myIntent.putExtra("animation", "fixture");
         /*If FLAG_ACTIVITY_CLEAR_TOP set, and the activity being launched is already running in
@@ -614,8 +614,8 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
             for (String p: teamDBEntry.getP()) {
                 tI.players.add(p);
                 //User name in Club League is only 8 chars. activity_clubleague_settings.xml > android:maxLength="8"
-                tI.p_nicks.add( getPlayerId(p, 8) );
-                //There is no check for length of nick name anywhere else: see readExcel()
+                tI.p_nicks.add( SharedData.getUniqIDStr(p, 8, null) );
+                //There is no check for length of nick name anywhere else: see readTournaExcel()
             }
             teamList.add(tI);
             //Log.d(TAG, "createLeagueTeamData: Adding:" + tI.toString());
@@ -687,7 +687,7 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
         killActivity();
 
         //wake up connection and read profile again from DB to check for password changes
-        mCommon.wakeUpDBConnection_profile();
+        mCommon.wakeUpDBConnectionProfile();
         Intent myIntent = new Intent(ClubLeagueCreateTourna.this, TournaSettings.class);
         myIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         myIntent.putExtra("animation", "fixture");
@@ -735,10 +735,10 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
         }
         return true;
     }
-
+/*
     String getPlayerId(final String p, int playerIdLen) {
         if(p==null) return "null";
-        String p1 = p.replaceAll("\\s+", "");
+        String p1 = p.replaceAll("\\s+", "");  //remove all spaces
         if(playerIdLen<=0) {
             //To be decided here, mainly for SE/DE formats.
             playerIdLen = TeamDBEntry.MAX_ID_LEN;
@@ -754,18 +754,23 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
             return p1;
     }
 
+ */
+
     //get unique team name
     String getTeamName(final List<String> players) {
         if(players==null || players.size()==0) return "null";
 
         String teamName;
         if(players.size()==1) {
-            teamName = getPlayerId(players.get(0), 0); //singles: only 1 player
+            teamName = SharedData.getUniqIDStr(players.get(0),
+                    TeamDBEntry.MAX_ID_LEN, null); //singles: only 1 player
         } else {
             //doubles: form a team name from both the player names
             teamName = String.format("%s-%s",
-                    getPlayerId(players.get(0), 0),
-                    getPlayerId(players.get(1), 0));
+                    SharedData.getUniqIDStr(players.get(0),
+                            TeamDBEntry.MAX_ID_LEN / 2 - 1, null),
+                    SharedData.getUniqIDStr(players.get(1),
+                            TeamDBEntry.MAX_ID_LEN / 2 - 1, null));
         }
         teamName = teamName.toLowerCase();
         //Log.d(TAG, teamName +":getTeamName: mTeams=[" + mTeams.toString() + "]");
@@ -773,7 +778,7 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
         if(mTeams.contains(teamName)) {
             for (int i = 1; i < 100; i++) {
                 //TeamDBEntry.MAX_STR_LEN = 12
-                String fmtStr = "%" + (TeamDBEntry.MAX_ID_LEN-1) + "s%d"; //format = "<player1>-<player2>#"
+                String fmtStr = "%" + (TeamDBEntry.MAX_ID_LEN-1) + "s%d"; //format = "<player1>-<player2>##"
                 String newTName = String.format(Locale.getDefault(),fmtStr, teamName, i)
                         .toLowerCase().trim();
                 if(!mTeams.contains(newTName)) {

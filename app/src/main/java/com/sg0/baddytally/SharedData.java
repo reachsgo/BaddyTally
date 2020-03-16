@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -13,6 +15,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -38,7 +41,6 @@ import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.database.annotations.NotNull;
 
 /*
 import org.apache.poi.ss.usermodel.CellType;
@@ -72,6 +74,8 @@ import java.util.UUID;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.res.ResourcesCompat;
 import jxl.Cell;
 import jxl.Sheet;
@@ -80,6 +84,8 @@ import jxl.read.biff.BiffException;
 
 import static android.content.Context.ACTIVITY_SERVICE;
 import static android.content.Context.MODE_PRIVATE;
+import static java.lang.Math.log;
+import static java.lang.Math.random;
 
 public class SharedData {
     static final int READ_REQUEST_CODE = 42;
@@ -92,6 +98,10 @@ public class SharedData {
     private static final String USER_MOVED = "USR_M";
     private static final String USER_DELETED = "USR_D";
     private static final String INNINGS_CREATED = "NEW_I";
+    private static final String RESET_DATA = "RST_D";
+    private static final String RESET_DATA_ALL = "RST_DE";
+    private static final String USERID_DELM = "#_U_";
+    private static final String DATE_DELM = "#_D_";
     //with volatile variable guarantees happens-before relationship,
     // all the write will happen on volatile sSoleInstance before any read of sSoleInstance variable
     private static volatile SharedData sSoleInstance;
@@ -103,6 +113,7 @@ public class SharedData {
     String mInnings;
     String mRoundName;
     ProfileDBEntry mProfile;
+    ProfileDBEntry mRootProfile;
     String mReadNews;
     ArrayList<PlayerData> mGoldPlayers;
     ArrayList<PlayerData> mSilverPlayers;
@@ -123,6 +134,7 @@ public class SharedData {
     //mTime: general purpose Long variable; used today for:
     //1. No of continuous refreshs done in ClubLeague/TournaLeague/TournaTableLayout
     Long mTime;
+    boolean mDemoMode;
 
     private boolean mDBUpdated;
     private boolean mUserNotifyEnabled;
@@ -131,6 +143,9 @@ public class SharedData {
     private Long mDBLockAcqAttemptTime;
     private String mStoreHistory;
     private ValueEventListener mDBConnectListener;
+    private ValueEventListener mNewClubListener;
+
+
 
 
     private SharedData() {
@@ -139,7 +154,7 @@ public class SharedData {
             throw new RuntimeException("Use getInstance() method to get the single instance of this class.");
         }
 
-        mDBConnectListener = null;
+        //Log.d(TAG, "SharedData: ctor");
         clear();
     }  //private constructor.
 
@@ -162,6 +177,12 @@ public class SharedData {
             else retStr = str.substring(0, len);
         }
         return retStr;
+    }
+
+    static boolean isValidString(final String s) {
+        if(s.isEmpty()) return true;
+        //alphanumeric or <hyphen> or <underscore> or <space>
+        return s.matches("[A-Za-z0-9\\-_ ]+");
     }
 
     public static void writeStringAsFile(final Activity activity,
@@ -238,9 +259,16 @@ public class SharedData {
         return getInstance();
     }
 
-    public void clearMain() {
+    private void clearMain() {
         //clear all the critical members.
-        Log.w(TAG, "SharedData: clearMain");
+        //Log.i(TAG, "SharedData: clearMain");
+
+        //Firebase DB members: they should go together.
+        removeDBConnectionListener();
+        mDBConnectListener = null;
+        mNewClubListener = null;
+        mDBConnected = false;
+
         mClub = "";
         mTournament = "";
         mRole = "unknown";
@@ -249,14 +277,17 @@ public class SharedData {
         mDBLock = false;
         mDBLockAcqAttemptTime = 0L;
         if(mProfile!=null) mProfile.clear();
+        if(mRootProfile!=null) mRootProfile.clear();
+        mDemoMode = false;
     }
 
     public void clear() {
-        Log.w(TAG, "SharedData: CLEAR");
+        Log.i(TAG, "SharedData: CLEAR");
         clearMain();
         mNumOfGroups = Constants.NUM_OF_GROUPS;
         mUser = "";
         mProfile = new ProfileDBEntry();
+        mRootProfile = new ProfileDBEntry();
         mReadNews = "";
         mGoldPlayers = null;
         mSilverPlayers = null;
@@ -264,7 +295,6 @@ public class SharedData {
         mWinPercNum = Constants.SHUFFLE_WINPERC_NUM_GAMES;
         mDBUpdated = false;
         mUserNotifyEnabled = true;
-        mDBConnected = false;
         mStoreHistory = "";
         mGoldPresentPlayerNames = new HashSet<>();  //initialize for the first time.
         mSilverPresentPlayerNames = new HashSet<>();  //initialize for the first time.
@@ -274,23 +304,71 @@ public class SharedData {
         mTeamInfoMap = null;
         mTeamInfoMap = new HashMap<>();
         mFlags = "";
-        mTable_view_resid = R.layout.tourna_match_info_tiny;
+        mTable_view_resid = R.layout.tourna_match_info_small;
         mCount = 0;
         mStrList = null;
         mOfflineMode = false;
         mTime = 0L;
     }
 
+    private void clearLocalStoredData(final Context context) {
+        //Log.d(TAG, "clearLocalStoredData: ");
+        SharedPreferences prefs = context.getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.clear();
+        editor.commit();  //using commit instead of apply for immediate write
+    }
+    private void clearData(final Context context, final boolean showToast) {
+        clearLocalStoredData(context);
+        clear();
+        if(showToast)
+            Toast.makeText(context, "Cache cleared!", Toast.LENGTH_SHORT).show();
+    }
+
+    void logOut(final Activity activity, final boolean kill_self) {
+        Log.i(TAG, "log out: " + activity.getLocalClassName() + ":" + kill_self);
+        RootService.stopRepeatingIntent(activity); //stop the service that was started from LoginActivity
+        deleteListenerForNewClub(activity.getApplicationContext());
+        clearData(activity, true);
+        if(kill_self) killActivity(activity, Activity.RESULT_OK);
+        Intent intent = new Intent(activity, MainSigninActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        activity.startActivity(intent);
+    }
+
     public boolean isRoot() {
         return Constants.ROOT.equals(mRole);
+    }
+
+    public boolean isSuperUser() {
+        return Constants.SUPERUSER.equals(mRole);
+    }
+
+    public boolean isSuperPlus() {
+        return isSuperUser() || isRoot();
     }
 
     boolean isAdmin() {
         return Constants.ADMIN.equals(mRole);
     }
 
-    boolean isAdminOrRoot() {
-        return (Constants.ADMIN.equals(mRole) || Constants.ROOT.equals(mRole));
+    boolean isAdminPlus() {
+        return isAdmin() || isSuperPlus();
+    }
+
+    boolean isMemberRole() {
+        return Constants.MEMBER.equals(mRole);
+    }
+
+    boolean isRootLogin(final String club, final String secpd) {
+        if(mRootProfile.isValid()) {
+            if(club.equals(mRootProfile.getDes()) &&
+                    secpd.equals(mRootProfile.getRc())) {
+                mRole = Constants.ROOT;
+                return true;
+            }
+        }
+        return false;
     }
 
     boolean isDBUpdated() {
@@ -343,20 +421,6 @@ public class SharedData {
         editor.apply();
     }
 
-    void clearLocalStoredData(final Context context) {
-        Log.d(TAG, "clearLocalStoredData: ");
-        SharedPreferences prefs = context.getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.clear();
-        editor.commit();  //using commit instead of apply for immediate write
-    }
-    void clearData(final Context context, final boolean showToast) {
-        clearLocalStoredData(context);
-        clear();
-        if(showToast)
-            Toast.makeText(context, "Cache cleared!", Toast.LENGTH_SHORT).show();
-    }
-
     void saveUserID(final Context context, final String id) {
         //Log.d(TAG, "saveUserID: " + mUser);
         SharedPreferences prefs = context.getSharedPreferences(Constants.USERDATA_ID, MODE_PRIVATE);
@@ -391,7 +455,7 @@ public class SharedData {
             String id = Settings.Secure.getString(context.getContentResolver(),
                     Settings.Secure.ANDROID_ID);
             if (!id.isEmpty()) {
-                Log.w(TAG, "getUserID: Overwriting id:" + mUser + " -> " + id);
+                Log.i(TAG, "getUserID: Overwriting id:" + mUser + " -> " + id);
                 mUser = id;
                 saveUserID(context, mUser);
             }
@@ -407,6 +471,11 @@ public class SharedData {
         return mFlags.contains(flag);
     }
 
+    String compactUser(final String usr) {
+        if(usr.length()>5) return usr.substring(0,4) + "..";
+        else return usr;
+    }
+
     private void addHistory(final String story) {
         if (story.isEmpty()) return;
         Date c = Calendar.getInstance().getTime();
@@ -418,8 +487,20 @@ public class SharedData {
                     .child(SharedData.getInstance().mClub)
                     .child(Constants.INTERNALS).child(Constants.HISTORY);
             DatabaseReference newHistory = inningsDBRef.push();
-            newHistory.setValue(dateStr + "#" + mUser + "#" + story);
+            newHistory.setValue(dateStr + DATE_DELM + story + USERID_DELM + mUser);
         } else mStoreHistory += story + ",";
+        //Log.w(TAG, "History added: [" + dateStr + ":" + mUser + ":" + story + "]");
+    }
+
+
+    void addHistory(final DatabaseReference dbRef, final String story) {
+        if (story.isEmpty()) return;
+        Date c = Calendar.getInstance().getTime();
+        SimpleDateFormat df = new SimpleDateFormat(Constants.ROUND_DATEFORMAT, Locale.CANADA);
+        String dateStr = df.format(c);
+        DatabaseReference newHistory = dbRef.child(Constants.INTERNALS).child(Constants.HISTORY).push();
+        //newHistory.setValue(dateStr + "#" + mUser + "#" + story);
+        newHistory.setValue(dateStr + DATE_DELM + story + USERID_DELM + mUser);
         //Log.w(TAG, "History added: [" + dateStr + ":" + mUser + ":" + story + "]");
     }
 
@@ -430,6 +511,13 @@ public class SharedData {
         } else if (storyLine.contains(SHUFFLE_START))
             return "";  //ignore
 
+        if(storyLine.contains(USERID_DELM)) {
+            String usrId = storyLine.substring(storyLine.indexOf(USERID_DELM) + USERID_DELM.length());
+            //remove user id from end
+            storyLine = storyLine.substring(0, storyLine.indexOf(USERID_DELM));
+            //add user id after date
+            storyLine = storyLine.replace(DATE_DELM, " " + compactUser(usrId) + " ");
+        }
         String resultStr = storyLine.replace("#", "  ");
         String tmpStr = resultStr.replace("=", " : ");
 
@@ -444,21 +532,14 @@ public class SharedData {
             resultStr = tmpStr.replace(SHUFFLE_FAIL, "Shuffle Failed");
         else if (tmpStr.contains(INNINGS_CREATED))
             resultStr = tmpStr.replace(INNINGS_CREATED, "New Innings");
+        else if (tmpStr.contains(RESET_DATA_ALL))
+            resultStr = tmpStr.replace(RESET_DATA_ALL, "Reset Everything");
+        else if (tmpStr.contains(RESET_DATA))
+            resultStr = tmpStr.replace(RESET_DATA, "Reset Data");
 
         return resultStr;
     }
 
-    void addHistory(final DatabaseReference dbRef, final String story) {
-        if (story.isEmpty()) return;
-        Date c = Calendar.getInstance().getTime();
-        SimpleDateFormat df = new SimpleDateFormat(Constants.ROUND_DATEFORMAT, Locale.CANADA);
-        String dateStr = df.format(c);
-
-        DatabaseReference newHistory = dbRef.child(Constants.INTERNALS).child(Constants.HISTORY).push();
-        newHistory.setValue(dateStr + "#" + mUser + "#" + story);
-
-        //Log.w(TAG, "History added: [" + dateStr + ":" + mUser + ":" + story + "]");
-    }
 
     void addShuffleStart2History(final String newInningsName) {
         addHistory(SHUFFLE_START + "=" + newInningsName);
@@ -484,12 +565,16 @@ public class SharedData {
         addHistory(USER_DELETED + "=" + userName);
     }
 
+    void addReset2History(final boolean everything) {
+        if(everything) addHistory(RESET_DATA_ALL);
+        else addHistory(RESET_DATA);
+    }
+
     void addInningsCreation2History(final String innings) {
         addHistory(INNINGS_CREATED + "=" + innings);
     }
 
     void disableUserNotify(Context context) {
-
         mUserNotifyEnabled = false;
         mStoreHistory = "";
     }
@@ -501,6 +586,37 @@ public class SharedData {
 
     boolean isUserNotifyEnabled() {
         return mUserNotifyEnabled;
+    }
+
+    //data is retrieved in the order of creation as the history key is autogenerated
+    //which is chronological.
+    void deleteOldHistory() {
+        if(mClub.isEmpty()) return;
+        final int MAX_HISTORY_COUNT = 250;
+        FirebaseDatabase.getInstance().getReference()
+                .child(mClub).child(Constants.INTERNALS).child(Constants.HISTORY)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                long numChildren = dataSnapshot.getChildrenCount();
+                if(numChildren>MAX_HISTORY_COUNT) {
+                    Log.i(TAG, " Old history to be deleted, num=" + numChildren +
+                            ", max=" + MAX_HISTORY_COUNT);
+                    int count = 0;
+                    for (DataSnapshot child : dataSnapshot.getChildren()) {
+                        //Log.d(TAG, count + ":" + child.getKey() + ":to be deleted: " + child.getValue());
+                        child.getRef().removeValue();
+                        count++;
+                        if(count>MAX_HISTORY_COUNT) break;
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {}
+        });
+
+
     }
 
     void showToast(final Context c, final CharSequence s, final int d) {
@@ -703,21 +819,27 @@ public class SharedData {
         return mDBConnected;
     }
 
-    void removeDBConnectionListener() {
-        DatabaseReference connectedRef = FirebaseDatabase.getInstance()
-                .getReference(".info/connected");
+    private void removeDBConnectionListener() {
+        //Log.d(TAG, "removeDBConnectionListener: ");
         if (null != mDBConnectListener) {
-            connectedRef.removeEventListener(mDBConnectListener);
+            FirebaseDatabase.getInstance().getReference(".info/connected")
+                    .removeEventListener(mDBConnectListener);
             mDBConnectListener = null;
             Log.d(TAG, "removeDBConnectionListener: removeEventListener");
         }
-        Log.d(TAG, "removeDBConnectionListener: ");
     }
+
+    //The listener for .info / connected stops listening if there is
+    //no active action or listener for the database. For root user, there will be an active
+    //listener for the new club. For non-root users, there will be no active listener that runs
+    //forever.
     void setUpDBConnectionListener() {
+        if (null != mDBConnectListener) return;
+
         Log.d(TAG, "--------- setUpDBConnectionListener -----------");
         DatabaseReference connectedRef = FirebaseDatabase.getInstance()
                 .getReference(".info/connected");
-        if (null != mDBConnectListener) connectedRef.removeEventListener(mDBConnectListener);
+        //if (null != mDBConnectListener) connectedRef.removeEventListener(mDBConnectListener);
         /*
         /.info/connected is a boolean value which is not synchronized between Realtime Database clients because the value is dependent
          on the state of the client. In other words, if one client reads /.info/connected as false, this is no guarantee that a separate
@@ -731,18 +853,18 @@ public class SharedData {
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 Boolean connected = snapshot.getValue(Boolean.class);
                 if(null==connected || !connected) {
-                    Log.d(TAG, "isDBConnected: not connected");
+                    Log.d(TAG, "setUpDBConnectionListener: not connected: " + mClub);
                     mDBConnected = false;
                 } else {
-                    Log.d(TAG, "isDBConnected: connected");
+                    Log.d(TAG, "setUpDBConnectionListener: connected: " + mClub);
                     mDBConnected = true;
-                    wakeUpDBConnection_profile();
+                    wakeupdbconnectionProfileRoot(); //init: read root profile
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Log.w(TAG, "isDBConnected: Listener was cancelled");
+                Log.w(TAG, "setUpDBConnectionListener: Listener was cancelled");
                 mDBConnected = false;
             }
         });
@@ -750,7 +872,7 @@ public class SharedData {
 
     void wakeUpDBConnection() {
         // Do a mock transaction to wake up the database connection.
-        // Note that "awake" child is never created in the DB.
+
         /*
         Logs from testing:
         09-17 21:13:38.351 27677-27677/com.sg0.baddytally W/SharedData: isDBConnected: connected
@@ -840,59 +962,40 @@ public class SharedData {
         });
     }
 
-    public void wakeUpDBConnection_profile() {
+    public void wakeupdbconnectionProfileRoot() {
+        wakeUpDBConnection_profile_inner("");
+    }
+
+    public void wakeUpDBConnectionProfile() {
+        wakeUpDBConnection_profile_inner(mClub);
+    }
+
+    private void wakeUpDBConnection_profile_inner(final String club) {
 
         if (null == mDBConnectListener) setUpDBConnectionListener();
 
         // Do a mock transaction to wake up the database connection.
-        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
-                .child(mClub).child(Constants.PROFILE);
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                .child(Constants.PROFILE);
+        if(!club.isEmpty()) //root profile
+            dbRef = FirebaseDatabase.getInstance().getReference()
+                    .child(club).child(Constants.PROFILE);
 
         dbRef.runTransaction(new Transaction.Handler() {
             @NonNull
             @Override
             public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
 
-                //Log.v(TAG, "wakeUpDBConnection_profile: onDataChange");
+                //Log.v(TAG, "wakeUpDBConnectionProfile: doTransaction: " + club);
                 ProfileDBEntry userData = mutableData.getValue(ProfileDBEntry.class);
                 if (userData == null) return Transaction.success(mutableData);
                 else {
-                    userData.copyProfile(mProfile);
-                    //Log.d(TAG, "wakeUpDBConnection_profile: onDataChange:" + mProfile.toString());
+                    if(club.isEmpty()) userData.copyProfile(mRootProfile);
+                    else userData.copyProfile(mProfile);
+                    //Log.d(TAG, club + ":wakeUpDBConnectionProfile: doTransaction: "
+                    //        + mProfile.toSecretString() + " root:" + mRootProfile.toSecretString());
                     return Transaction.success(mutableData);
                 }
-
-                /*
-                for (MutableData child : mutableData.getChildren()) {
-                    if(null==child) continue;
-
-                    switch (child.getKey()) {
-                        case "admincode":
-                            mAdminCode = child.getValue(String.class);
-                            break;
-                        case "memcode":
-                            mMemCode = child.getValue(String.class);
-                            break;
-                        case "rootcode":
-                            mRootCode = child.getValue(String.class);
-                            break;
-                        case "numgroups":
-                            mNumOfGroups = child.getValue(Integer.class);
-                            break;
-                        case "wake":
-                            //just write something into DB to keep the DB connection alive
-                            Boolean wake = child.getValue(Boolean.class);
-                            child.setValue(!wake);
-                            Log.w(TAG, "doTransaction: wake=" + !wake );
-                            break;
-                        case Constants.NEWS:
-                            mNews = child.getValue(String.class);
-                            break;
-                    } //switch case
-                }
-                //Log.w(TAG, "wakeUpDBConnection_profile: onDataChange:" + mAdminCode + "/" + mRootCode);
-                return Transaction.success(mutableData);
-                 */
             }
 
             @Override
@@ -902,26 +1005,109 @@ public class SharedData {
         });
     }
 
-    Boolean isPermitted(final Context context) {
-        if(!mProfile.isValid()) {
-            wakeUpDBConnection_profile();
+    void fetchProfile(final CallbackRoutine cb, final Context context, final String club) {
+        //Log.d(TAG, club + ":fetchProfile: " + context.getClass().getName());
+        //club is passed in as SharedData will not be populated yet with club info
+        //when invoked from LoginActivity.
+
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                .child(club).child(Constants.PROFILE);
+        if(club.isEmpty()) //root profile
+            dbRef = FirebaseDatabase.getInstance().getReference().child(Constants.PROFILE);
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                ProfileDBEntry userData = dataSnapshot.getValue(ProfileDBEntry.class);
+                if (userData == null) {
+                    //this is hit if the DB is NOT connected
+                    Log.i(TAG, "fetchProfile: null:" + club);
+                    return;
+                }
+                if(club.isEmpty()) userData.copyProfile(mRootProfile);
+                else userData.copyProfile(mProfile);
+                //Log.v(TAG, club + ":fetchProfile: " + mProfile.toString()
+                //        + " root:" + mRootProfile.toString());
+                if(null!=cb) cb.profileFetched();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w(TAG, "fetchProfile: onCancelled", databaseError.toException());
+                Toast.makeText(context,
+                        "Login Profile DB error:" + databaseError.toString(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+
+    void auditClub(final Activity activity) {
+        Log.d(TAG, mClub + ":auditClub: " + activity.getLocalClassName());
+        if(mClub.isEmpty()) return;
+        if(mUser.isEmpty()) mUser = getUserID(activity);
+
+        FirebaseDatabase.getInstance().getReference()
+                .child(mClub)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if(!dataSnapshot.exists()) {
+                    Log.w(TAG, "auditClub: Club does not exist anymore: " + mClub);
+                    mClub = "";
+                    logOut(activity, true);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w(TAG, "auditClub: onCancelled", databaseError.toException());
+            }
+        });
+    }
+
+    //What if the passwords in the DB have changed?
+    //What if the club was deleted by root?
+    Boolean isPermitted(final Activity activity) {
+        Log.d(TAG, "isPermitted: " + activity.getLocalClassName());
+        if(mClub.isEmpty()) {
+            Toast.makeText(activity,
+                    "Invalid club! Login again.",
+                    Toast.LENGTH_LONG).show();
+            logOut(activity, true);
+            //restartApplication(context, MainSigninActivity.class);
+            return false;
+
         }
-        SharedPreferences prefs = context.getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
-        final String secpd = prefs.getString(Constants.DATA_SEC, "");
-        //Log.d(TAG, "isPermitted: " + secpd + " " +mRootCode + "," + mAdminCode + "," + mMemCode);
-        if (secpd.isEmpty()) return true;
-        if (secpd.equals(mProfile.getAdmincode())) {
-            return true;
-        } else if (secpd.equals(mProfile.getMemcode())) {
-            return true;
-        } else if (secpd.equals(mProfile.getRootcode())) {
-            return true;
+        if(!mProfile.isValid()) {
+            wakeUpDBConnectionProfile();
+        } else if(!mRootProfile.isValid()) {
+            wakeupdbconnectionProfileRoot();
         }
 
-        Toast.makeText(context,
-                "No permission, login again using new credentials",
-                Toast.LENGTH_LONG).show();
-        return false;
+        SharedPreferences prefs = activity.getSharedPreferences(Constants.USERDATA, MODE_PRIVATE);
+        final String secpd = prefs.getString(Constants.DATA_SEC, "");
+        //Log.d(TAG, secpd+"isPermitted: " + mProfile.toString() + " root=" +
+        //        mRootProfile.toString());
+        if (secpd.isEmpty()) return true;
+
+        boolean err = false;
+        if(isRoot()) {
+            if (secpd.equals(mRootProfile.getRc())) {
+                Log.d(TAG, "isPermitted: still root");
+                return true;
+            }
+        }
+
+        if(isSuperUser() && !secpd.equals(mProfile.getRc())) err = true;
+        if(isAdmin() && !secpd.equals(mProfile.getAc())) err = true;
+        if(isMemberRole() && !secpd.equals(mProfile.getMc())) err = true;
+
+        if(err) {
+            Toast.makeText(activity,
+                    "No permission, login again using new credentials",
+                    Toast.LENGTH_LONG).show();
+            logOut(activity, true);
+        }
+        return !err;
     }
 
     boolean isDBLocked() {
@@ -1069,34 +1255,6 @@ public class SharedData {
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
                 Log.w(TAG, "createDBLock: databaseError=" + databaseError);
-            }
-        });
-    }
-
-    void fetchProfile(final CallbackRoutine cb, final Context context, final String club) {
-        Log.d(TAG, club + ":fetchProfile: " + context.getClass().getName());
-        //club is passed in as SharedData will not be populated yet with club info when invoked from LoginActivity.
-        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
-                .child(club).child(Constants.PROFILE);
-        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                ProfileDBEntry userData = dataSnapshot.getValue(ProfileDBEntry.class);
-                if (userData == null) {
-                    //this is hit if the DB is NOT connected
-                    Log.i(TAG, "fetchProfile: null");
-                    return;
-                }
-                userData.copyProfile(mProfile);
-                Log.v(TAG, "fetchProfile: " + mProfile.toString());
-                cb.profileFetched();
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                Log.w(TAG, "fetchProfile: onCancelled", databaseError.toException());
-                Toast.makeText(context,
-                        "Login Profile DB error:" + databaseError.toString(), Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -1361,7 +1519,7 @@ public class SharedData {
     }
 
     public void killActivity(final Activity activity, final int res_code) {
-        Log.d(TAG, "++++killActivity: " + activity.getLocalClassName() + "++++");
+        Log.d(TAG, activity.getLocalClassName() +">++++++ killActivity ++++++");
         activity.setResult(res_code);
         activity.finish();
     }
@@ -1369,10 +1527,12 @@ public class SharedData {
     void killApplication(final Activity activity) {
         mTournament = "";
         if (Build.VERSION.SDK_INT >= 21) {
-            Log.w(TAG, "+++++++++++++ killApplication(finishAndRemoveTask) +++++++++++++");
+            Log.w(TAG, activity.getLocalClassName() +
+                    ">+++++++++++++ killApplication(finishAndRemoveTask) +++++++++++++");
             activity.finishAndRemoveTask();
         } else {
-            Log.w(TAG, "+++++++++++++ killApplication(exit) +++++++++++++");
+            Log.w(TAG, activity.getLocalClassName() +
+                    ">+++++++++++++ killApplication(exit) +++++++++++++");
             activity.finishAffinity();
             //android.os.Process.killProcess(android.os.Process.myPid());
             //System.exit(0);
@@ -1381,7 +1541,8 @@ public class SharedData {
 
     void restartApplication(final Activity activity, final Class cname) {
         mTournament = "";
-        Log.w(TAG, "+++++++++++++ restartApplication +++++++++++++");
+        Log.w(TAG, activity.getLocalClassName() +
+                ">+++++++++++++ restartApplication +++++++++++++");
         Intent mStartActivity = new Intent(activity, cname);
         int mPendingIntentId = 3331;
         PendingIntent mPendingIntent = PendingIntent.getActivity(activity, mPendingIntentId,
@@ -1433,7 +1594,7 @@ public class SharedData {
         dbRef.keepSynced(enable);
     }
     
-    void delayedKillActivity(final Handler mainHandler, final Activity activity,
+    private void delayedKillActivity(final Handler mainHandler, final Activity activity,
                                     int timeout) {
         mainHandler.removeCallbacksAndMessages(null);
         if(timeout==0) timeout = Constants.SHOWTOAST_TIMEOUT;
@@ -1500,7 +1661,7 @@ public class SharedData {
         return false;
     }
 
-    boolean isStoragePermissionGranted(final Activity activity) {
+    private boolean isStoragePermissionGranted(final Activity activity) {
         if (Build.VERSION.SDK_INT >= 23) {
             if (activity.checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
                     == PackageManager.PERMISSION_GRANTED) {
@@ -1536,10 +1697,8 @@ public class SharedData {
     /**
      * Fires an intent to spin up the "file chooser" UI and select an image.
      */
-    void performFileSearch(final Activity activity) {
+    void performFileSearch(final Activity activity, String[] mimeTypes) {
         //Log.d(TAG, "performFileSearch: ");
-
-
 
         // ACTION_OPEN_DOCUMENT is the intent to choose a file via the system's file
         // browser.
@@ -1562,7 +1721,6 @@ public class SharedData {
         String[] mimeTypes = {"application/vnd.ms-excel" ,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"};*/
 
-        String[] mimeTypes = {"application/vnd.ms-excel", "text/plain"};
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             intent.setType(mimeTypes.length == 1 ? mimeTypes[0] : "*/*");
             if (mimeTypes.length > 0) {
@@ -1582,12 +1740,139 @@ public class SharedData {
     }
 
     /*
-    #<teamid>=<teamname>,<player1 id>=<player1 name>,<player2 id>=<player2 name>,...
+    #<groupName>=<player1 name>,<player2 name>,...
+    #innings=<inningsName>
     #Example:
-    #t1=team1,t1p1=player1, t1p2=player2
+    #gold=gPlayer1, gPlayer2, gPlayer3, .....
+    #silver=sPlayer1, sPlayer2, sPlayer3, .....
+    #innings=FirstInnings
     */
-    ArrayList<TeamInfo> readTextFromUri(final Activity activity, Uri uri) {
+    Map<String, ArrayList<String>> readClubLeagueText(final Activity activity, Uri uri) {
+        final Map<String, ArrayList<String>> clubMap = new HashMap<>();
+        StringBuilder errStr = new StringBuilder();
+        try {
+            InputStream inputStream = activity.getContentResolver().openInputStream(uri);
+            if (null == inputStream) return clubMap;
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            String line;
+            int count = 0;
+            while ((line = reader.readLine()) != null) {
+                //Log.d(TAG, "readClubLeagueData: [" + line + "]");
+                String dataline = line.trim();
+                if(dataline.startsWith("#")) continue;
+                String[] entries = dataline.split("=");
+                if(entries.length<2) continue;
+                String key = entries[0].trim();
+                //key has to be gold, silver or "innings". Check for this is there in Club settings class
+                if(key.isEmpty()) continue;
+                String[] valStrings = entries[1].trim().split(",");
+                ArrayList<String> values = new ArrayList<>();
+                StringBuilder badValues = new StringBuilder();
+                for(String value: valStrings) {
+                    String player = value.trim();
+                    if(player.isEmpty()) continue;
+                    if (isValidString(player))
+                        values.add(player);
+                    else badValues.append(player);
+                }
+                if(badValues.length()>0) {
+                    errStr.append("Ignoring invalid entries: ");
+                    errStr.append(badValues); errStr.append("\n");
+                }
+                clubMap.put(key, values);
+                //Log.d(TAG, count + ":readClubLeagueData: " + key + "=" + values.toString());
+                count++;
+                if(count>Constants.TOO_MANY_ENTRIES) break; //bad huge file! avoid tight loop
+            }
+            inputStream.close();
+            reader.close();
+        } catch (Exception e) {
+            Log.e(TAG, "readClubLeagueData: " + e.getMessage());
+            //e.printStackTrace();
+        }
+        if(errStr.length()>0) {
+            //showAlert(null, activity, "Warning", errStr.toString());
+            //Cant be AlertDialog here, as the return below will happen even before
+            //user response to the Alert.
+            Toast.makeText(activity, errStr.toString(), Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "readClubLeagueText: errStr=" + errStr.toString());
+        }
+        return clubMap;
+    }
+
+    Map<String, ArrayList<String>> readClubLeagueExcel(final Activity activity, Uri uri) {
+        final Map<String, ArrayList<String>> clubMap = new HashMap<>();
+        StringBuilder errStr = new StringBuilder();
+        try {
+            InputStream inputStream = activity.getContentResolver().openInputStream(uri);
+            if (null == inputStream) {
+                Log.e(TAG, "readClubLeagueExcel: null stream");
+                return clubMap;
+            }
+            Workbook m_workBook = Workbook.getWorkbook(inputStream);
+            //p_sheetNo is excel sheet no which u want to read
+            Sheet sheet = m_workBook.getSheet(0);
+
+            if(sheet.getRows()>Constants.TOO_MANY_ENTRIES || sheet.getColumns()>Constants.TOO_MANY_ENTRIES) {
+                Toast.makeText(activity, "Bad file!!", Toast.LENGTH_SHORT).show();
+                return clubMap;
+            }
+            for (int row = 0; row < sheet.getRows(); row++) {
+                String content = sheet.getCell(0, row).getContents();
+                if(content.contains("TEAM NAME")) continue;  //if its heading, ignore.
+
+                final String key = sheet.getCell(0, row).getContents();
+                //key has to be gold, silver or "innings". Check for this is there in Club settings class
+                if (key.isEmpty()) continue;
+                if (!isValidString(key)) {
+                    String str = "Invalid team name [" + key + "]\n";
+                    errStr.append(str);
+                    continue;
+                }
+                ArrayList<String> values = new ArrayList<>();
+                for (int col = 1; col < sheet.getColumns(); col++) {
+                    String playerName = sheet.getCell(col, row).getContents();
+                    if (playerName.isEmpty()) continue;
+                    if (!isValidString(playerName)) {
+                        String str = "Ignored invalid player name [" + playerName + "] in " +
+                                key + "\n";
+                        errStr.append(str);
+                        continue;
+                    }
+
+                    if(values.contains(playerName)) {
+                            String str = "Ignored " + playerName + " (duplicate in " +
+                                    key + ")\n";
+                            errStr.append(str);
+                    } else {
+                        values.add(playerName);
+                    }
+                }
+                clubMap.put(key, values);
+            }
+        } catch (IOException | BiffException e) {
+            Log.e(TAG, "readClubLeagueExcel: " + e.getMessage());
+            //e.printStackTrace();
+        }
+
+        if(errStr.length()>0) {
+            Toast.makeText(activity, errStr.toString(), Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "readClubLeagueExcel: errStr=" + errStr.toString());
+        }
+        return clubMap;
+    }
+
+    /*
+    #<teamname>=<player1 name>,<player2 name>,...
+    #Example:
+    #team1=t1player1, t1player2
+    */
+    ArrayList<TeamInfo> readTournaText(final Activity activity, Uri uri) {
         final ArrayList<TeamInfo> retList = new ArrayList<>();
+        ArrayList<String> existingTeamIDs = new ArrayList<>();
+        //Generated teamIds are tracked to avoid duplicate teamIds. But team Names are not checked
+        //here, as it will be checked in TournaSettings. Similarly for existingPlayerIDs.
+        ArrayList<String> existingPlayerIDs = new ArrayList<>();
         StringBuilder errStr = new StringBuilder();
         try {
             InputStream inputStream = activity.getContentResolver().openInputStream(uri);
@@ -1596,62 +1881,63 @@ public class SharedData {
             String line;
             int count = 0;
             while ((line = reader.readLine()) != null) {
-                //Log.d(TAG, "readTextFromUri: [" + line + "]");
+                //Log.d(TAG, "readTournaText: [" + line + "]");
                 String dataline = line.trim();
                 if(dataline.startsWith("#")) continue;
-                String[] entries = dataline.split(",");
-                if(entries.length<2) continue; //at least 1 team and 1 player entry
-                boolean firstEntry = false;  //first entry for team
+                String[] entries = dataline.split("=");
+                if(entries.length!=2) continue; //every row has one team entry
+                String desc = entries[0].trim();
+                if(desc.isEmpty()) continue;
+                if (!isValidString(desc)) {
+                    errStr.append("Ignoring invalid team name: ");
+                    errStr.append(desc); errStr.append("\n");
+                    continue;
+                }
+
                 TeamInfo tI = new TeamInfo();
-                for(String entry: entries) {
-                    String[] values = entry.trim().split("=");
-                    if(values.length!=2) continue;
-                    if(!firstEntry) {
-                        //first entry is always team
-                        tI.name = values[0].trim();
-                        tI.desc = values[1].trim();
-                        if (tI.name.isEmpty() || tI.desc.isEmpty()) {
-                            String str = "Ignored bad team name [" + tI.name + ":" + tI.desc + "]\n";
-                            errStr.append(str);
-                            break;  //break and read next line
-                        }
-                        firstEntry = true;
-                    } else {
-                        //player entry
-                        String pId = values[0].trim();
-                        String pName = values[1].trim();
-                        if (pId.isEmpty() || pName.isEmpty()) {
-                            String str = "Ignored bad player name [" + pId + ":" + pName + "] in " +
-                                    tI.name + "\n";
-                            errStr.append(str);
-                            continue;
-                        }
+                tI.name = getUniqIDStr(desc, 0, existingTeamIDs);
+                tI.desc = desc;
+                String[] valStrings = entries[1].trim().split(",");
+                StringBuilder badValues = new StringBuilder();
+                for(String value: valStrings) {
+                    String player = value.trim();
+                    if(player.isEmpty()) continue;
+                    if (isValidString(player)){
+                        //Duplicate player name is checked in TournaSettings
                         boolean ignore = false;
                         for (String existingPlayer : tI.players) {
-                            if (existingPlayer.equals(pName)) {
+                            if (existingPlayer.equals(player)) {
                                 ignore = true;
-                                String str = "Ignored " + pName + " (duplicate in " +
+                                String str = "Ignored " + player + " (duplicate in " +
                                         tI.name + ")\n";
                                 errStr.append(str);
                                 break;
                             }
                         }
                         if (!ignore) {
-                            tI.p_nicks.add(values[0].trim());
-                            tI.players.add(values[1].trim());
+                            String plNickName = getUniqIDStr(player, 0, existingPlayerIDs);
+                            tI.p_nicks.add(plNickName);
+                            tI.players.add(player);
+                            existingPlayerIDs.add(plNickName);
                         }
                     }
+                    else badValues.append(player);
+                }
+                if(badValues.length()>0) {
+                    errStr.append("Ignoring invalid entries: ");
+                    errStr.append(badValues); errStr.append("\n");
                 }
                 if(!tI.isValid()) continue;
-                //Log.d(TAG, count + ":readTextFromUri: Adding " + tI.toString());
+                Log.d(TAG, count + ":readTournaText: Adding " + tI.toString());
                 retList.add(tI);
+                existingTeamIDs.add(tI.name); //team ids
                 count++;
-                if(count>300) break; //bad huge file! avoid tight loop
+                if(count>Constants.TOO_MANY_ENTRIES) break; //bad huge file! avoid tight loop
             }
             inputStream.close();
             reader.close();
         } catch (Exception e) {
-            Log.e(TAG, "readTextFromUri: " + e.getMessage());
+            Log.e(TAG, "readTournaText: " + e.getMessage());
             //e.printStackTrace();
         }
         if(errStr.length()>0) {
@@ -1659,91 +1945,127 @@ public class SharedData {
             //Cant be AlertDialog here, as the return below will happen even before
             //user response to the Alert.
             Toast.makeText(activity, errStr.toString(), Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "readTournaText: errStr=" + errStr.toString());
         }
         return retList;
     }
 
-    ArrayList<TeamInfo> readExcel(final Activity activity, Uri uri) {
+    ArrayList<TeamInfo> readTournaExcel(final Activity activity, Uri uri) {
         final ArrayList<TeamInfo> retList = new ArrayList<>();
+        ArrayList<String> existingTeamIDs = new ArrayList<>();
+        ArrayList<String> existingPlayerIDs = new ArrayList<>();
         StringBuilder errStr = new StringBuilder();
         try {
             InputStream inputStream = activity.getContentResolver().openInputStream(uri);
             if (null == inputStream) {
-                Log.e(TAG, "readExcel: null stream");
+                Log.e(TAG, "readTournaExcel: null stream");
                 return retList;
             }
             Workbook m_workBook = Workbook.getWorkbook(inputStream);
             //p_sheetNo is excel sheet no which u want to read
             Sheet sheet = m_workBook.getSheet(0);
 
-            if (!sheet.getCell(0, 0).getContents().contains("TID")) {
-                Log.e(TAG, "readExcel: row=0, col=0: TID not found");
-                return retList;
-            }
-            if (!sheet.getCell(1, 0).getContents().contains("TEAM")) {
-                Log.e(TAG, "readExcel: row=0, col=1: TEAM not found");
-                return retList;
-            }
-            if (!sheet.getCell(2, 0).getContents().contains("PID")) {
-                Log.e(TAG, "readExcel: row=0, col=2: PID not found");
-                return retList;
-            }
-            if (!sheet.getCell(3, 0).getContents().contains("NAME")) {
-                Log.e(TAG, "readExcel: row=0, col=3: NAME not found");
-                return retList;
-            }
-
-            if(sheet.getRows()>300 || sheet.getColumns()>300) {
+            if(sheet.getRows()>Constants.TOO_MANY_ENTRIES || sheet.getColumns()>Constants.TOO_MANY_ENTRIES) {
                 Toast.makeText(activity, "Bad file!!", Toast.LENGTH_SHORT).show();
                 return retList;
             }
-            for (int row = 1; row < sheet.getRows(); row++) {
-                Cell tid = sheet.getCell(0, row);
-                //if(null==tid) continue;
-                Cell teamName = sheet.getCell(1, row);
-                //if(null==teamName) continue;
-                TeamInfo tI = new TeamInfo();
-                tI.name = tid.getContents();
-                tI.desc = teamName.getContents();
-                if (tI.name.isEmpty() || tI.desc.isEmpty()) {
-                    String str = "Ignored bad team name [" + tI.name + ":" + tI.desc + "]\n";
+            for (int row = 0; row < sheet.getRows(); row++) {
+                String content = sheet.getCell(0, row).getContents();
+                if(content.contains("TEAM NAME")) continue;  //if its heading, ignore.
+
+                String desc = sheet.getCell(0, row).getContents();
+                if (desc.isEmpty()) continue;
+                if (!isValidString(desc)) {
+                    String str = "Invalid team name [" + desc + "]\n";
                     errStr.append(str);
                     continue;
                 }
-
-                for (int col = 2; col < sheet.getColumns(); col += 2) {
-                    String pid = sheet.getCell(col, row).getContents();
-                    String playerName = sheet.getCell(col + 1, row).getContents();
-                    //if(null==pid) tI.p_nicks.add("");
-                    if (pid.isEmpty() && playerName.isEmpty()) continue;
+                TeamInfo tI = new TeamInfo();
+                tI.desc = desc;
+                tI.name = getUniqIDStr(tI.desc, 0, existingTeamIDs);
+                for (int col = 1; col < sheet.getColumns(); col++) {
+                    String playerName = sheet.getCell(col, row).getContents();
+                    if (playerName.isEmpty()) continue;
+                    if (!isValidString(playerName)) {
+                        String str = "Ignored invalid player name [" + playerName + "] in " +
+                                tI.name + "\n";
+                        errStr.append(str);
+                        continue;
+                    }
+                    String pID = getUniqIDStr(playerName, 0, existingPlayerIDs);
                     boolean ignore = false;
                     for(String existingPlayer: tI.players) {
                         if(existingPlayer.equals(playerName)) {
                             ignore = true;
                             String str = "Ignored " + playerName + " (duplicate in " +
-                                    tid.getContents() + ")\n";
+                                    tI.name + ")\n";
                             errStr.append(str);
                             break;
                         }
                     }
                     if(!ignore) {
-                        tI.p_nicks.add(pid);
+                        tI.p_nicks.add(pID);
                         tI.players.add(playerName);
+                        existingPlayerIDs.add(pID);
                     }
                 }
                 if(!tI.isValid()) continue;
-                //Log.d(TAG, row + " readExcel: Adding " + tI.toString());
+                //Log.d(TAG, row + " readTournaExcel: Adding " + tI.toString());
                 retList.add(tI);
+                existingTeamIDs.add(tI.name);
             }
         } catch (IOException | BiffException e) {
-            Log.e(TAG, "readExcel: " + e.getMessage());
+            Log.e(TAG, "readTournaExcel: " + e.getMessage());
             //e.printStackTrace();
         }
 
         if(errStr.length()>0) {
+            Log.d(TAG, "readTournaExcel: errStr=" + errStr.toString());
             Toast.makeText(activity, errStr.toString(), Toast.LENGTH_SHORT).show();
         }
         return retList;
+    }
+
+    static String getUniqIDStr(final String p, int len, final ArrayList<String> currentList) {
+        if(p==null) return "null";
+        String p1 = p.replaceAll("\\s+", "");  //remove all spaces
+        if(len<=0) len = TeamDBEntry.MAX_ID_LEN;
+        String id;
+        if(p1.length() > len)
+            //The substring begins at the specified beginIndex and extends to the character at
+            //index endIndex - 1. Thus the length of the substring is endIndex-beginIndex.
+            id = p1.substring(0,len); //not playerIdLen-1; see comment above
+        else
+            id = p1;
+        id = id.toLowerCase();
+        if(null!=currentList && currentList.contains(id)) {
+            for (int i = 1; i < 100; i++) {
+                //TeamDBEntry.MAX_STR_LEN = 12
+                //%x.ys: The first digit (x) is the minimum length (the string will be left padded
+                //if it's shorter), the second digit (y) is the maxiumum length and the string will
+                //be truncated if it's longer.
+                String fmtStr = "%." + (TeamDBEntry.MAX_ID_LEN-2) + "s%d"; //format = "<name>##"
+                String newID = String.format(Locale.getDefault(),fmtStr, id, i)
+                        .toLowerCase().trim();
+                if(!currentList.contains(newID)) {
+                    Log.d(TAG, fmtStr + " getUniqIDStr: uniqueName=" + newID);
+                    return newID;
+                } else {
+                    //Log.d(TAG, "getUniqIDStr: name already taken:" + newID);
+                }
+            }
+
+            for (int i = 0; i < 10; i++) {
+                String newID = UUID.randomUUID().toString(); //nothing worked, just create a random name
+                if(!currentList.contains(newID)) {
+                    Log.d(TAG, "getUniqIDStr: generated uniqueName=" + newID);
+                    return newID;
+                }
+            }
+        } else {
+            return id;
+        }
+        return "random" + random();   //don't think we will ever hit this
     }
 
 
@@ -1801,7 +2123,7 @@ public class SharedData {
     void startProgressDialog(final Activity activity, final String title, final String msg) {
         ProgressBar pgsBar = activity.findViewById(R.id.progressBar);
         if(pgsBar!=null) pgsBar.setVisibility(View.VISIBLE);
-        Log.d(TAG, title + " :Progress: " + msg );
+        //Log.d(TAG, title + " :Progress: " + msg );
 
         /*
         Using ProgressDialog leads to issues if the parent activity is minimized (not visible)
@@ -1817,6 +2139,125 @@ public class SharedData {
         //        ",fin=" + activity.isFinishing());
         ProgressBar pgsBar = activity.findViewById(R.id.progressBar);
         if(pgsBar!=null) pgsBar.setVisibility(View.GONE);
+    }
+
+    public static void addNotification(final Context context, final String title, final String msg) {
+
+        if(msg.isEmpty()) return;
+        Log.d(TAG, "addNotification: [" + title + "][" + msg + "]");
+
+        // Create an explicit intent for an Activity in your app
+        Intent intent = new Intent(context, MainSigninActivity.class);
+        intent.putExtra(Constants.INTENT_DATASTR1, Constants.CHANNEL_NEWCLUB);
+        intent.putExtra(Constants.INTENT_DATASTR2, msg);
+
+        //FLAG_ACTIVITY_NEW_TASK: Start the activity in a new task. If a task is already running
+        //for the activity you are now starting, that task is brought to the foreground with its
+        //last state restored and the activity receives the new intent in onNewIntent().
+
+        //FLAG_ACTIVITY_CLEAR_TASK: If set in an Intent passed to Context#startActivity, this flag
+        //will cause any existing task that would be associated with the activity to be cleared
+        //before the activity is started. That is, the activity becomes the new root of an otherwise
+        //empty task, and any old activities are finished.
+        //This can only be used in conjunction with FLAG_ACTIVITY_NEW_TASK.
+
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
+
+        //Define sound URI
+        Uri soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+
+        NotificationCompat.Builder builder =
+                new NotificationCompat.Builder(context, Constants.CHANNEL_NEWCLUB)
+                        .setSmallIcon(R.drawable.birdie_red_btn)
+                        .setContentTitle(title)
+                        .setContentText(msg)
+                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                        // Set the intent that will fire when the user taps the notification
+                        .setContentIntent(pendingIntent)
+                        .setSound(soundUri)
+                        .setAutoCancel(true);
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
+
+        // notificationId is a unique int for each notification that you must define
+        notificationManager.notify(0, builder.build());
+
+    }
+
+    public static void createNotificationChannel(final Context context) {
+        Log.d(TAG, "createNotificationChannel: ");
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(Constants.CHANNEL_NEWCLUB,
+                    Constants.CHANNEL_NEWCLUB_NAME, importance);
+            channel.setDescription("New Club Notification");
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+            if(notificationManager!=null)
+                notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+    public static void deleteNotificationChannel(final Context context) {
+        Log.d(TAG, "deleteNotificationChannel: " + context.getClass().getName());
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+            if(notificationManager!=null)
+                notificationManager.deleteNotificationChannel(Constants.CHANNEL_NEWCLUB);
+        }
+    }
+
+    void addListenerForNewClub(final Context context) {
+        if(mNewClubListener!=null) return;
+        mNewClubListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                GenericTypeIndicator<Map<String, ClubDBEntry>> genericTypeIndicator =
+                        new GenericTypeIndicator<Map<String, ClubDBEntry>>() {
+                        };
+                Map<String, ClubDBEntry> mClubs = dataSnapshot.getValue(genericTypeIndicator);
+                if (null == mClubs) {
+                    Log.d(TAG, "readDBForNewClubs: no new clubs");
+                } else {
+                    Log.d(TAG, "onDataChange: readDBForNewClubs: " + mClubs.size());
+                    if(mClubs.size()>0) {
+                        StringBuilder sb = new StringBuilder();
+                        for (Map.Entry<String, ClubDBEntry> entry : mClubs.entrySet()) {
+                            if (entry.getValue().getAc() < 0) {
+                                sb.append(entry.getValue().getN());
+                                sb.append(" ");
+                            }
+                        }
+                        addNotification(context, "New clubs created", sb.toString());
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        };
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                .child(Constants.NEWCLUBS);
+        dbRef.addValueEventListener(mNewClubListener);
+        createNotificationChannel(context);
+    }
+
+    void deleteListenerForNewClub(final Context context) {
+        if(mNewClubListener==null) return;
+        Log.d(TAG, "deleteListenerForNewClub: " + context.getClass().getName());
+        FirebaseDatabase.getInstance().getReference()
+                .child(Constants.NEWCLUBS).removeEventListener(mNewClubListener);
+        mNewClubListener = null;
+        deleteNotificationChannel(context);
     }
 }
 

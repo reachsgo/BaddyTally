@@ -216,7 +216,7 @@ class TournaFixtureDBEntry {
             //This helps to display external links properly
             setExtLink(TEAM1_IDX, mN.getExtFixtureLabel(), mN.getExtMatchId(), false);
         }*/
-        Log.d("TournaFixtureDBEntry: ", toString());
+        //Log.d("TournaFixtureDBEntry: ", toString());
     }
 
     public Boolean validTeams() {

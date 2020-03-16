@@ -270,7 +270,7 @@ public class TournaMatchNode {
     public String getLoser() {
         if(null==winner || null==t1 || null==t2) return "";
         if(winner.isEmpty()) return "";
-        Log.d(TAG, "getLoser: " + toLongString());
+        //Log.d(TAG, "getLoser: " + toLongString());
         if(winner.equals(t1.getWinner())) return t2.getWinner();
         else if(winner.equals(t2.getWinner())) return t1.getWinner();
         else return "";
@@ -296,7 +296,7 @@ public class TournaMatchNode {
             return;
         }
 
-        Log.d(TAG, "setWinnerString:" + t1.toLongString() + " vs " + t2.toLongString());
+        //Log.d(TAG, "setWinnerString:" + t1.toLongString() + " vs " + t2.toLongString());
         //if(t1.isBye() && !t2.isBye()) setWinner(t2.winner);
         //else if(!t1.isBye() && t2.isBye()) setWinner(t1.winner);
 
@@ -404,7 +404,7 @@ public class TournaMatchNode {
             tmpMatches = getPreviousRoundMatches(tmpMatches);
             if (tmpMatches == null) break;
         }
-        Log.d(TAG, "getNumOfRounds: in="  + matches.size() + ", rounds=" + rounds);
+        //Log.d(TAG, "getNumOfRounds: in="  + matches.size() + ", rounds=" + rounds);
         return rounds;
     }
 
@@ -427,7 +427,7 @@ public class TournaMatchNode {
         Integer rounds = MAX_ROUNDS;
         while(roundMatches.size()>0) {
             int count=1;
-            Log.d(TAG, rounds + ") nameRounds: " + roundMatches.toString());
+            //Log.d(TAG, rounds + ") nameRounds: " + roundMatches.toString());
             for(TournaMatchNode pM: roundMatches) {
                 pM.setId(rounds+"-"+count);
                 count++;
@@ -436,7 +436,7 @@ public class TournaMatchNode {
             roundMatches = getPreviousRoundMatches(roundMatches);
             if (roundMatches == null) break;
         }
-        Log.d(TAG, "nameRounds: " + TournaMatchNode.toString(matches.get(0)));
+        //Log.d(TAG, "nameRounds: " + TournaMatchNode.toString(matches.get(0)));
     }
 
     public static void setWinnerStrings(List<TournaMatchNode> matches) {
@@ -448,7 +448,7 @@ public class TournaMatchNode {
             if(matches==null) break;
         }while (!TournaMatchNode.areTheseLeafNodes(matches));
 
-        Log.d(TAG, "setWinnerStrings ==> " + matches.toString());
+        //Log.d(TAG, "setWinnerStrings ==> " + matches.toString());
     }
 
     public static List<TournaMatchNode> getMatchesForThisRound(List<TournaMatchNode> matches, final Integer round) {
@@ -543,10 +543,6 @@ public class TournaMatchNode {
         str += ")";
         return str;
     }
-
-
-
-
 }
 
 

@@ -54,10 +54,10 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
     private RadioButton mGroupRadioButton;
     private String mAdminCode;
     private String mMemCode;
-    private String mRootCode;
-    private String mClub;
+    private String mSuperUserCode;
+    private String mLoginClub;
     private String mUser;
-    private String mRole;
+    private String mLoginRole;
     private boolean mInitialAttempt;
     private boolean mTournaFlag;
     private String mActToStart;
@@ -106,8 +106,12 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
         if (null != actToStart && !actToStart.isEmpty()) {
             mActToStart = actToStart;
         }
+        String club = thisIntent.getStringExtra(Constants.DATA_CLUB);
+        if (null != club && !club.isEmpty()) {
+            mLoginClub = club;
+        }
 
-        Log.d(TAG, "onCreate mode:" + mActToStart);
+        //Log.d(TAG, "onCreate mode:" + mActToStart);
         if (mActToStart.equals(Constants.INITIAL)) {
             //Log.d(TAG, "onCreate initial mode");
             findViewById(R.id.options_ll).setVisibility(View.GONE);
@@ -119,6 +123,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
             //Log.d(TAG, "onCreate club-enter mode");
             findViewById(R.id.passwd_view_ll).setVisibility(View.GONE);
             findViewById(R.id.email_sign_in_button).setVisibility(View.GONE);
+            findViewById(R.id.role_radiogroup).setVisibility(View.GONE);
             ((TextView) findViewById(R.id.header)).setText("Select the group and match type");
         }
 
@@ -146,8 +151,10 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
         String todaysDate = df.format(c);
         //Log.d(TAG, "onCreate LoginActivity["+ todaysDate + "]: data = " + mCommon.toString());
 
-        SharedPreferences clubprefs = getSharedPreferences(Constants.USERDATA_LASTCLUB, MODE_PRIVATE);
-        final String club = clubprefs.getString(Constants.DATA_CLUB, "");
+        if (null == club || club.isEmpty()) {  //if not club passed in, read from local file
+            SharedPreferences clubprefs = getSharedPreferences(Constants.USERDATA_LASTCLUB, MODE_PRIVATE);
+            club = clubprefs.getString(Constants.DATA_CLUB, "");
+        }
 
         mUser = mCommon.getUserID(LoginActivity.this);
         String userText = "usr: " + mUser;
@@ -160,7 +167,10 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
             findViewById(R.id.current_round).setVisibility(View.GONE);
             findViewById(R.id.time_now).setVisibility(View.GONE);
         } else {
-            mClubView.setText(club);
+            if(!club.equals(Constants.DEMO_CLUB) && !club.equals(Constants.STCLUB)) {
+                mClubView.setText(club);
+                mPasswordView.requestFocus();
+            }
             String roundStr = "Active round: ";
             if (mCommon.mRoundName.isEmpty()) roundStr += "None";
             else roundStr += mCommon.getShortRoundName(mCommon.mRoundName);
@@ -181,7 +191,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
                     //Gotcha: When the user account is locked (after many bad passwds),
                     //the "sign in" button will be Gone. Even in that case, if you restart the app,
                     //you can enter the correct password using "Done" key of the virtual keyboard!
-                    prepareForLogin(club, secpd);
+                    prepareForLogin();
                     return true;
                 }
                 return false;
@@ -193,7 +203,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                prepareForLogin(club, secpd);
+                prepareForLogin();
                 //Sequence is:
                 //prepareForLogin
                 //fetchInitialData
@@ -217,21 +227,40 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
                                             "Go to Settings and create a new innings first.", Toast.LENGTH_LONG).show();
                                     return;
                                 }
-                                String roundName = mCommon.createNewRoundName(true, LoginActivity.this);
+                                final String roundName = mCommon.createNewRoundName(true, LoginActivity.this);
                                 FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
-                                        .child(Constants.INNINGS)
-                                        .child(mCommon.mInningsDBKey.toString()).child("round").setValue(roundName);
-                                Toast.makeText(LoginActivity.this,
-                                        "Round " + roundName + " created!", Toast.LENGTH_SHORT).show();
-                                mCommon.mRoundName = roundName;
-                                mCommon.mGoldPresentPlayerNames.clear();
-                                mCommon.mSilverPresentPlayerNames.clear();
-                                Log.d(TAG, "WRITTEN mRoundName: " + roundName + " data=" +
-                                        mCommon.toString());
-                                //let the user click NEXT after this, dont kill the activity here.
-                                findViewById(R.id.new_round_btn).setBackground(
-                                        getResources().getDrawable(R.drawable.roundedrect));
-                                findViewById(R.id.new_round_btn).setEnabled(false);
+                                        .addListenerForSingleValueEvent(new ValueEventListener() {
+                                            @Override
+                                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                                if(dataSnapshot.exists()) {
+                                                    //create only if the club exists
+                                                    FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
+                                                            .child(Constants.INNINGS)
+                                                            .child(mCommon.mInningsDBKey.toString())
+                                                            .child(Constants.ROUND).setValue(roundName);
+                                                    Toast.makeText(LoginActivity.this,
+                                                            "Round " + roundName + " created!", Toast.LENGTH_SHORT).show();
+                                                    mCommon.mRoundName = roundName;
+                                                    mCommon.mGoldPresentPlayerNames.clear();
+                                                    mCommon.mSilverPresentPlayerNames.clear();
+                                                    //Log.d(TAG, "WRITTEN mRoundName: " + roundName + " data=" +
+                                                    //        mCommon.toString());
+                                                    //let the user click NEXT after this, dont kill the activity here.
+                                                    findViewById(R.id.new_round_btn).setBackground(
+                                                            getResources().getDrawable(R.drawable.roundedrect));
+                                                    findViewById(R.id.new_round_btn).setEnabled(false);
+                                                } else {
+                                                    Log.e(TAG, "onDataChange: Club missing in DB:" + mCommon.mClub);
+                                                    mCommon.killActivity(LoginActivity.this, RESULT_OK);
+                                                }
+                                            }
+
+                                            @Override
+                                            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                            }
+                                        });
+
                                 break;
 
                             case DialogInterface.BUTTON_NEGATIVE:
@@ -316,6 +345,15 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
             }
         }
 
+        ((RadioGroup)findViewById(R.id.role_radiogroup)).setOnCheckedChangeListener(
+                new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup radioGroup, int i) {
+                // Reset errors.
+                mPasswordView.setError(null);
+            }
+        });
+
         // add back arrow to toolbar
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -328,36 +366,59 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
         //Log.d(TAG, "onOptionsItemSelected: ");
         switch (item.getItemId()) {
             case android.R.id.home:
-                onBackPressed();
+                //onBackPressed();
+                mCommon.logOut(LoginActivity.this, true);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-    private void prepareForLogin(String club, String secpd) {
-        mClub = mClubView.getText().toString().trim();
-        //Log.d(TAG, "prepareForLogin: ");
+    private void prepareForLogin() {
+        mLoginClub = mClubView.getText().toString().trim();
+        String secpd = mPasswordView.getText().toString();
+
+        if (mLoginClub.isEmpty() || secpd.isEmpty()) {
+            Toast.makeText(LoginActivity.this,
+                    "All fields are mandatory!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         findViewById(R.id.email_sign_in_button).setEnabled(false);  //disable signin button
         fetchInitialData();
     }
 
-    //TODO: This DB fetch is done every time data is entered. This could be optimized to
-    //reduce number of DB reads.
-    private void fetchInitialData() {
-        //Log.w(TAG, mCommon.mCount + ":fetchInitialData: " + mClub + "/" + mCommon.mClub);
 
-        if (!mClub.equals(mCommon.mClub)) {
-            //If the club's name is changed during login, then clear & fetch data again
-            mInitialAttempt = true;
-            mCommon.clearMain();
-            mCommon.clearLocalStoredData(LoginActivity.this);
+
+
+    private void fetchInitialData() {
+        //Log.i(TAG, mCommon.mCount + ":fetchInitialData: " + mLoginClub + "/" + mCommon.mClub);
+
+        String secpd = mPasswordView.getText().toString();
+        if(mCommon.isRootLogin(mLoginClub, secpd)) {
+            //root login, using root profile details.
+            //Next step is to login again using the actual club name, but with the same root passwd.
+            //stored passwd is audited later in isPermitted(), if the root passwd in DB has been changed.
+            Toast.makeText(LoginActivity.this,
+                    "....",
+                    Toast.LENGTH_LONG).show();
+
+            mCommon.addListenerForNewClub(getApplicationContext());
+            //When the app gets moved out by android scheduler, listeners will not work any more.
+            //So, start a repeating service, so that listener can be pricked every now and then!
+            //This service is later stopped from logOut().
+            RootService.startRepeatingIntent(getApplicationContext());
+
+            mLoginRole = Constants.ROOT;
+            successfulLogin(Constants.STCLUB, secpd);
+            return; 
         }
-        if (!mCommon.mProfile.getMemcode().isEmpty() && !mInitialAttempt) {
-            //Log.w(TAG, "fetchInitialData: data already populated!");
-            mAdminCode = mCommon.mProfile.getAdmincode();
-            mMemCode = mCommon.mProfile.getMemcode();
-            mRootCode = mCommon.mProfile.getRootcode();
+
+        if (!mCommon.mProfile.getMc().isEmpty() && !mInitialAttempt) {
+            Log.i(TAG, "fetchInitialData: data already populated!");
+            mAdminCode = mCommon.mProfile.getAc();
+            mMemCode = mCommon.mProfile.getMc();
+            mSuperUserCode = mCommon.mProfile.getRc();
             attemptLogin();
             return;
         }
@@ -372,7 +433,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
 
         mCommon.startProgressDialog(LoginActivity.this, "Login", "");
 
-        mCommon.fetchProfile(LoginActivity.this, LoginActivity.this, mClub);
+        mCommon.fetchProfile(LoginActivity.this, LoginActivity.this, mLoginClub);
         //see profileFetched() for next step
 
         mMainHandler.postDelayed(new Runnable() {
@@ -389,7 +450,12 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
 
 
     private void attemptLogin() {
-        if (mVerCode < mCommon.mProfile.getMinver()) {
+
+        if( (mCommon.mProfile!=null && mCommon.mProfile.getVer()>0 &&
+                mVerCode < mCommon.mProfile.getVer()) ||
+            (mCommon.mRootProfile!=null && mCommon.mRootProfile.getVer()>0 &&
+                mVerCode < mCommon.mRootProfile.getVer()) )
+        {
             AlertDialog.Builder builder = new AlertDialog.Builder(LoginActivity.this);
             builder.setTitle(mCommon.getColorString("Update your app", Color.RED));
             builder.setMessage("There is a newer app version available.\nPlease update to the latest version.")
@@ -423,12 +489,6 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
         String club = mClubView.getText().toString().trim();
         String secpd = mPasswordView.getText().toString();
 
-        if (club.isEmpty() || secpd.isEmpty() || mUser.isEmpty()) {
-            Toast.makeText(LoginActivity.this,
-                    "All fields are mandatory!", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-
         // Check for a valid password, if the user entered one.
         if (!TextUtils.isEmpty(secpd) && !isPasswordValid(secpd)) {
             mPasswordView.setError(getString(R.string.error_invalid_password));
@@ -436,7 +496,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
             return false;
         }
 
-        //Log.v(TAG, "attemptLogin(" + club + "," + secpd + "):" + mAdminCode + ":" + mMemCode);
+        //Log.v(TAG, "attempt:[" + club + "],[" + secpd + "]");
 
         //hide keyboard
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
@@ -446,22 +506,69 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
                 inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
         }
 
-        if (secpd.equals(mAdminCode)) {
-            mRole = Constants.ADMIN;
+        RadioButton radioBtn = null;
+        boolean err = false;
+        try {
+            //Returns the identifier of the selected radio button in this group.
+            //Upon empty selection, the returned value is -1.
+            int selectedId = ((RadioGroup)findViewById(R.id.role_radiogroup)).getCheckedRadioButtonId();
+
+            if(selectedId==-1) {
+                err = true;
+            } else {
+                radioBtn = findViewById(selectedId);
+            }
+        } catch (Exception e) {
+            err = true;
+        }
+        if(err || null==radioBtn) {
+            Toast.makeText(LoginActivity.this,
+                    "Select the role.",
+                    Toast.LENGTH_SHORT).show();
+            findViewById(R.id.role_radiogroup).requestFocus();
+            return false;
+        }
+
+        //Log.v(TAG, "attempt2:[" + mSuperUserCode + "],[" + mAdminCode + "],[" +
+        //        mMemCode + "][" + radioBtn.getText().toString() + "]");
+
+        err = true;
+        if(mCommon.isRoot()) {
+            mLoginRole = Constants.ROOT;
             successfulLogin(club, secpd);
-        } else if (secpd.equals(mMemCode)) {
-            mRole = Constants.MEMBER;
-            successfulLogin(club, secpd);
-        } else if (secpd.equals(mRootCode)) {
-            mRole = Constants.ROOT;
-            successfulLogin(club, secpd);
-        } else {
+            err = false;
+        } else if(radioBtn.getText().toString().equals(getString(R.string.superuser))) {
+            if (secpd.equals(mSuperUserCode)) {
+                mLoginRole = Constants.SUPERUSER;
+                successfulLogin(club, secpd);
+                err = false;
+            }
+        } else if(radioBtn.getText().toString().equals(getString(R.string.admin))) {
+            if (secpd.equals(mAdminCode)) {
+                mLoginRole = Constants.ADMIN;
+                successfulLogin(club, secpd);
+                err = false;
+            }
+        } else if(radioBtn.getText().toString().equals(getString(R.string.member))) {
+            if (secpd.equals(mMemCode)) {
+                mLoginRole = Constants.MEMBER;
+                successfulLogin(club, secpd);
+                err = false;
+            }
+        }  else {
             mPasswordView.setError(getString(R.string.error_incorrect_password));
             mPasswordView.requestFocus();
             return false;
         }
 
-        return true;
+        if(err) {
+            Log.d(TAG, "attemptLogin2: mismatch error");
+            mPasswordView.setError(getString(R.string.error_incorrect_password));
+            mPasswordView.requestFocus();
+            return false;
+        }
+
+        return true; //successful login
     }
 
     private void getReadyForNextAttempt() {
@@ -501,7 +608,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(Constants.DATA_CLUB, club);
         editor.putString(Constants.DATA_SEC, secpd);
-        editor.putString(Constants.DATA_ROLE, mRole);
+        editor.putString(Constants.DATA_ROLE, mLoginRole);
         editor.putString(Constants.DATA_LOCKED, "");
         //mUser already written in getUserID
         editor.apply();
@@ -514,7 +621,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
         clubeditor.apply();
 
         mCommon.mClub = club;
-        mCommon.mRole = mRole;
+        mCommon.mRole = mLoginRole;
         mCommon.mUser = mUser;
         mCommon.wakeUpDBConnection();  //update DB with the new user login
         if (mInitialAttempt && mActToStart.isEmpty()) {
@@ -550,7 +657,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
             Intent thisIntent = getIntent(); // gets the previously created intent
             String tType = thisIntent.getStringExtra(Constants.TOURNATYPE);
 
-            Log.i(TAG, "successfulLogin, tournament mode");
+            //Log.i(TAG, "successfulLogin, tournament mode");
             if (tType.equals(Constants.SE) || tType.equals(Constants.DE)) {
                 Intent myIntent = new Intent(LoginActivity.this, TournaSEDEEnterData.class);
                 myIntent.putExtra(Constants.TOURNATYPE, tType);
@@ -568,7 +675,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
 
         } else {
             String newRoundFlag = "False";
-            Log.i(TAG, "successfulLogin, new round flag:" + newRoundFlag);
+            //Log.i(TAG, "successfulLogin, new round flag:" + newRoundFlag);
             Intent myIntent = new Intent(LoginActivity.this, ClubLeagueEnterData.class);
             myIntent.putExtra("gametype", mGameTypeRadioButton.getText());
             myIntent.putExtra("group", mGroupRadioButton.getText());
@@ -602,19 +709,19 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
                     if (dataSnapshot.getKey() != null) {
                         usr.setTs("now");
                         usr.setPh("");
-                        usr.setClub(mClub);   //may be last login was for another club
+                        usr.setClub(mLoginClub);   //may be last login was for another club
                         usr.setVer(mVerCode);
                         dbRef.setValue(usr);
-                        Log.d(TAG, "setUserInDB: DB updated:" + dataSnapshot.getKey() + " >> "
-                                + usr.toString());
+                        //Log.d(TAG, "setUserInDB: DB updated:" + dataSnapshot.getKey() + " >> "
+                        //        + usr.toString());
                     }
                 } else {
                     UserDBEntry usr = new UserDBEntry();
-                    usr.setClub(mClub);
+                    usr.setClub(mLoginClub);
                     usr.setVer(mVerCode);
                     dbRef.setValue(usr);
-                    Log.d(TAG, "setUserInDB: Usr created in DB:" + dataSnapshot.getKey() + " >> "
-                            + usr.toString());
+                    //Log.d(TAG, "setUserInDB: Usr created in DB:" + dataSnapshot.getKey() + " >> "
+                    //        + usr.toString());
                 }
 
                 //user id is set in the Club tree too from wakeUpDBConnection()
@@ -630,9 +737,9 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
     //CallbackRoutine Callback after profile is fetched from DB. See SharedData impl of fetchProfile()
     public void profileFetched() {
         //Log.w(TAG, "profileFetched invoked ...." + mCommon.toString());
-        mAdminCode = mCommon.mProfile.getAdmincode();
-        mMemCode = mCommon.mProfile.getMemcode();
-        mRootCode = mCommon.mProfile.getRootcode();
+        mSuperUserCode = mCommon.mProfile.getRc();
+        mAdminCode = mCommon.mProfile.getAc();
+        mMemCode = mCommon.mProfile.getMc();
 
         mMainHandler.removeCallbacksAndMessages(null);  //delete the toast runnables posted above
         mCommon.stopProgressDialog(LoginActivity.this);

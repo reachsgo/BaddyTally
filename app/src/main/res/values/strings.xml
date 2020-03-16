@@ -16,7 +16,7 @@
     <string name="action_sign_in">Sign in</string>
     <string name="action_sign_in_short">Sign in</string>
     <string name="error_invalid_password">This password is too short</string>
-    <string name="error_incorrect_password">Club or Password is incorrect</string>
+    <string name="error_incorrect_password">Club or Password or role is incorrect</string>
     <string name="radio_singles">singles</string>
     <string name="radio_doubles">doubles</string>
     <string name="radio_gold">gold</string>
@@ -25,8 +25,12 @@
     <string name="action_summary">Summary of this round</string>
     <string name="check_new_round">Start a new round of games</string>
     <string name="st_image_desc">Score tally image</string>
+    <string name="superuser">super-user</string>
+    <string name="admin">admin</string>
+    <string name="member">member</string>
 
 
     <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="demo_scroll">This is \'demo\' mode with \'member\' role access. To exit, go to settings and click \'Logout\'</string>
+    <string name="demo1_link"><![CDATA[<a href="https://www.youtube.com/watch?v=ePddeJr9x-U">demo video1</a>]]></string>
 </resources>

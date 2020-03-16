@@ -90,7 +90,7 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
         }
         mCommon = SharedData.getInstance();
 
-        if(!mCommon.isAdminOrRoot()) finish();
+        if(!mCommon.isAdminPlus()) finish();
 
         setTitle(mTourna);
         mTeams = new ArrayList<>();
@@ -388,7 +388,7 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
                     Toast.makeText(TournaSeeding.this,
                             "Fixture already in DB!",
                             Toast.LENGTH_LONG).show();
-                    if(!mCommon.isRoot()) return;
+                    if(!mCommon.isSuperPlus()) return;
 
                     //Give root an option to overwrite
                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaSeeding.this);
@@ -426,7 +426,7 @@ public class TournaSeeding extends AppCompatActivity implements CallbackRoutine 
 
     void writeFixtureToDB(final HashMap<String,TournaFixtureDBEntry> fixtureMap,
                           final String fixLabel) {
-        Log.e(TAG, "writeFixtureToDB:" + fixtureMap.toString() );
+        //Log.e(TAG, "writeFixtureToDB:" + fixtureMap.toString() );
 
         final DatabaseReference setDBRef = FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
                 .child(Constants.TOURNA).child(mTourna).child(fixLabel);

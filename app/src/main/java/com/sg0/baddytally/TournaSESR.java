@@ -50,7 +50,7 @@ public class TournaSESR {
                 //return difference to the next 2-to-the-power, so that so many fillers (bye nodes) can be added
                 //Double nextpower2 = Math.pow(2, i+1);
                 int diff = power2.intValue() - listLen;
-                Log.d(TAG, "isListcomplete: diff=" + diff + " listLen=" + listLen + " power2=" + power2);
+                //Log.d(TAG, "isListcomplete: diff=" + diff + " listLen=" + listLen + " power2=" + power2);
                 return diff;
             }
         }
@@ -77,7 +77,7 @@ public class TournaSESR {
         final String FNAME = ":createRegularMatchesForThisRound - ";
         if (matches != null) initMatches(matches);
         if (null == matchList) return null;
-        Log.d(TAG, FNAME + " size=" + matchList.size());
+        //Log.d(TAG, FNAME + " size=" + matchList.size());
         if (matchList.size() == 1)
             return matchList;  //only one node in this round. Will hit in lower bracket, when
         //there are many BYES in first round of upper bracket. Ex: 9 teams
@@ -93,7 +93,7 @@ public class TournaSESR {
                 t.setExternalLinkDesc(team2Node.getExtFixtureLabel());
             t.setWinnerString();
             tmpList.add(t);
-            Log.d(TAG, FNAME + "Adding: " + t.toLongString());
+            //Log.d(TAG, FNAME + "Adding: " + t.toLongString());
         }
         return tmpList;
     }
@@ -111,10 +111,10 @@ public class TournaSESR {
 
         if (addByes) {
             Integer before = matchList.size();
-            Log.d(TAG, "createMatchesForThisRound: BEFORE = " + matchList.toString());
+            //Log.d(TAG, "createMatchesForThisRound: BEFORE = " + matchList.toString());
             if (!makeListComplete()) return null;
-            Log.d(TAG, "createMatchesForThisRound: AFTER = " + matchList.toString());
-            Log.d(TAG, FNAME + " before=" + before + " after=" + matchList.size());
+            //Log.d(TAG, "createMatchesForThisRound: AFTER = " + matchList.toString());
+            //Log.d(TAG, FNAME + " before=" + before + " after=" + matchList.size());
             Integer listLen = matchList.size();
             if (listLen != 1 && listLen % 2 != 0) {
                 Log.e(TAG, FNAME + "internal error:" + listLen);
@@ -139,7 +139,7 @@ public class TournaSESR {
                     TournaMatchNode.NodeType.NODE);
             t.setWinnerString();
             tmpList.add(t);
-            Log.d(TAG, FNAME + "Adding: " + t.toLongString());
+            //Log.d(TAG, FNAME + "Adding: " + t.toLongString());
             //createMatchesForThisRound - Adding: [: (-1,-1)=,NODE,/fixU/2-1,/fixU,(W),false]
             //   where "new8" is t1.getDesc() and "new9" is t2.getDesc()
             //   desc is set to team name only for leafnode.
@@ -149,11 +149,11 @@ public class TournaSESR {
 
     public HashMap<String, TournaFixtureDBEntry> createFixture(final List<TournaMatchNode> matchTree) {
         Integer MAX_ROUNDS = TournaMatchNode.getNumOfRounds(matchTree);
-        Log.d(TAG, "createFixture: MAX_ROUNDS=" + MAX_ROUNDS + " tree=" + matchTree.toString());
+        //Log.d(TAG, "createFixture: MAX_ROUNDS=" + MAX_ROUNDS + " tree=" + matchTree.toString());
         HashMap<String, TournaFixtureDBEntry> fixtureMap = new HashMap<>();
         for (int i = 0; i <= MAX_ROUNDS; i++) {
             List<TournaMatchNode> m = TournaMatchNode.getMatchesForThisRound(matchTree, i);
-            Log.d(TAG, i + "createFixture ==> " + m.toString());
+            //Log.d(TAG, i + "createFixture ==> " + m.toString());
             for (TournaMatchNode node : m) {
                 //if(node.isLeaf()) continue;
                 //if(node.t1==null || node.t2==null) continue;
@@ -162,7 +162,7 @@ public class TournaSESR {
                 if (i == MAX_ROUNDS) dbEntry.setF(true); //This is the final match.
                 fixtureMap.put(node.getId(), dbEntry);
             }
-            Log.d(TAG, i + "createFixture fixtureMap ==> " + fixtureMap.toString());
+            //Log.d(TAG, i + "createFixture fixtureMap ==> " + fixtureMap.toString());
         }
         return fixtureMap;
     }
@@ -174,7 +174,7 @@ public class TournaSESR {
         }
 
         //List<TournaMatchNode> matches = new ArrayList<>(seededTeamList);
-        Log.d(TAG, "createFixture: matches.size=" + matches.size() + " " + matches.toString());
+        //Log.d(TAG, "createFixture: matches.size=" + matches.size() + " " + matches.toString());
         Integer totalTeamCount = 0;  //including fillers for byes
         //TournaSESR sesr = new TournaSESR();
         initMatches(matches);
@@ -184,16 +184,16 @@ public class TournaSESR {
             if (totalTeamCount == 0) totalTeamCount = getCount();
         }
         Log.d(TAG, "createFixture: totalTeamCount=" + totalTeamCount);
-        Log.d(TAG, "createFixture: ==> " + TournaMatchNode.toString(matches.get(0)));
-        Log.d(TAG, "createFixture: getNumOfRounds ==> " + TournaMatchNode.getNumOfRounds(matches));
+        //Log.d(TAG, "createFixture: ==> " + TournaMatchNode.toString(matches.get(0)));
+        //Log.d(TAG, "createFixture: getNumOfRounds ==> " + TournaMatchNode.getNumOfRounds(matches));
         TournaMatchNode.nameRounds(matches, false);
-        Log.d(TAG, "createFixture: nameRounds ==> " + matches.toString());
+        //Log.d(TAG, "createFixture: nameRounds ==> " + matches.toString());
         TournaMatchNode.print(matches);
 
         Integer MAX_ROUNDS = TournaMatchNode.getNumOfRounds(matches);
         for (int i = 1; i <= MAX_ROUNDS; i++) {
             List<TournaMatchNode> m = TournaMatchNode.getMatchesForThisRound(matches, i);
-            Log.d(TAG, "createFixtureTree: ==> " + m.toString());
+            //Log.d(TAG, "createFixtureTree: ==> " + m.toString());
         }
 
         return matches;
@@ -206,7 +206,7 @@ public class TournaSESR {
     public List<TournaMatchNode> createDEFixtureTree(final List<TournaMatchNode> ubMatches, String upperFixtureLabel) {
         final String FUNC = "createDEFixtureTree: ";
 
-        Log.e(TAG, " ================== LOWER BRACKET ================");
+        //Log.e(TAG, " ================== LOWER BRACKET ================");
 
         List<TournaMatchNode> lowerMatches = new ArrayList<>();  //lower bracket matches
         Integer MAX_ROUNDS = TournaMatchNode.getNumOfRounds(ubMatches);
@@ -218,21 +218,21 @@ public class TournaSESR {
             lowerMatches = createRegularMatchesForThisRound(lowerMatches, false);
             if (lowerMatches == null) return null;
             while(m.size() == lowerMatches.size()) {
-                Log.d(TAG, "createDEFixtureTree: ONE MORE ROUND:" + m.size() + " lower=" + lowerMatches.size());
+                //Log.d(TAG, "createDEFixtureTree: ONE MORE ROUND:" + m.size() + " lower=" + lowerMatches.size());
                 lowerMatches = createRegularMatchesForThisRound(lowerMatches, false);
                 if (lowerMatches == null) return null;
                 if(lowerMatches.size()==1) break;
             }
-            Log.d(TAG, FUNC + i+"==> " + lowerMatches.toString());
+            //Log.d(TAG, FUNC + i+"==> " + lowerMatches.toString());
             TournaMatchNode.print(lowerMatches);
         }
 
-        Log.e(TAG, FUNC + lowerMatches.size() + " lowerMatches1=" + lowerMatches.toString());
+        //Log.e(TAG, FUNC + lowerMatches.size() + " lowerMatches1=" + lowerMatches.toString());
 
-        Log.d(TAG, FUNC + "==> " + TournaMatchNode.toString(lowerMatches.get(0)));
-        Log.e(TAG, FUNC + "getNumOfRounds ==> " + TournaMatchNode.getNumOfRounds(lowerMatches));
+        //Log.d(TAG, FUNC + "==> " + TournaMatchNode.toString(lowerMatches.get(0)));
+        //Log.e(TAG, FUNC + "getNumOfRounds ==> " + TournaMatchNode.getNumOfRounds(lowerMatches));
         TournaMatchNode.nameRounds(lowerMatches, false);
-        Log.d(TAG, FUNC + "nameRounds ==> " + lowerMatches.toString());
+        //Log.d(TAG, FUNC + "nameRounds ==> " + lowerMatches.toString());
         TournaMatchNode.print(lowerMatches);
 
         return lowerMatches;
@@ -247,9 +247,9 @@ public class TournaSESR {
                                                 final Boolean pickLowerHalfFirst,
                                                 final String upperFixtureLabel,
                                                 final Boolean interlace) {
-        Log.e(TAG, "seedLowerRound --start: LOW=" + lowerMatches.toString() +
-                " \n UPPER=" + upperMatches.toString() +
-                "\n pickLowerHalfFirst=" + pickLowerHalfFirst + " interlace=" + interlace);
+        //Log.e(TAG, "seedLowerRound --start: LOW=" + lowerMatches.toString() +
+        //        " \n UPPER=" + upperMatches.toString() +
+        //       "\n pickLowerHalfFirst=" + pickLowerHalfFirst + " interlace=" + interlace);
         if (upperMatches.size() == 0) {
             return lowerMatches;
         }
@@ -258,7 +258,7 @@ public class TournaSESR {
             TournaMatchNode t = new TournaMatchNode(TournaMatchNode.NodeType.EXTERNALLEAF);
             t.setExternalLink(upperFixtureLabel, upperMatches.get(0).getId());
             lowerMatches.add(0, t);
-            Log.d(TAG, "seedLowerRound:  --returning:" + lowerMatches.toString());
+            //Log.d(TAG, "seedLowerRound:  --returning:" + lowerMatches.toString());
             return lowerMatches;
         }
 
@@ -274,10 +274,10 @@ public class TournaSESR {
             }
         }
 
-        Log.d(TAG, "seedLowerRound2: LOW=" + lowerMatches.size() +
-                " \n UPPER=" + upperM.size());
-        Log.d(TAG, "seedLowerRound2: LOW=" + lowerMatches.toString() +
-                " \n UPPER=" + upperM.toString());
+        //Log.d(TAG, "seedLowerRound2: LOW=" + lowerMatches.size() +
+        //        " \n UPPER=" + upperM.size());
+        //Log.d(TAG, "seedLowerRound2: LOW=" + lowerMatches.toString() +
+        //        " \n UPPER=" + upperM.toString());
 
         List<TournaMatchNode> retList = new ArrayList<>();
         for (int i = 0; i < upperM.size(); i++) {
@@ -291,8 +291,8 @@ public class TournaSESR {
             //loser of the UB match (which is BYE here)
             t.setWinner(upperM.get(i).getLoser());
             retList.add(t);
-            Log.d(TAG, "seedLowerRound(" + i + ") t=" + t.toLongString() +
-                    " upperM=" + upperM.get(i).toLongString());
+            //Log.d(TAG, "seedLowerRound(" + i + ") t=" + t.toLongString() +
+            //        " upperM=" + upperM.get(i).toLongString());
             if (interlace && lowerMatches.size() > i) {
                 //lowerMatches.get(i).setWinnerString();
                 retList.add(lowerMatches.get(i));
@@ -301,7 +301,7 @@ public class TournaSESR {
 
         if (!interlace) retList.addAll(lowerMatches);
 
-        Log.d(TAG, "seedLowerRound:  --returning:" + retList.toString());
+        //Log.d(TAG, "seedLowerRound:  --returning:" + retList.toString());
         return retList;
 
     }

@@ -68,7 +68,7 @@ public class TournaLeague extends AppCompatActivity implements CallbackRoutine {
         enterScoreBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                SharedData.getInstance().wakeUpDBConnection_profile();
+                SharedData.getInstance().wakeUpDBConnectionProfile();
                 //Intent myIntent = new Intent(TournaLeague.this, LoginActivity.class);
                 Intent myIntent = new Intent(TournaLeague.this, TournaLeagueEnterData.class);
                 myIntent.putExtra(Constants.TOURNATYPE, Constants.LEAGUE);
@@ -80,7 +80,7 @@ public class TournaLeague extends AppCompatActivity implements CallbackRoutine {
         schedBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                SharedData.getInstance().wakeUpDBConnection_profile();
+                SharedData.getInstance().wakeUpDBConnectionProfile();
                 //Intent myIntent = new Intent(TournaLeague.this, LoginActivity.class);
                 Intent myIntent = new Intent(TournaLeague.this, TournaLeagueSchedule.class);
                 myIntent.putExtra("tournament", mCommon.mTournament);
@@ -93,7 +93,7 @@ public class TournaLeague extends AppCompatActivity implements CallbackRoutine {
             @Override
             public void onClick(View view) {
                 if(mCommon.mTournament.isEmpty()) return;
-                SharedData.getInstance().wakeUpDBConnection_profile();
+                SharedData.getInstance().wakeUpDBConnectionProfile();
                 Intent myIntent = new Intent(TournaLeague.this, TournaSummary.class);
                 myIntent.putExtra("tournament", mCommon.mTournament);
                 TournaLeague.this.startActivityForResult(myIntent, Constants.SUMMARY_ACTIVITY);
@@ -103,7 +103,7 @@ public class TournaLeague extends AppCompatActivity implements CallbackRoutine {
         summaryBtn.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
-                if(!mCommon.isRoot()) return false;
+                if(!mCommon.isSuperPlus()) return false;
                 if(mCommon.mClub.isEmpty() || mCommon.mTournament.isEmpty()) {
                     return false;
                 }
@@ -201,7 +201,7 @@ public class TournaLeague extends AppCompatActivity implements CallbackRoutine {
 
         int delayTime = 0;
         if(!mCommon.isDBConnected()) {
-            mCommon.wakeUpDBConnection_profile();
+            mCommon.wakeUpDBConnectionProfile();
             delayTime = 2000;  //is DB not connected, give it time to get connected.
         }
         mMainHandler.postDelayed(new Runnable() {

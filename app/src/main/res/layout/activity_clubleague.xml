@@ -231,7 +231,7 @@
             android:gravity="center_horizontal"
             android:text="Season"
             android:textColor="@android:color/black"
-            android:textSize="11sp" />
+            android:textSize="10sp" />
 
             <ImageButton
                 android:id="@+id/suggestions"

@@ -98,6 +98,8 @@
             android:layout_height="match_parent"
             android:gravity="center"
             android:hint="eg: T1's home match"
+            android:digits="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 -_"
+            android:inputType="text"
             android:maxLength="16"
             android:maxLines="1"
             android:singleLine="true"

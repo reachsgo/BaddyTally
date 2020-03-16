@@ -5,8 +5,6 @@ import android.content.Context;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.text.SpannableStringBuilder;
-import android.text.Spanned;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.Gravity;
@@ -73,7 +71,7 @@ public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecy
         holder.parentLayout.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
-                if (SharedData.getInstance().isAdminOrRoot())
+                if (SharedData.getInstance().isAdminPlus())
                     showOptions(view, holder);
                 return true;
             }

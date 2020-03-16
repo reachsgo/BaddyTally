@@ -55,6 +55,12 @@ public class PointsDBEntry {
     //    this.pts = pts;
     //}
 
+    public void reset() {
+        this.pts = 0;
+        this.P = 0;
+        this.W = 0;
+    }
+
     @Exclude     //dont add in the Firebase DB on invoking setValue()
     public int getWinPercentage () {
         if(P>0) return ((W * 100) / P);     // games_won / games_played x 100
