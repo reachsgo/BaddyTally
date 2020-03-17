@@ -170,8 +170,9 @@ public class SharedData {
     }
 
     static String truncate(final String str, final boolean dots, int len) {
+        if(str==null) return "";
         String retStr = str;
-        if (len == 0) len = Constants.TINYNAMELENGTH;
+        if (len <= 0) len = Constants.TINYNAMELENGTH;
         if (str.length() > len) {
             if (dots) retStr = str.substring(0, len - 2) + "..";
             else retStr = str.substring(0, len);
@@ -1427,11 +1428,19 @@ public class SharedData {
         return tI;
     }
 
-    Boolean checkIfPlayerAlreadyExists(final Context context, final String pShort) {
+    Boolean checkIfPlayerAlreadyExists(final Context context, final String pShort,
+                                       final String pName) {
         for (Map.Entry<String, TeamInfo> entry : mTeamInfoMap.entrySet()) {
             TeamInfo tI = entry.getValue();
             for (String p_nick : tI.p_nicks) {
                 if (p_nick.equals(pShort)) {
+                    //Log.d(TAG, pShort + " already exists in " + tI.name);
+                    //showToast(context, pShort + " already exists in " + tI.name, Toast.LENGTH_SHORT);
+                    return true;
+                }
+            }
+            for (String p : tI.players) {
+                if (p.equals(pName)) {
                     //Log.d(TAG, pShort + " already exists in " + tI.name);
                     //showToast(context, pShort + " already exists in " + tI.name, Toast.LENGTH_SHORT);
                     return true;
@@ -1819,7 +1828,10 @@ public class SharedData {
             }
             for (int row = 0; row < sheet.getRows(); row++) {
                 String content = sheet.getCell(0, row).getContents();
-                if(content.contains("TEAM NAME")) continue;  //if its heading, ignore.
+                //if its heading, ignore.
+                if(row==0 &&
+                        (content.contains("TEAM NAME") || content.contains("POOL NAME") ||
+                        content.contains("TEAMNAME") || content.contains("POOLNAME"))) continue;
 
                 final String key = sheet.getCell(0, row).getContents();
                 //key has to be gold, silver or "innings". Check for this is there in Club settings class
@@ -1971,7 +1983,10 @@ public class SharedData {
             }
             for (int row = 0; row < sheet.getRows(); row++) {
                 String content = sheet.getCell(0, row).getContents();
-                if(content.contains("TEAM NAME")) continue;  //if its heading, ignore.
+                //if its heading, ignore.
+                if(row==0 &&
+                        (content.contains("TEAM NAME") || content.contains("POOL NAME") ||
+                        content.contains("TEAMNAME") || content.contains("POOLNAME"))) continue;
 
                 String desc = sheet.getCell(0, row).getContents();
                 if (desc.isEmpty()) continue;

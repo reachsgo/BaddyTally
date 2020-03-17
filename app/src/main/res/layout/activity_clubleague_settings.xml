@@ -223,7 +223,7 @@
                 android:hint="new innings desc"
                 android:digits="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 -_"
                 android:inputType="text"
-                android:maxLength="5"
+                android:maxLength="@integer/max_short_id_len"
                 android:maxLines="1"
                 android:singleLine="true"
                 android:textColor="@android:color/black"

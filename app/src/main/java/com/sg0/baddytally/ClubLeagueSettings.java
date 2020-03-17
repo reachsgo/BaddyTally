@@ -95,6 +95,10 @@ public class ClubLeagueSettings extends AppCompatActivity {
     private PlayerData lwPD;  //lowest win% Player Data
     private String mWinPercInfo; //Info on Win % shuffling rule application
     private Handler mMainHandler;
+    private Handler mImportHandler;
+    // Need a new Handler Q as the main handler messages are removed from the MainHandler in the
+    // below scenario:
+    // checkforDuplicateName() -> starts new thread -> mMainHandler.removeCallbacksAndMessages()
 
 
     private void enableDisableView(View view, boolean enabled) {
@@ -121,6 +125,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
         mCommon = SharedData.getInstance();
         mWinPercInfo = "";
         mMainHandler = new Handler();
+        mImportHandler = new Handler();
         //Log.i(TAG, "onCreate :" + mCommon.toString());
         mCommon.auditClub(ClubLeagueSettings.this); //check if club still exists in DB
 
@@ -187,7 +192,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
                 dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        StringBuilder history = new StringBuilder();
+                        final StringBuilder history = new StringBuilder();
                         for (DataSnapshot child : dataSnapshot.getChildren()) {
                             String storyLine = child.getValue(String.class);
                             if (null == storyLine) continue;
@@ -195,20 +200,28 @@ public class ClubLeagueSettings extends AppCompatActivity {
                             if (!parsed.isEmpty()) history.append(parsed).append("\n");
                         }
 
-                        AlertDialog.Builder builder = new AlertDialog.Builder(ClubLeagueSettings.this);
-                        builder.setMessage(mCommon.getSizeString(history.toString(), 0.7f))
-                                .setTitle(mCommon.getTitleStr("History:", ClubLeagueSettings.this))
-                                .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialogInterface, int i) {
-                                        return;
-                                    }
-                                }).show();
+                        if(history.length()<=0) return;
+
+                        mMainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                AlertDialog.Builder builder = new AlertDialog.Builder(ClubLeagueSettings.this);
+                                builder.setMessage(mCommon.getSizeString(history.toString(), 0.7f))
+                                        .setTitle(mCommon.getTitleStr("History:", ClubLeagueSettings.this))
+                                        .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialogInterface, int i) {
+                                                return;
+                                            }
+                                        }).show();
+                            }
+                        });
+
                     }
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError databaseError) {
-
+                        Log.w(TAG, "history_btn:onCancelled", databaseError.toException());
                     }
                 });
             } //onClick
@@ -340,6 +353,13 @@ public class ClubLeagueSettings extends AppCompatActivity {
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mMainHandler.removeCallbacksAndMessages(null);
+        mImportHandler.removeCallbacksAndMessages(null);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         //Log.d(TAG, "onOptionsItemSelected: ");
         switch (item.getItemId()) {
@@ -361,7 +381,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
                 dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        StringBuilder userList = new StringBuilder();
+                        final StringBuilder userList = new StringBuilder();
                         //support for releases previous to 4.0.0, where user data
                         //was ProfileDBEntry.class instead of String.
                         try {
@@ -381,15 +401,22 @@ public class ClubLeagueSettings extends AppCompatActivity {
                             }*/
 
                             if (userList.length() == 0) return;
-                            AlertDialog.Builder builder = new AlertDialog.Builder(ClubLeagueSettings.this);
-                            builder.setMessage(mCommon.getSizeString(userList.toString(), 0.8f))
-                                    .setTitle(mCommon.getTitleStr("Users:", ClubLeagueSettings.this))
-                                    .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialogInterface, int i) {
-                                            return;
-                                        }
-                                    }).show();
+
+                            mMainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(ClubLeagueSettings.this);
+                                    builder.setMessage(mCommon.getSizeString(userList.toString(), 0.8f))
+                                            .setTitle(mCommon.getTitleStr("Users:", ClubLeagueSettings.this))
+                                            .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialogInterface, int i) {
+                                                    return;
+                                                }
+                                            }).show();
+                                }
+                            });
+
                         } catch (com.google.firebase.database.DatabaseException e) {
                             //Old DB had ProfileDBEntry.class in DB instead of String.
                             //just ignore it.
@@ -399,7 +426,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError databaseError) {
-
+                        Log.w(TAG, "activateUserButton:onCancelled", databaseError.toException());
                     }
                 });
             } //onClick
@@ -410,9 +437,11 @@ public class ClubLeagueSettings extends AppCompatActivity {
     private void onClickNewUser(String name, String group) {
         boolean showDiag = true;
         if(null==name || name.isEmpty()) {
-            String tmpName = ((EditText) findViewById(R.id.newuser)).getText().toString();
-            if (TextUtils.isEmpty(tmpName)) {
-                Log.e(TAG, "empty user name");
+            String tmpName = ((EditText) findViewById(R.id.newuser)).getText().toString().trim();
+            if (TextUtils.isEmpty(tmpName) || !SharedData.isValidString(tmpName)) {
+                //Log.w(TAG, "onClickNewUser: invalid user name [" + tmpName + "]");
+                Toast.makeText(ClubLeagueSettings.this,
+                        "Invalid player name (" + tmpName + ")!", Toast.LENGTH_SHORT).show();
                 return;
             }
             //final String name = tmpName.toUpperCase().charAt(0) + tmpName.substring(1, tmpName.length());
@@ -440,7 +469,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
         final String finalGroup = group;
 
         if(!showDiag) {
-            checkforDuplicateName(finalName, finalGroup);
+            checkforDuplicateName(finalName, finalGroup, false);
             return; //done, dont go to dialoge code.
         }
 
@@ -450,7 +479,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
                 switch (which) {
                     case DialogInterface.BUTTON_POSITIVE:
                         //Yes button clicked
-                        checkforDuplicateName(finalName, finalGroup);
+                        checkforDuplicateName(finalName, finalGroup, true);
                         break;
 
                     case DialogInterface.BUTTON_NEGATIVE:
@@ -468,7 +497,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
                 .setNegativeButton("No", dialogClickListener).show();
     }
 
-    private void checkforDuplicateName(final String name, final String group) {
+    private void checkforDuplicateName(final String name, final String group, final boolean notify) {
         //Retrieve latest list from DB
         if (!mCommon.isDBConnected()) {
             mCommon.wakeUpDBConnectionProfile();
@@ -510,16 +539,16 @@ public class ClubLeagueSettings extends AppCompatActivity {
                         }
                     }
                 }
-
-                createNewUser(name, group, null, true);  //no season points to carry over for a new user
+                createNewUser(name, group, null, notify);  //no season points to carry over for a new user
                 mCommon.stopProgressDialog(ClubLeagueSettings.this);
                 mMainHandler.removeCallbacksAndMessages(null);
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                Log.w(TAG, "identifyPlayersToShuffle:onCancelled", databaseError.toException());
-                Toast.makeText(ClubLeagueSettings.this, "DB error while fetching players:" + databaseError.toString(),
+                Log.w(TAG, "checkforDuplicateName:onCancelled", databaseError.toException());
+                Toast.makeText(ClubLeagueSettings.this,
+                        "DB error while fetching players:" + databaseError.toString(),
                         Toast.LENGTH_LONG).show();
             }
         });
@@ -528,7 +557,6 @@ public class ClubLeagueSettings extends AppCompatActivity {
     private void createNewUser(final String name, final String group, final PointsDBEntry seasonPts,
                                final boolean notify) {
         final String club = mCommon.mClub;
-        final String innings = mCommon.mInnings;
 
         DatabaseReference dbRef = mDatabase.child(club).child(Constants.GROUPS).child(group).child(name);
         final List<PointsDBEntry> points = new ArrayList<>();
@@ -589,6 +617,7 @@ public class ClubLeagueSettings extends AppCompatActivity {
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w(TAG, "fetchDataAndUpdateSpinner:onCancelled", databaseError.toException());
             }
         });
     }
@@ -664,7 +693,6 @@ public class ClubLeagueSettings extends AppCompatActivity {
             return;
         }
         final String club = mCommon.mClub;
-        final String innings = mCommon.mInnings;
         //Create user with 0 overall score.
         DatabaseReference dbRef = mDatabase.child(club).child(Constants.GROUPS).child(group).child(name);
         dbRef.setValue(null, new DatabaseReference.CompletionListener() {
@@ -699,15 +727,20 @@ public class ClubLeagueSettings extends AppCompatActivity {
     // 7. create new entry under club/innings/ with {1:true, 2:""}
     private void onClickCreateNewInnings(final String innings) {
         if(null==innings || innings.isEmpty()) {
-            String tmpName = ((EditText) findViewById(R.id.newinnings)).getText().toString();
-            if (TextUtils.isEmpty(tmpName)) {
-                Log.w(TAG, "onClickCreateNewInnings: empty innings name");
+            String tmpName = ((EditText) findViewById(R.id.newinnings)).getText().toString().trim();
+            if (TextUtils.isEmpty(tmpName) || !SharedData.isValidString(tmpName)) {
+                //Log.w(TAG, "onClickCreateNewInnings: invalid innings name [" + tmpName + "]");
+                Toast.makeText(ClubLeagueSettings.this,
+                        "Invalid Innings (" + tmpName + ")!", Toast.LENGTH_SHORT).show();
                 return;
             }
-            mNewInningsName = tmpName.toUpperCase().charAt(0) + tmpName.substring(1);
+            mNewInningsName = tmpName.trim();
         } else mNewInningsName = innings;
 
-        SharedData.getInstance().mWinPercNum = Constants.SHUFFLE_WINPERC_NUM_GAMES;
+        mNewInningsName = SharedData.truncate(mNewInningsName.trim(), false,
+                getResources().getInteger(R.integer.max_short_id_len)).trim();
+
+        mCommon.mWinPercNum = Constants.SHUFFLE_WINPERC_NUM_GAMES;
         boolean dataError = false;
         try {
             Integer val = Integer.valueOf(((EditText) findViewById(R.id.winPercNum)).getText().toString());
@@ -717,9 +750,12 @@ public class ClubLeagueSettings extends AppCompatActivity {
             dataError = true;
         }
         if (dataError)
-            Toast.makeText(ClubLeagueSettings.this, "Bad entry for win% qualification number! Will use default:" + Constants.SHUFFLE_WINPERC_NUM_GAMES, Toast.LENGTH_LONG).show();
+            Toast.makeText(ClubLeagueSettings.this,
+                    "Bad entry for win% qualification number! Will use default:" +
+                            Constants.SHUFFLE_WINPERC_NUM_GAMES, Toast.LENGTH_LONG).show();
 
-        Log.i(TAG, "onClickCreateNewInnings: mWinPercNum=" + SharedData.getInstance().mWinPercNum);
+        Log.i(TAG, mNewInningsName + ":onClickCreateNewInnings: mWinPercNum=" +
+                mCommon.mWinPercNum);
 
         //If there is no lock parameter in DB, create it now.
         mCommon.createDBLock(null);
@@ -808,19 +844,21 @@ public class ClubLeagueSettings extends AppCompatActivity {
         };
 
         AlertDialog.Builder builder = new AlertDialog.Builder(ClubLeagueSettings.this);
-        String msg;
+        StringBuilder sb = new StringBuilder();
+        sb.append("\nThere is already an active innings: '");
+        sb.append(mCommon.mInnings); sb.append("'.\n\n");
+        sb.append("If you create a new one now, you will shuffle players between the 2 pools!\n\n");
         if (Objects.equals(mCommon.mNumOfGroups, Constants.NUM_OF_GROUPS)) { //if 2
-            msg = "You are about to create a new Innings.\n" +
-                    "Gold & Silver player lists will be updated as needed.\n\n" +
-                    "Are you sure?";
+            sb.append("Gold & Silver player lists will be updated as needed.\n\n");
+            sb.append("Are you sure?");
         } else {
-            msg = "You are about to create a new Innings.\n\n" +
-                    "Are you sure?";
+            sb.append("You are about to create a new Innings.\n\n");
+            sb.append("Are you sure?");
         }
-        builder.setMessage(msg)
-                .setTitle(mCommon.getColorString("Warning", Color.RED))
-                .setPositiveButton("Yes", dialogClickListener)
-                .setNegativeButton("No", dialogClickListener).show();
+        builder.setMessage(sb.toString())
+                .setTitle(mCommon.getColorString("Warning: You are about to shuffle", Color.RED))
+                .setPositiveButton("Yes, Proceed", dialogClickListener)
+                .setNegativeButton("No, Cancel", dialogClickListener).show();
     }
 
     private void getNumOfPlayersToShuffle() {
@@ -908,9 +946,24 @@ public class ClubLeagueSettings extends AppCompatActivity {
 
 
                 //TODO: Make group names configurable
-                Map.Entry<String, ArrayList<PlayerData>> entry = mAllPlayers.entrySet().iterator().next();
-                final ArrayList<PlayerData> silverNewPL = new ArrayList<>(mAllPlayers.get(Constants.SILVER));
-                final ArrayList<PlayerData> goldNewPL = new ArrayList<>(mAllPlayers.get(Constants.GOLD));
+                //Map.Entry<String, ArrayList<PlayerData>> entry = mAllPlayers.entrySet().iterator().next();
+                ArrayList<PlayerData> sList = mAllPlayers.get(Constants.SILVER);
+                if(sList==null) {
+                    Toast.makeText(ClubLeagueSettings.this,
+                            "No Silver players found!",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
+                ArrayList<PlayerData> gList = mAllPlayers.get(Constants.GOLD);
+                if(gList==null) {
+                    Toast.makeText(ClubLeagueSettings.this,
+                            "No Gold players found!",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                final ArrayList<PlayerData> silverNewPL = new ArrayList<>(sList);
+                final ArrayList<PlayerData> goldNewPL = new ArrayList<>(gList);
                 Log.i(TAG, "identifyPlayersToShuffle: Silver players:" + silverNewPL.toString());
                 Log.i(TAG, "identifyPlayersToShuffle: Gold players:" + goldNewPL.toString());
 
@@ -1220,7 +1273,8 @@ public class ClubLeagueSettings extends AppCompatActivity {
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                mCommon.showToast(ClubLeagueSettings.this, "Innings DB error on write: " + databaseError.getMessage(), Toast.LENGTH_SHORT);
+                mCommon.showToast(ClubLeagueSettings.this,
+                        "Innings DB error on write: " + databaseError.getMessage(), Toast.LENGTH_SHORT);
             }
         });
     }
@@ -1341,8 +1395,10 @@ public class ClubLeagueSettings extends AppCompatActivity {
                                     "To start fresh, create a new Innings first!",
                                     Toast.LENGTH_LONG).show();
                             dataSnapshot.getRef().removeValue();
-                            mCommon.mInnings = "";
                         }
+                        mCommon.mInnings = ""; //reset internal var even if it is not in DB
+                        mCommon.mRoundName = "";
+                        mCommon.mInningsDBKey = -1;
                     }
 
                     @Override
@@ -1413,9 +1469,77 @@ public class ClubLeagueSettings extends AppCompatActivity {
 
                 }
 
-                importPlayerData(Constants.GOLD, dataMap);
+                checkAndImportPlayerData(Constants.GOLD, dataMap);
             }
         }
+    }
+
+    //Flow is : Gold players -> Silver players -> Innings
+    void moveToNextPool(final String group, final Map<String, ArrayList<String>> dataMap) {
+        Log.d(TAG, "moveToNextPool: " + group);
+        //It is done sequentially as Dialog needs to be shown to user one after the other.
+        //If done all together, only the last operation is seen.
+        if(group.equals(Constants.GOLD))
+            checkAndImportPlayerData(Constants.SILVER, dataMap);
+        else if(group.equals(Constants.SILVER)){
+            //After all players are added, add innings if there is one.
+            //This should be sequential, otherwise innings
+            importInningsData(dataMap);
+        }
+        else {
+            //shudnt be here
+            Log.e(TAG, "moveToNextPool: why here? :" + group );
+        }
+    }
+
+    void checkAndImportPlayerData(final String group, final Map<String, ArrayList<String>> dataMap) {
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                .child(mCommon.mClub)
+                .child(Constants.GROUPS).child(group);
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                final long count = dataSnapshot.getChildrenCount();
+                if(count>0) {
+                    mImportHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            AlertDialog.Builder alertBuilder = new AlertDialog.Builder(ClubLeagueSettings.this);
+                            alertBuilder.setTitle("Import players");
+                            String str = "There are already " + count + " players in '" + group +
+                                    "' pool. You want to continue?";
+                            alertBuilder.setMessage(str);
+                            alertBuilder.setPositiveButton("Yes, proceed", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    importPlayerData(group, dataMap);
+                                }
+                            });
+                            alertBuilder.setNegativeButton("No, Cancel", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    moveToNextPool(group, dataMap);
+                                }
+                            });
+                            alertBuilder.show();
+                        }
+                    }); //end of post
+                } else {
+                    //no players in DB, go ahead and create new players
+                    mImportHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            importPlayerData(group, dataMap);
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w(TAG, "checkAndImportPlayerData:onCancelled", databaseError.toException());
+            }
+        });
     }
 
     void importPlayerData(final String group, final Map<String, ArrayList<String>> dataMap) {
@@ -1425,32 +1549,31 @@ public class ClubLeagueSettings extends AppCompatActivity {
             final ArrayList<String> players = entry.getValue();
 
                 AlertDialog.Builder alertBuilder = new AlertDialog.Builder(ClubLeagueSettings.this);
-                SpannableStringBuilder title = new SpannableStringBuilder("Review new players for ");
+                SpannableStringBuilder title = new SpannableStringBuilder("Review players being imported to ");
                 title.append(SharedData.getInstance().getStyleString(group, Typeface.ITALIC));
+                title.append(" pool");
                 alertBuilder.setTitle(SharedData.getInstance().getColorString(title,
                         getResources().getColor(R.color.colorTealGreen)));
                 alertBuilder.setMessage(players.toString());
                 alertBuilder.setPositiveButton("Proceed", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
+                        if(players.size()>0)
+                            mCommon.showToast(ClubLeagueSettings.this,
+                                    "Adding players to '" + group + "' pool...",
+                                    Toast.LENGTH_SHORT);
+
                         for(String player: players) {
                             onClickNewUser(player, group);
                         }
 
-                        //It is done sequentially as Dialog needs to be shown to user one after the other.
-                        //If done all together, only the last operation is seen.
-                        if(group.equals(Constants.GOLD)) importPlayerData(Constants.SILVER, dataMap);
-                        else {
-                            //After all players are added, add innings if there is one.
-                            //This should be sequential, otherwise innings
-                            importInningsData(dataMap);
-                        }
+                        moveToNextPool(group, dataMap);
                     }
                 });
                 alertBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-
+                        moveToNextPool(group, dataMap);
                     }
                 });
                 alertBuilder.show();
@@ -1460,10 +1583,9 @@ public class ClubLeagueSettings extends AppCompatActivity {
     void importInningsData(final Map<String, ArrayList<String>> dataMap) {
         //Log.d(TAG, "importInningsData: ");
         for (Map.Entry<String, ArrayList<String>> entry : dataMap.entrySet()) {
-            final String group = entry.getKey();
-            final ArrayList<String> players = entry.getValue();
             if(entry.getKey().equals(Constants.INNINGS)) {
                 onClickCreateNewInnings(entry.getValue().get(0));  //first name is the innings name
+                break;
             }
         }
     }

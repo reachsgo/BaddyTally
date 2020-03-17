@@ -718,6 +718,8 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                 if (null == innings) {
                     //no innings in DB
                     mCommon.mInnings = "";
+                    mCommon.mRoundName = "";
+                    mCommon.mInningsDBKey = -1;
                     Log.v(TAG, "fetchInnings: null");
                     //doTransaction with null input is called once always.
                     //Even if the DB is not connected at this time, it will get connected
@@ -762,18 +764,6 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
                         break;
                     }
                 }
-
-                //do less in the firebase callback
-                uiHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        //when you are here, you are sure that DB is connected.
-                        mCommon.fetchProfile(ClubLeagueActivity.this, ClubLeagueActivity.this, mClub);
-                        fetchGames(Constants.GOLD, mGoldPlayedGames, mCommon.mGoldPresentPlayerNames);
-                        fetchGames(Constants.SILVER, mSilverPlayedGames, mCommon.mSilverPresentPlayerNames);
-                    }
-                });
-                setFooter();
                 return Transaction.success(mutableData);
             }
 
@@ -781,6 +771,18 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
             public void onComplete(@Nullable DatabaseError databaseError, boolean b,
                                    @Nullable DataSnapshot dataSnapshot) {
                 Log.d(TAG, "onComplete: fetchInnings");
+                //when you are here, you are sure that DB is connected. Even if there is no innings
+                //created yet, onComplete will be invoked.
+                uiHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        //do less in the firebase callback
+                        mCommon.fetchProfile(ClubLeagueActivity.this, ClubLeagueActivity.this, mClub);
+                        fetchGames(Constants.GOLD, mGoldPlayedGames, mCommon.mGoldPresentPlayerNames);
+                        fetchGames(Constants.SILVER, mSilverPlayedGames, mCommon.mSilverPresentPlayerNames);
+                    }
+                });
+                setFooter();
             }
         });
     }

@@ -18,6 +18,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.animation.Animation;
@@ -34,6 +35,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -406,22 +408,55 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             final ArrayAdapter<Integer> dataAdapter1 = new ArrayAdapter<>(parentActivity,
                     android.R.layout.simple_spinner_item, matchNumList);
             dataAdapter1.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            mSpinner1.setSelection(0);
             mSpinner1.setAdapter(dataAdapter1);
+            mSpinner1.setSelection(0);
+            
+            mSpinner1.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                @Override
+                public void onFocusChange(View view, boolean b) {
+                    Log.d(TAG, "onFocusChange: ");
+                }
+            });
 
 
             List<Integer> bestOfList = new ArrayList<>(Arrays.asList(1, 3));
             final ArrayAdapter<Integer> dataAdapter2 = new ArrayAdapter<>(parentActivity,
                     android.R.layout.simple_spinner_item, bestOfList);
             dataAdapter2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            mSpinner2.setSelection(2);
             mSpinner2.setAdapter(dataAdapter2);
+            mSpinner2.setSelection(1);  //setSelection() should be after setAdapter()
 
             enter = findViewById(R.id.enter_button);
             enter.setOnClickListener(this);
 
             cancel = findViewById(R.id.cancel_button);
             cancel.setOnClickListener(this);
+
+            findViewById(R.id.league_mnum_ll).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    AlertDialog.Builder hBuilder = new AlertDialog.Builder(TournaSettings.this);
+                    hBuilder.setMessage(Html.fromHtml(
+                            "<a href=\"https://sites.google.com/view/scoretally/user-guide/tournament-league\">Help on match-set</a>"))
+                        .setTitle("Match sets")
+                        .setNeutralButton("Ok", null);
+                    AlertDialog help = hBuilder.create();
+                    help.show();
+                    // Make the textview clickable. Must be called after show()
+                    ((TextView)help.findViewById(android.R.id.message))
+                            .setMovementMethod(LinkMovementMethod.getInstance());
+
+                    /* To check if clicking outside will dismiss the Dialog. Answer is yes.
+                    help.setOnDismissListener(new OnDismissListener() {
+                        @Override
+                        public void onDismiss(DialogInterface dialogInterface) {
+                            Log.d(TAG, "onDismiss: ");
+                        }
+                    });
+
+                     */
+                }
+            });
 
         }
 

@@ -308,7 +308,6 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
             ArrayList<String> strList = (ArrayList<String>)inobj;
             if(strList.size()!=3) {
                 Log.e(TAG, "callback: unexpected input! " + strList.size());
-                Log.e(TAG, "callback: unexpected input! " + strList.size());
                 Toast.makeText(mContext, "Internal error in callback", Toast.LENGTH_SHORT)
                         .show();
                 return;
@@ -325,8 +324,9 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
                         .show();
                 Log.i(TAG, "Bad Input! Enter only alphanumeric values: [" + pShort + "] [" + pLong + "]");
             } else {
-                if(mCommon.checkIfPlayerAlreadyExists(mContext, pShort)) {
-                    Toast.makeText(mContext, "Player nick name '" + pShort + "' is taken. Use something else.", Toast.LENGTH_SHORT)
+                if(mCommon.checkIfPlayerAlreadyExists(mContext, pShort, pLong)) {
+                    Toast.makeText(mContext, "Player name " + pShort + "/" + pLong +
+                            " is taken. Try another name.", Toast.LENGTH_SHORT)
                             .show();
                     Log.i(TAG,  "Player id '" + pShort + "' is taken. Use another short name. [" + pLong + "]");
                     return;
