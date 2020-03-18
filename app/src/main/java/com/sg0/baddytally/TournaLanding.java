@@ -380,13 +380,13 @@ public class TournaLanding extends AppCompatActivity implements CallbackRoutine 
             AlertDialog.Builder builder = new AlertDialog.Builder(TournaLanding.this);
             builder.setTitle("Demo mode");
             builder.setMessage(
-                    "You are exploring 'demo mode' of the Club League screen.\n\n" +
+                    "You are exploring 'demo mode' of tournaments.\n\n" +
                             " ++ Click on any tournament to navigate to the tournament fixture screen.\n\n" +
-                            " ++ Super-user can 'long click' on any tournament and delete the tournament.\n\n" +
                             " ++ On right top, you can see 'refresh' and settings (3 dots) icons. " +
                             "From settings you can navigate to the below screens:\n" +
                             "      > Settings: Privileged users can perform tournament admin operations.\n\n" +
-                            " ++ On left top, you can see left arrow icon to go back to previous screen.\n\n"
+                            " ++ On left top, you can see left arrow icon to go back to previous screen.\n\n" +
+                            " ++ Super-user can 'long click' on any tournament and delete the tournament.\n\n"
             );
             builder.setPositiveButton("Remind me again", new DialogInterface.OnClickListener() {
                 @Override

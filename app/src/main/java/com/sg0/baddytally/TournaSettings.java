@@ -204,8 +204,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                     return;
                 }
                 mScenario = CREATE_NEW_TEAM;
-                if(mTUtil!=null) mTUtil.fetchActiveTournaments();
-                //callback is completed()
+                if(mTUtil!=null) mTUtil.fetchActiveTournaments(); //callback is completed(): CB_READTOURNA
             }
         });
 
@@ -266,7 +265,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
         }
 
         TournaUtil mTUtil = new TournaUtil(TournaSettings.this, TournaSettings.this);
-        mTUtil.fetchActiveTournaments();
+        mTUtil.fetchActiveTournaments(); //callback is completed(): CB_READTOURNA
     }
 
     //only for LeagueTournament
@@ -286,15 +285,13 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             return;
         }
         final String tourna = strList.get(0);
-        mTeamShort = strList.get(1).toUpperCase();
+        mTeamShort = SharedData.getUniqIDStr(strList.get(1), 0, null);
         mTeamLong = strList.get(2);
         //Log.d(TAG, "callback: got back:" + tourna + mTeamShort + mTeamLong);
-        Boolean errVal = false;
         //Log.i(TAG, "team name: [" + mTeamShort + "] [" + mTeamLong + "]");
-        if(!mTeamShort.matches("[A-Z0-9]+")) errVal = true;
-        if(!mTeamLong.matches("[A-Za-z0-9 ]+")) errVal = true;
-        if(errVal) {
-            Toast.makeText(TournaSettings.this, "Bad Input! Enter only alphanumeric values", Toast.LENGTH_SHORT)
+        if(!SharedData.isValidString(mTeamShort) || !SharedData.isValidString(mTeamLong)) {
+            Toast.makeText(TournaSettings.this,
+                    "Bad Input! Enter only alphanumeric values", Toast.LENGTH_SHORT)
                     .show();
             Log.e(TAG, "Bad Input! Enter only alphanumeric values: [" + mTeamShort + "] [" + mTeamLong + "]");
         } else {
@@ -878,7 +875,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
         this.startActivity(myIntent);
     }
 
-    //Schedule a match or create fixture
+    //Schedule a match or create fixture: CREATE_NEW_MATCH
     private void CreateNewMatchOrFixture() {
         if(mCommon.mTournaMap ==null || mCommon.mTournaMap.size()==0) {
             Toast.makeText(TournaSettings.this, "No active tournaments!",
@@ -942,12 +939,14 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
         }
     }
     public void completed (final String in, final Boolean ok) {
-        if(mScenario.isEmpty()) return;
+        if(mScenario.isEmpty()) return; //return if from onCreate()
+
         Log.w(TAG, "completed: " + in + ":" + ok);
-        if(in.equals(Constants.CB_READTOURNA)) {
+        if(in.equals(Constants.CB_READTOURNA)) {  //CREATE_NEW_TEAM
             //Callback from add new team
             if(ok) mTUtil.showTournaments(TournaSettings.this);
-        } else if(in.equals(Constants.CB_SHOWTOURNA)) {
+        } else if(in.equals(Constants.CB_SHOWTOURNA)) { //CREATE_NEW_TEAM
+            //To add a new team
             if(ok) {
                 mTourna = mTUtil.mTourna;
                 if (null==mCommon.mTournaMap || mCommon.mTournaMap.size() == 0) {
@@ -959,8 +958,8 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                     mCustomDialog = new TournaEditTextDialog(TournaSettings.this, TournaSettings.this);
                     mCustomDialog.setContents(mTourna, CREATE_NEW_TEAM,
                             "Add new team to " + mTourna,
-                            "Short name", " P4F ",   //8 chars
-                            "Full name", "  Play for Fun  ");
+                            "ID", " P4F ",
+                            "Team name", "  Play for Fun  ");
                     mCustomDialog.setTitle(mTourna);
                     mCustomDialog.show();  //callback is handled by onClickNewteam()
                 } else if (mCommon.isEliminationTournament(mTourna)) {
@@ -968,7 +967,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                     mTeamDialog.show();
                 }
             }
-        } else {
+        } else { //CREATE_NEW_MATCH
             //callback from readDBTeam
             if (ok) getMatchInputs(in);
         }
@@ -1002,7 +1001,9 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
     }
 
 
-    // --------------- Dialog to schedule a new match -------------------
+    // --------------- Dialog to schedule a new team for EliminationTournament -------------------
+    //                   only team id and player names are required in this format.
+    //             SGO: This is not ideal. Should have been consistent with all other formats (TODO)
     private class TeamDialogClass extends Dialog implements
             View.OnClickListener {
 
@@ -1132,10 +1133,10 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
 
         private void createTeam() {
             EditText et_team = findViewById(R.id.newTeam_et);
-            final String tName = et_team.getText().toString().trim();
+            final String tID = SharedData.getUniqIDStr(
+                    et_team.getText().toString().trim(), 0, null);
 
-
-            if(tName.isEmpty()) {
+            if(tID.isEmpty()) {
                 Log.e(TAG, "createTeam : name is empty");
                 Toast.makeText(TournaSettings.this, "Enter team name!", Toast.LENGTH_LONG)
                         .show();
@@ -1143,7 +1144,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                 return;
             }
 
-            if(!SharedData.isValidString(tName)) {
+            if(!SharedData.isValidString(tID)) {
                 Toast.makeText(TournaSettings.this, "Enter alphanumeric team name!",
                         Toast.LENGTH_LONG)
                         .show();
@@ -1153,27 +1154,28 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
 
             int idx =  mSpinner0.getSelectedItemPosition();
             Integer resId  = mResIdList.get(idx);
-            Boolean err = false;
+            boolean err = false;
             List<String> playerList = new ArrayList<>();
             for (int j = 0; j <= idx; j++) {
                 EditText et = findViewById(mResIdList.get(j));
                 String pName = et.getText().toString().trim();
-                if(pName.isEmpty() || !SharedData.isValidString(pName)) err = true;
+                if(pName.isEmpty() || !SharedData.isValidString(pName) ||
+                    playerList.contains(pName)) err = true;
                 else playerList.add(pName);
             }
 
-            Log.v(TAG, "createTeam: " + tName + "," + playerList.toString());
+            Log.v(TAG, "createTeam: " + tID + "," + playerList.toString());
             if(err) {
                 Log.e(TAG, "createTeam : Invalid player names");
                 Toast.makeText(TournaSettings.this,
-                        "Invalid player names! Use alphanumeric characters only.",
+                        "Invalid player names! Use alphanumeric characters only and no duplicates!",
                         Toast.LENGTH_LONG).show();
                 mDialogueDone = true; //stop the background loop waiting to dismiss the dialogue window
                 return;
             }
 
             final TeamDBEntry teamDBEntry = new TeamDBEntry();
-            teamDBEntry.setId(tName);
+            teamDBEntry.setId(tID);
             teamDBEntry.setP(playerList);
 
             final DatabaseReference dbRef = mDatabase.child(mCommon.mClub)
@@ -1197,9 +1199,9 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                                 FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
                                         .child(Constants.TOURNA).child(mTourna),
                                 String.format(Locale.getDefault(),"NEW %s/%s/%s/%s",
-                                        Constants.TOURNA, mTourna, Constants.TEAMS, tName));
+                                        Constants.TOURNA, mTourna, Constants.TEAMS, tID));
 
-                        Toast.makeText(TournaSettings.this, "Team '" + tName +"' created.",
+                        Toast.makeText(TournaSettings.this, "Team '" + tID +"' created.",
                                 Toast.LENGTH_LONG).show();
                         mDialogueDismiss = true; //notify background loop to dismiss the dialogue window
                         return;
@@ -1244,9 +1246,9 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                                 FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
                                         .child(Constants.TOURNA).child(mTourna),
                                 String.format(Locale.getDefault(),"NEW %s/%s/%s/%s",
-                                        Constants.TOURNA, mTourna, Constants.TEAMS, tName));
+                                        Constants.TOURNA, mTourna, Constants.TEAMS, tID));
 
-                        Toast.makeText(TournaSettings.this, "Team '" + tName +"' created.",
+                        Toast.makeText(TournaSettings.this, "Team '" + tID +"' created.",
                                 Toast.LENGTH_LONG).show();
                         mDialogueDismiss = true; //notify background loop to dismiss the dialogue window
                     } else {
@@ -1263,9 +1265,9 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                                         FirebaseDatabase.getInstance().getReference().child(mCommon.mClub)
                                                 .child(Constants.TOURNA).child(mTourna),
                                         String.format(Locale.getDefault(),"NEW %s/%s/%s/%s",
-                                                Constants.TOURNA, mTourna, Constants.TEAMS, tName));
+                                                Constants.TOURNA, mTourna, Constants.TEAMS, tID));
 
-                                Toast.makeText(TournaSettings.this, "Team '" + tName +"' created.",
+                                Toast.makeText(TournaSettings.this, "Team '" + tID +"' created.",
                                         Toast.LENGTH_LONG).show();
                                 mDialogueDismiss = true; //notify background loop to dismiss the dialogue window
                             }
@@ -1366,12 +1368,12 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                     break;
                 case R.id.enter_button:
                     if(!team1.isEmpty() && !team2.isEmpty()) {
-                        readDB(team1, team2);
+                        readDB(team1, team2, true);
                     }
                     break;
                 case R.id.auto_button:
                     team1 = AUTO_GEN;
-                    readDB(team1, team2);
+                    readDB(team1, team2, false);
                     break;
                 default:
                     break;
@@ -1379,7 +1381,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             dismiss();
         }
 
-        private void readDB(final String team1, final String team2) {
+        private void readDB(final String team1, final String team2, final Boolean toast) {
             if(mTourna.isEmpty()) return;
             final DatabaseReference dbRef = mDatabase.child(mCommon.mClub).child(Constants.TOURNA)
                     .child(mTourna).child(Constants.MATCHES).child(Constants.META);
@@ -1418,7 +1420,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                             desc = "";
                         }
                         createMatch(team1, team2, mNextKey, mNumOfMatches,
-                                desc, false);
+                                desc, toast);
                     }
                     else {
                         mCommon.showToast(parentActivity, "Number of matches not configured!", Toast.LENGTH_SHORT);

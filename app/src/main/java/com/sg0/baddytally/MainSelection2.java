@@ -343,7 +343,7 @@ public class MainSelection2 extends AppCompatActivity {
             builder.setMessage(
                     "You are exploring 'demo mode' of the app.\n\n" +
                             " ++ Demo club has ongoing club league and tournaments.\n\n" +
-                            " ++ You can explore the club league and tournaments pages to get a feel of the app.\n\n" +
+                            " ++ You can explore the club league and tournament pages to get a feel of the app.\n\n" +
                             " ++ You can browse points table, fixture, game scores, player statistics etc\n\n" +
                             " ++ You have only 'member' role access. So no updates can be made.\n\n" +
                             " ++ To exit the demo mode, go to settings and click 'Logout'.\n\n"

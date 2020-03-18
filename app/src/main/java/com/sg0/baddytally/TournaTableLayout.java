@@ -2247,7 +2247,7 @@ public class TournaTableLayout extends AppCompatActivity {
                     }
 
                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(TournaTableLayout.this);
-                    alertBuilder.setTitle("(Seeding) and Teams for " + mCommon.mTournament);
+                    alertBuilder.setTitle("(Seeding) and Teams for \n" + mCommon.mTournament);
                     alertBuilder.setMessage(sb.toString());
                     alertBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                         @Override

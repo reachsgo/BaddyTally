@@ -250,8 +250,8 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
                             case ADD_PLAYER:
                                 mCustomDialog.setContents(team, NEWPLAYER_TITLE,
                                         mTourna + "\nAdd new player to " + team,
-                                        "Nick name", "  JACK  ",   //8 chars
-                                        "Full name", "  Jack Daniels  ");
+                                        "ID", "  JACK  ",   //8 chars
+                                        "Name", "  Jack Daniels  ");
                                 //mCustomDialog.setTitle(mTourna);
                                 if (null != mCustomDialog.getWindow()) {
                                     mCustomDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
@@ -313,13 +313,10 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
                 return;
             }
             final String team = strList.get(0);
-            final String pShort = strList.get(1);
+            final String pShort = SharedData.getUniqIDStr(strList.get(1), 0, null);
             final String pLong = strList.get(2);
             Log.d(TAG, "callback: got back:" + team+ pShort + pLong);
-            Boolean errVal = false;
-            if(!pShort.matches("[A-Za-z0-9-_]+")) errVal = true;
-            if(!pLong.matches("[A-Za-z0-9 -_]+")) errVal = true;
-            if(errVal) {
+            if(!SharedData.isValidString(pShort) || !SharedData.isValidString(pLong)) {
                 Toast.makeText(mContext, "Bad Input! Enter only alphanumeric values", Toast.LENGTH_SHORT)
                         .show();
                 Log.i(TAG, "Bad Input! Enter only alphanumeric values: [" + pShort + "] [" + pLong + "]");

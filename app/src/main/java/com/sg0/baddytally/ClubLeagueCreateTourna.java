@@ -247,7 +247,8 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
                     if(tE.getId().equals(team)) {
                         mTeams.remove(team);
                         mTeamDBEntries.remove(tE);
-                        //removing an item while iterating is not good, but ok here as the loop is not continued after this
+                        //removing an item while iterating is not good, but ok here as the
+                        //loop is not continued after this
                         mTeamsLA.notifyDataSetChanged();
                         mPlayers.addAll(tE.getP());
                         mPlayersLA.notifyDataSetChanged();
@@ -258,7 +259,8 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
         });
 
         List<Integer> bestOfList = new ArrayList<>(Arrays.asList(1, 3));
-        final ArrayAdapter<Integer> dataAdapter2 = new ArrayAdapter<>(ClubLeagueCreateTourna.this,
+        final ArrayAdapter<Integer> dataAdapter2 = new ArrayAdapter<>(
+                ClubLeagueCreateTourna.this,
                 android.R.layout.simple_spinner_item, bestOfList);
         dataAdapter2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         Spinner mSpinner2 = findViewById(R.id.bestOf_spinner);
@@ -350,16 +352,6 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
                     case 5:  //applicable only for doubles
                         Spinner mSpinner0 = findViewById(R.id.tourna_type_spinner);
                         int idx =  mSpinner0.getSelectedItemPosition();
-
-                        /*
-                        String mNewTournaType  = mMatchTypeListShort.get(idx);
-                        if(mNewTournaType.equals(Constants.LEAGUE)) {
-                            Toast.makeText(ClubLeagueCreateTourna.this,
-                                            "League not supported now",
-                                    Toast.LENGTH_SHORT).show();
-                            break;
-                        }
-                         */
 
                         findViewById(R.id.final_step_tv).setVisibility(View.VISIBLE);
                         String msg = "You are about to create '" + mTourna + "' tournament!\n" +
@@ -497,28 +489,32 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 if (dataSnapshot.hasChild(mTourna)) {
                     //Log.w(TAG, FN + " tournament already exists: " + mTourna);
-                    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(ClubLeagueCreateTourna.this);
-                    alertBuilder.setTitle("Overwrite?");
-                    alertBuilder.setMessage(
-                            mTourna + " already exists! Overwrite?");
-                    alertBuilder.setPositiveButton("yes", new DialogInterface.OnClickListener() {
+                    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(
+                            ClubLeagueCreateTourna.this);
+
+                    DialogInterface.OnClickListener posBtn = new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
-                            //delete existing data, especially needed for League format so that stale team data is removed
+                            //delete existing data, especially needed for League format so that
+                            //stale team data is removed
                             dbRef.child(mTourna).setValue(null);
                             dbRef.child(Constants.ACTIVE).child(mTourna).setValue(null);
                             createSubTournamentInDB(dbRef, mTourna, mTeamDBEntries);
-                        }
-                    });
-                    alertBuilder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                        }};
+
+                    DialogInterface.OnClickListener negBtn = new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
                             //allow the user to change the tournament name
                             Button backBtn = findViewById(R.id.back_button);
                             backBtn.performClick();
-                        }
-                    });
-                    alertBuilder.show();
+                        }};
+
+                    alertBuilder.setTitle("Overwrite?")
+                            .setMessage(mTourna + " already exists! Overwrite?")
+                            .setPositiveButton("yes", posBtn)
+                            .setNegativeButton("No", negBtn)
+                            .show();
                 } else {
                     //tournament does not exist in DB, create new.
                     createSubTournamentInDB(dbRef, mTourna, mTeamDBEntries);
@@ -539,12 +535,16 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
 
         if(mSingles) {
             //build the team data structure
+            mTeamDBEntries.clear();  //for singles, team data structures are filled here.
+            mTeams.clear();          //reset teh data here, as clicking back and then next again
+                                     //should not cause duplicate entries.
+
             for (String p : mPlayers) {
                 List<String> players = new ArrayList<>();
                 if(mTeamEntry==null) mTeamEntry = new TeamDBEntry();
-                players.add(p);
+                players.add(p);  //player (full) names are already unique in the club league DB
                 mTeamEntry.setP(players);
-                String tName = getTeamName(players);
+                String tName = getTeamName(players);  //get unique team names
                 mTeamEntry.setId(tName);
                 mTeams.add(tName);
                 mTeamDBEntries.add(mTeamEntry);
@@ -609,13 +609,16 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
 
         //Log.d(TAG, newTourna + ":createLeagueTeamData: " + teamDBEntries.size());
         ArrayList<TeamInfo> teamList = new ArrayList<>();
+        ArrayList<String> currPNickList = new ArrayList<>();
         for (TeamDBEntry teamDBEntry: teamDBEntries) {
             TeamInfo tI = new TeamInfo(teamDBEntry.getId());
             for (String p: teamDBEntry.getP()) {
                 tI.players.add(p);
-                //User name in Club League is only 8 chars. activity_clubleague_settings.xml > android:maxLength="8"
-                tI.p_nicks.add( SharedData.getUniqIDStr(p, 8, null) );
+                //User name in Club League is 20 chars. activity_clubleague_settings.xml > android:max_longname_len="20"
+                String nickName = SharedData.getUniqIDStr(p, 0, currPNickList);
+                tI.p_nicks.add( nickName );
                 //There is no check for length of nick name anywhere else: see readTournaExcel()
+                currPNickList.add(nickName); //so that there are no duplicate nick names
             }
             teamList.add(tI);
             //Log.d(TAG, "createLeagueTeamData: Adding:" + tI.toString());
@@ -702,11 +705,13 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
                 if(tI.name.equals(otherTI.name)) {
                     Toast.makeText(ClubLeagueCreateTourna.this, "Duplicate team name '" + tI.name +"'.",
                             Toast.LENGTH_SHORT).show();
+                    //Log.d(TAG, "isValidLeagueTeamData1: " + teamList.toString());
                     return false;
                 }
                 if(tI.desc.equals(otherTI.desc)) {
                     Toast.makeText(ClubLeagueCreateTourna.this, "Duplicate team name '" + tI.desc +"'.",
                             Toast.LENGTH_SHORT).show();
+                    //Log.d(TAG, "isValidLeagueTeamData2: " + teamList.toString());
                     return false;
                 }
                 for(String nick1 : tI.p_nicks){
@@ -715,6 +720,7 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
                             Toast.makeText(ClubLeagueCreateTourna.this, "Duplicate player name '" +
                                             nick1 +"'.",
                                     Toast.LENGTH_SHORT).show();
+                            //Log.d(TAG, "isValidLeagueTeamData3: " + tI.p_nicks.toString());
                             return false;
                         }
                     }
@@ -726,6 +732,7 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
                             Toast.makeText(ClubLeagueCreateTourna.this, "Duplicate player name '" +
                                             name1 +"'.",
                                     Toast.LENGTH_SHORT).show();
+                            //Log.d(TAG, "isValidLeagueTeamData4: " + otherTI.players.toString());
                             return false;
                         }
                     }
@@ -735,26 +742,6 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
         }
         return true;
     }
-/*
-    String getPlayerId(final String p, int playerIdLen) {
-        if(p==null) return "null";
-        String p1 = p.replaceAll("\\s+", "");  //remove all spaces
-        if(playerIdLen<=0) {
-            //To be decided here, mainly for SE/DE formats.
-            playerIdLen = TeamDBEntry.MAX_ID_LEN;
-            if (!mSingles)
-                playerIdLen = TeamDBEntry.MAX_ID_LEN / 2 - 1;  //format = "<player1>-<player2>#"
-        }
-        //Log.d(TAG, playerIdLen + ":getPlayerId: p1=[" + p1 + "]");
-        if(p1.length() > playerIdLen)
-            //The substring begins at the specified beginIndex and extends to the character at
-            //index endIndex - 1. Thus the length of the substring is endIndex-beginIndex.
-            return p1.substring(0,playerIdLen); //not playerIdLen-1; see comment above
-        else
-            return p1;
-    }
-
- */
 
     //get unique team name
     String getTeamName(final List<String> players) {
@@ -762,8 +749,7 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
 
         String teamName;
         if(players.size()==1) {
-            teamName = SharedData.getUniqIDStr(players.get(0),
-                    TeamDBEntry.MAX_ID_LEN, null); //singles: only 1 player
+            teamName = players.get(0);  //singles: only 1 player; getUniqIDStr() is called below.
         } else {
             //doubles: form a team name from both the player names
             teamName = String.format("%s-%s",
@@ -772,27 +758,11 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
                     SharedData.getUniqIDStr(players.get(1),
                             TeamDBEntry.MAX_ID_LEN / 2 - 1, null));
         }
-        teamName = teamName.toLowerCase();
         //Log.d(TAG, teamName +":getTeamName: mTeams=[" + mTeams.toString() + "]");
 
-        if(mTeams.contains(teamName)) {
-            for (int i = 1; i < 100; i++) {
-                //TeamDBEntry.MAX_STR_LEN = 12
-                String fmtStr = "%" + (TeamDBEntry.MAX_ID_LEN-1) + "s%d"; //format = "<player1>-<player2>##"
-                String newTName = String.format(Locale.getDefault(),fmtStr, teamName, i)
-                        .toLowerCase().trim();
-                if(!mTeams.contains(newTName)) {
-                    //Log.d(TAG, fmtStr + " getTeamName: uniqueName=" + newTName);
-                    return newTName;
-                } else {
-                    Log.d(TAG, "getTeamName: name already taken:" + newTName);
-                }
-            }
-            //nothing worked, just create a random name
-            return UUID.randomUUID().toString();
-        } else {
-            return teamName;
-        }
+        //Now that we have a team name whether singles or doubles, make it a unique name
+        return SharedData.getUniqIDStr(teamName, TeamDBEntry.MAX_ID_LEN,
+                                mTeams); //pass the current list of teams so that a unique name is generated
     }
 
     void setPlayers() {

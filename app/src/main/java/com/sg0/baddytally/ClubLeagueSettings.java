@@ -465,7 +465,8 @@ public class ClubLeagueSettings extends AppCompatActivity {
             //Log.i(TAG, "onClickNewUser:" + name + ":" + group);
         }
 
-        final String finalName = name;
+        final String finalName = SharedData.truncate(name, false,
+                getResources().getInteger(R.integer.max_longname_len));
         final String finalGroup = group;
 
         if(!showDiag) {

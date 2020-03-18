@@ -315,6 +315,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
                 myIntent.putExtra("group", mGroupRadioButton.getText());
                 myIntent.putExtra("new_round", newRoundFlag);
                 LoginActivity.this.startActivityForResult(myIntent, Constants.ENTERDATA_ACTIVITY);
+                mCommon.killActivity(LoginActivity.this, RESULT_OK);
             }
         });
 
@@ -625,7 +626,7 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
         mCommon.mUser = mUser;
         mCommon.wakeUpDBConnection();  //update DB with the new user login
         if (mInitialAttempt && mActToStart.isEmpty()) {
-            killActivity();   //finish was not ending the activity here.
+            mCommon.killActivity(this, RESULT_OK);;   //finish was not ending the activity here.
             return;
         }
 
@@ -638,50 +639,6 @@ public class LoginActivity extends AppCompatActivity implements CallbackRoutine 
             startActivity(intent);
         }
 
-    }
-
-    private void createEnterDataActivity() {
-
-        if (mActToStart.equals(Constants.ACTIVITY_SETTINGS)) {
-            mCommon.wakeUpDBConnection();
-            Intent settingsIntent = new Intent(LoginActivity.this, ClubLeagueSettings.class);
-            LoginActivity.this.startActivityForResult(settingsIntent, Constants.SETTINGS_ACTIVITY);
-            return;
-        } else if (mActToStart.equals(Constants.ACTIVITY_TOURNA_SETTINGS)) {
-            mCommon.wakeUpDBConnection();
-            Intent settingsIntent = new Intent(LoginActivity.this, TournaSettings.class);
-            LoginActivity.this.startActivityForResult(settingsIntent, Constants.SETTINGS_ACTIVITY);
-            return;
-        }
-        if (mTournaFlag) {
-            Intent thisIntent = getIntent(); // gets the previously created intent
-            String tType = thisIntent.getStringExtra(Constants.TOURNATYPE);
-
-            //Log.i(TAG, "successfulLogin, tournament mode");
-            if (tType.equals(Constants.SE) || tType.equals(Constants.DE)) {
-                Intent myIntent = new Intent(LoginActivity.this, TournaSEDEEnterData.class);
-                myIntent.putExtra(Constants.TOURNATYPE, tType);
-                myIntent.putExtra(Constants.MATCH, thisIntent.getStringExtra(Constants.MATCH));
-                myIntent.putExtra(Constants.FIXTURE, thisIntent.getStringExtra(Constants.FIXTURE));
-                myIntent.putStringArrayListExtra(Constants.TEAMS, thisIntent.getStringArrayListExtra(Constants.TEAMS));
-                myIntent.putStringArrayListExtra(Constants.TEAM1PLAYERS, thisIntent.getStringArrayListExtra(Constants.TEAM1PLAYERS));
-                myIntent.putStringArrayListExtra(Constants.TEAM2PLAYERS, thisIntent.getStringArrayListExtra(Constants.TEAM2PLAYERS));
-                LoginActivity.this.startActivityForResult(myIntent, Constants.ENTERDATA_ACTIVITY);
-            } else {
-                Intent myIntent = new Intent(LoginActivity.this, TournaLeagueEnterData.class);
-                myIntent.putExtra("gametype", mGameTypeRadioButton.getText());
-                LoginActivity.this.startActivityForResult(myIntent, Constants.ENTERDATA_ACTIVITY);
-            }
-
-        } else {
-            String newRoundFlag = "False";
-            //Log.i(TAG, "successfulLogin, new round flag:" + newRoundFlag);
-            Intent myIntent = new Intent(LoginActivity.this, ClubLeagueEnterData.class);
-            myIntent.putExtra("gametype", mGameTypeRadioButton.getText());
-            myIntent.putExtra("group", mGroupRadioButton.getText());
-            myIntent.putExtra("new_round", newRoundFlag);
-            LoginActivity.this.startActivityForResult(myIntent, Constants.ENTERDATA_ACTIVITY);
-        }
     }
 
     private boolean isPasswordValid(String password) {

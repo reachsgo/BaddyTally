@@ -1,0 +1,87 @@
+
+Test Cases: Club League
+=======================
+
+
+1. Create Club League from excel
+    1.1 Cancel Gold, Create Silver + innings
+    1.2 Create again: Create Gold, Cancel Silver + innings
+        - Note Shuffle warning dialog and cancel it
+    1.3 Create Gold & Silver again with new player names (from text file)
+    1.4 Create innings from settings GUI and see through the shuffling process
+    1.5 Create round and enter scores
+    1.6 Add a player from Settings GUI
+2. Create Club League from text file
+    2.1 Create Gold, Create Silver, no innings; Create innings from GUI
+    2.2 Reset Points
+    2.3 Cancel Gold, Cancel Silver, create innings
+    2.4 Delete All
+    2.5 Cancel Gold, Create Silver, create innings
+    2.6 Create innings from GUI: causes shuffling.
+        -Failure toast message saying no Gold players
+3.  Enter Gold & Silver players
+        -20 chars
+        -alphanumeric: "   Saju_G O -1  "
+        -multiple similar names:
+            - " sil Player 1"
+            - " sil Player 10"
+            - " sil Player 11"
+            - " sil Player 111"
+            - " sil Player 1110"
+        Failure cases:
+        -Duplicate names: "  KK-123" in Gold, " KK-123  " in Silver
+        -Symbols: . # $
+4.  History for root, super-user, admin, member user roles
+5.  Users for root, super-user, admin, member user roles
+6.  Round Summary
+7.  Create tournament from Club League:
+        >- Tournament name:  " Tourna -10"
+        - Tournament type
+            > SE-SINGLES
+            > SE-DOUBLES
+            > DE-SINGLES
+            > DE-DOUBLES
+            > LEAG-SINGLES
+            > LEAG-DOUBLES
+                   --Club League should have similar names as seen above
+        - button sequence: back -> next -> back -> back -> next -> create
+        - create fixture for random tournaments
+
+
+
+
+Test Cases: Tournaments
+=======================
+
+1. League -> Enter Score / Schedule / Match Summary
+2. SE -> Match Info, Enter Score, View Score, Reset Match Data
+3. DE -> Match Info, Enter Score, View Score, Reset Match Data
+4. Enter Score -> ScoreTracker
+5. SE/DE -> Zoom +/-
+6. SE/DE -> Pinch zoom in/out
+7. SE/DE -> Show teams
+8. SE/DE -> Export pdf
+9. SE/DE -> Create sub tournament
+10. SE/DE -> Show teams
+11. Settings -> New Tournament -> SE / DE / League from data file
+12. Settings -> New Tournament -> SE / DE / League (no file)
+13. Settings -> New Team "team-00" to League tournament#check that spaces, dots not allowed
+                -> "team-00" -> "player 01", "player 02"
+                -> "team-000" -> "player 01", "player002" #duplicate name, change to "player 010"
+                -> "team-00" -> "player01", "player02"  # alert to replace existing team
+                -> Create Fixture: Random / Seeding
+                -> Create Fixture: Seeding: Add 2 teams and leave few not seeded #verify only 2 teams seen in fixture
+14. Settings -> New Team to SE / DE
+        - Create fixture
+15. League -> Add new player
+16. League -> Remove a player
+17. League -> Delete team
+
+
+Test Cases: Misc
+=======================
+
+1.  Root login & check if service is running
+2.  New Club, Activation
+3.  Login from phone 1 to club XX, Delete club from phone 2 as root
+    #Note that update actions on phone1 should lead to a auto logout

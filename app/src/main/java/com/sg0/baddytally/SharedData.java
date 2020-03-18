@@ -2041,8 +2041,9 @@ public class SharedData {
         return retList;
     }
 
+    //remove spaces, trim, toLowerCase, make unique id compared to the list passed in
     static String getUniqIDStr(final String p, int len, final ArrayList<String> currentList) {
-        if(p==null) return "null";
+        if(p==null) return "";
         String p1 = p.replaceAll("\\s+", "");  //remove all spaces
         if(len<=0) len = TeamDBEntry.MAX_ID_LEN;
         String id;
@@ -2052,22 +2053,19 @@ public class SharedData {
             id = p1.substring(0,len); //not playerIdLen-1; see comment above
         else
             id = p1;
-        id = id.toLowerCase();
+        id = id.trim().toLowerCase();
         if(null!=currentList && currentList.contains(id)) {
             for (int i = 1; i < 100; i++) {
-                //TeamDBEntry.MAX_STR_LEN = 12
                 //%x.ys: The first digit (x) is the minimum length (the string will be left padded
                 //if it's shorter), the second digit (y) is the maxiumum length and the string will
                 //be truncated if it's longer.
                 String fmtStr = "%." + (TeamDBEntry.MAX_ID_LEN-2) + "s%d"; //format = "<name>##"
-                String newID = String.format(Locale.getDefault(),fmtStr, id, i)
-                        .toLowerCase().trim();
+                String newID = String.format(Locale.getDefault(),fmtStr, id, i);
                 if(!currentList.contains(newID)) {
                     Log.d(TAG, fmtStr + " getUniqIDStr: uniqueName=" + newID);
                     return newID;
-                } else {
-                    //Log.d(TAG, "getUniqIDStr: name already taken:" + newID);
                 }
+                //else { Log.d(TAG, "getUniqIDStr: name already taken:" + newID); }
             }
 
             for (int i = 0; i < 10; i++) {

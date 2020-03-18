@@ -1320,8 +1320,8 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
             AlertDialog.Builder builder = new AlertDialog.Builder(ClubLeagueActivity.this);
             builder.setTitle("Demo mode");
             builder.setMessage(
-                    "You are exploring 'demo mode' of the Club League screen.\n\n" +
-                            " ++ Click on Gold or Silver header to maximise the group screen.\n\n" +
+                    "You are exploring 'demo mode' of Club League.\n\n" +
+                            " ++ Click on Gold or Silver header to maximise the pool screen.\n\n" +
                             " ++ Click on Innings or Season tab header to sort on that column.\n\n" +
                             " ++ Click on a player to see statistics.\n\n" +
                             " ++ On right top, you can see 'refresh' and settings (3 dots) icons. " +
