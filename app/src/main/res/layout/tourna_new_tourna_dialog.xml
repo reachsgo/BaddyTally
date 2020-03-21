@@ -23,74 +23,53 @@
         android:background="@color/colorWhite" />
 
 
-    <LinearLayout
-        android:layout_width="wrap_content"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/step2_v1"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_margin="10dp"
-            android:text="Name: "
-            android:textColor="@android:color/black"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp">
 
         <EditText
             android:id="@+id/et_newTourna"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:hint="      2019CANOPEN      "
-            android:inputType="textCapCharacters"
-            android:maxLength="24"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:textColor="@android:color/white"
-            android:textColorHint="@android:color/darker_gray"
-            android:textSize="15sp"
-            android:textStyle="italic" />
-    </LinearLayout>
-    <View
-        android:layout_marginTop="1dp"
-        android:layout_width="match_parent"
-        android:layout_height="2dip"
-        android:background="@color/colorWhite" />
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_margin="10dp"
-            android:layout_marginBottom="15dp"
-            android:text="Description: "
+            android:hint="*Tournament name"
+            android:digits="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 -_"
+            android:inputType="text"
             android:textColor="@android:color/black"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+            android:textColorHint="@android:color/black"
+            android:imeActionId="1"
+            android:imeActionLabel="Tournament name"
+            android:imeOptions="actionUnspecified"
+            android:maxLines="1"
+            android:singleLine="true" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/step2_v2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp">
 
         <EditText
             android:id="@+id/et_newTourna_desc"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:hint="2019 Canadian Open"
+            android:layout_height="wrap_content"
+            android:hint="Description"
+            android:digits="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 -_"
             android:inputType="text"
+            android:textColor="@android:color/black"
+            android:textColorHint="@android:color/black"
+            android:imeActionId="1"
+            android:imeActionLabel="Description"
+            android:imeOptions="actionUnspecified"
             android:maxLines="1"
-            android:singleLine="true"
-            android:textColor="@android:color/white"
-            android:textColorHint="@android:color/darker_gray"
-            android:textSize="15sp"
-            android:textStyle="italic" />
-    </LinearLayout>
+            android:singleLine="true" />
+    </com.google.android.material.textfield.TextInputLayout>
+
     <View
         android:layout_marginTop="1dp"
         android:layout_width="match_parent"
@@ -109,7 +88,7 @@
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:layout_marginStart="10dp"
-            android:text="Type:"
+            android:text="*Type:"
             android:textColor="@android:color/black"
             android:textSize="15sp"
             android:textStyle="bold" />

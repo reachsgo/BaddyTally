@@ -1455,9 +1455,9 @@ public class ClubLeagueSettings extends AppCompatActivity {
                 final Map<String, ArrayList<String>> dataMap = new HashMap<>();
                 try {
                     if(uri.toString().contains(".xls")) {
-                        dataMap.putAll(mCommon.readClubLeagueExcel(this, uri));
+                        dataMap.putAll(SharedData.readClubLeagueExcel(this, uri));
                     } else {
-                        dataMap.putAll(mCommon.readClubLeagueText(this, uri));
+                        dataMap.putAll(SharedData.readClubLeagueText(this, uri));
                     }
                 } catch (Exception e) {
                     Log.e(TAG, "onActivityResult: Exception in readClubLeagueExcel:" + e.toString());

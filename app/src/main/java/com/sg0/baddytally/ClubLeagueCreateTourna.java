@@ -295,14 +295,15 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
                     //name/desc is entered and "next" button is pressed after that
                     case 2:  //Enter name / desc; followed by Enter button.
                         EditText et = findViewById(R.id.et_newTourna);
-                        mTourna = et.getText().toString();
+                        //upper case or lower case; all good!
+                        mTourna = SharedData.getUniqIDStr(et.getText().toString(),
+                                                        0, null); //tourna name
                         if(mTourna.isEmpty()) {
                             Toast.makeText(ClubLeagueCreateTourna.this,
                                     "Enter tournament name",
                                     Toast.LENGTH_SHORT).show();
                             return;
                         }
-                        mTourna = mTourna.toUpperCase();
 
                         //hide keyboard
                         InputMethodManager inputMethodManager =
@@ -615,7 +616,7 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
             for (String p: teamDBEntry.getP()) {
                 tI.players.add(p);
                 //User name in Club League is 20 chars. activity_clubleague_settings.xml > android:max_longname_len="20"
-                String nickName = SharedData.getUniqIDStr(p, 0, currPNickList);
+                String nickName = SharedData.getUniqIDStr(p, 0, currPNickList).toLowerCase();
                 tI.p_nicks.add( nickName );
                 //There is no check for length of nick name anywhere else: see readTournaExcel()
                 currPNickList.add(nickName); //so that there are no duplicate nick names
@@ -761,8 +762,8 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
         //Log.d(TAG, teamName +":getTeamName: mTeams=[" + mTeams.toString() + "]");
 
         //Now that we have a team name whether singles or doubles, make it a unique name
-        return SharedData.getUniqIDStr(teamName, TeamDBEntry.MAX_ID_LEN,
-                                mTeams); //pass the current list of teams so that a unique name is generated
+        //pass the current list of teams so that a unique name is generated
+        return SharedData.getUniqIDStr(teamName, TeamDBEntry.MAX_ID_LEN, mTeams).toLowerCase();
     }
 
     void setPlayers() {

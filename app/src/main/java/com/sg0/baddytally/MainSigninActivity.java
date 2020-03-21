@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity;
 public class MainSigninActivity extends AppCompatActivity {
 
     private static final String TAG = "MainSignin";
+    private SharedData mCommon;
 
 
     @Override
@@ -31,6 +32,8 @@ public class MainSigninActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main_selection1);
+        mCommon = SharedData.getInstance();
+        mCommon.getUserID(MainSigninActivity.this);
 
         Button signin = findViewById(R.id.clubsignin);
         signin.setOnClickListener(new View.OnClickListener() {
@@ -52,11 +55,11 @@ public class MainSigninActivity extends AppCompatActivity {
         });
 
         //forcefully setup the DB listener, even if this is a re-login.
-        SharedData.getInstance().setUpDBConnectionListener();
+        mCommon.setUpDBConnectionListener();
 
         Button floatingBtn = findViewById(R.id.ms_button);
         //Log.d(TAG, "onCreate: check for root:" + SharedData.getInstance().toString());
-        if(SharedData.getInstance().isRoot()) {
+        if(mCommon.isRoot()) {
 
             //final Intent intent = getIntent();
             //final String data1 = intent.getStringExtra(Constants.INTENT_DATASTR1);
@@ -81,9 +84,10 @@ public class MainSigninActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Toast.makeText(MainSigninActivity.this,
                         "Demo mode", Toast.LENGTH_LONG).show();
-                SharedData.getInstance().mClub = Constants.DEMO_CLUB;
-                SharedData.getInstance().mRole = Constants.MEMBER;
-                SharedData.getInstance().mDemoMode = true;
+                mCommon.mClub = Constants.DEMO_CLUB;
+                mCommon.wakeUpDBConnection2(Constants.DEMO_CLUB);  //set user id in DB
+                mCommon.mRole = Constants.MEMBER;
+                mCommon.mDemoMode = true;
                 Intent myIntent = new Intent(MainSigninActivity.this, MainSelection2.class);
                 MainSigninActivity.this.startActivity(myIntent);
             }
@@ -100,16 +104,16 @@ public class MainSigninActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         //Log.d(TAG, "onResume: ");
-        if(SharedData.getInstance().mCount == Constants.EXIT_APPLICATION) killActivity();
+        if(mCommon.mCount == Constants.EXIT_APPLICATION) killActivity();
         //Intent myIntent = new Intent(MainSigninActivity.this, TrackScores.class);
         //MainSigninActivity.this.startActivity(myIntent);
         //dont keep this activity in stack to reduce heap usage (mainly due to background image)
         //history=false set in manifest
 
         //Refresh root credentials, isPermitted() will find if there are discrepancies
-        SharedData.getInstance().wakeupdbconnectionProfileRoot();
+        mCommon.wakeupdbconnectionProfileRoot();
 
-        if(SharedData.getInstance().isDBServerConnected() && SharedData.getInstance().mOfflineMode) {
+        if(mCommon.isDBServerConnected() && mCommon.mOfflineMode) {
             //in offline mode, remind the user
             //Do it only if there is network connectivity at this time. To make sure that the data
             //entered during offline-mode is sync-ed.
@@ -120,8 +124,8 @@ public class MainSigninActivity extends AppCompatActivity {
             alertBuilder.setPositiveButton("Disable", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
-                    SharedData.getInstance().persistOfflineMode(false, MainSigninActivity.this);
-                    //SharedData.getInstance().setOfflineMode(false, false);
+                    mCommon.persistOfflineMode(false, MainSigninActivity.this);
+                    //mCommon.setOfflineMode(false, false);
                     //Let the next app restart take care of disabling offline mode in Firebase
                     //At this time, firebase could have been already initialized
                     //and setOfflineMode() will fail on those cases. No hurry to disable offline mode!
@@ -144,8 +148,8 @@ public class MainSigninActivity extends AppCompatActivity {
     }
 
     void moveOn() {
-        if (!SharedData.getInstance().mClub.isEmpty() &&
-                !SharedData.getInstance().isRoot()) {
+        if (!mCommon.mClub.isEmpty() &&
+                !mCommon.isRoot()) {
             Intent myIntent = new Intent(MainSigninActivity.this, MainSelection2.class);
             //dont keep this activity in stack to reduce heap usage (mainly due to background image)
             //history=false set in manifest
@@ -158,7 +162,7 @@ public class MainSigninActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        SharedData.getInstance().killApplication(MainSigninActivity.this);
+        mCommon.killApplication(MainSigninActivity.this);
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -210,12 +214,11 @@ public class MainSigninActivity extends AppCompatActivity {
                 SharedData.showAboutAlert(MainSigninActivity.this);
                 break;
             case R.id.action_misc:
-                SharedData.getInstance().getUserID(MainSigninActivity.this);
                 AlertDialog.Builder newclubDialog = new AlertDialog.Builder(MainSigninActivity.this);
                 newclubDialog.setMessage(
                         "You are about to send an email to ScoreTally team.\n\n" +
                         "You will now be directed to your favourite email client.")
-                        .setTitle(SharedData.getInstance().getTitleStr("Contact us",
+                        .setTitle(mCommon.getTitleStr("Contact us",
                                 MainSigninActivity.this))
                         .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
                             @Override
@@ -233,7 +236,7 @@ public class MainSigninActivity extends AppCompatActivity {
     private void sendEmail() {
         Intent email = new Intent(Intent.ACTION_SEND);
         email.putExtra(Intent.EXTRA_EMAIL, new String[]{"scoretallyteam@gmail.com"});
-        email.putExtra(Intent.EXTRA_SUBJECT, "ScoreTally: support for " + SharedData.getInstance().mUser);
+        email.putExtra(Intent.EXTRA_SUBJECT, "ScoreTally: support for " + mCommon.mUser);
         email.putExtra(Intent.EXTRA_TEXT,
                 "Please fill in the below template and send the email. " +
                         "ScoreTally team will get back to you.\n" +

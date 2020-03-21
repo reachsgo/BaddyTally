@@ -70,6 +70,12 @@ public class RootOptions extends AppCompatActivity {
             }
         });
 
+        // add back arrow to toolbar
+        if (getSupportActionBar() != null){
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+
         //Log.d(TAG, "onCreate: check for root:" + SharedData.getInstance().toString());
         mCommon.startProgressDialog(RootOptions.this,"", "");
         mCommon.showToastAndDieOnTimeout(mMainHandler, RootOptions.this,
@@ -77,10 +83,6 @@ public class RootOptions extends AppCompatActivity {
         readDBForNewClubs();
     }
 
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.basic_menu_main, menu);
-        return true;
-    }
 
 
     void readDBForNewClubs() {
@@ -299,6 +301,17 @@ public class RootOptions extends AppCompatActivity {
                             Toast.makeText(RootOptions.this,
                                     "Club [" + club + "] deleted!",
                                     Toast.LENGTH_SHORT).show();
+                            mMainHandler.postDelayed(new Runnable() {
+                                @Override
+                                public void run() {
+                                    //not the best impl, but will do for root options.
+                                    //give 1.5s for active/club node to be delete, which in fact should be faster
+                                    Toast.makeText(RootOptions.this,
+                                            "Refreshing...",
+                                            Toast.LENGTH_SHORT).show();
+                                    recreate();
+                                }
+                            }, 1500);
                         }
                     }
 
@@ -359,6 +372,12 @@ public class RootOptions extends AppCompatActivity {
         startActivity(Intent.createChooser(email, "Choose an Email client :"));
     }
 
+
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.basic_menu_main, menu);
+        return true;
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         AlertDialog.Builder builder = new AlertDialog.Builder(RootOptions.this);
@@ -374,11 +393,16 @@ public class RootOptions extends AppCompatActivity {
                 SharedData.showAboutAlert(RootOptions.this);
                 break;
             case android.R.id.home:
-                onBackPressed();
+                //MainSigninActivity does not have history
+                mCommon.killActivity(this, RESULT_OK);
+                Intent intent = new Intent(RootOptions.this, MainSigninActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
                 return true;
             default:
                 break;
         }
         return true;
     }
+
 }

@@ -872,6 +872,10 @@ public class SharedData {
     }
 
     void wakeUpDBConnection() {
+        wakeUpDBConnection2(mRole);
+    }
+
+    void wakeUpDBConnection2(final String role) {
         // Do a mock transaction to wake up the database connection.
 
         /*
@@ -916,7 +920,7 @@ public class SharedData {
                     if (userData == null) return Transaction.success(mutableData);
                     else {
                         //Log.w(TAG, "wakeUpDBConnection: update DB for user:" + id);
-                        mutableData.setValue(mRole);
+                        mutableData.setValue(role);
                         return Transaction.success(mutableData);
                     }
                 } catch (com.google.firebase.database.DatabaseException e) {
@@ -937,11 +941,10 @@ public class SharedData {
                         //Log.w(TAG, "wakeUpDBConnection: onComplete: Success: " + id);
                         if (userData == null) {
                             //Log.w(TAG, "wakeUpDBConnection: onComplete: Success: " + "null data");
-                            dbRef.setValue(mRole);
+                            dbRef.setValue(role);
                             //Log.w(TAG, "New user created in DB:" + id);
-                        } else {
-                            //Log.w(TAG, "wakeUpDBConnection: onComplete: Success: " + userData);
                         }
+                        //else { Log.w(TAG, "wakeUpDBConnection: onComplete: Success: " + userData); }
                     } catch (NullPointerException e) {
                         if (mClub.isEmpty()) return;
                         //java.lang.NullPointerException: Attempt to invoke virtual method 'boolean java.lang.Boolean.booleanValue()' on a null object reference
@@ -951,11 +954,11 @@ public class SharedData {
                         //but the older version never new about INTERNALS/locked. Workaround was to manually create INTERNALS/locked in the DB for that club.
                         //This issue will not happen if the new app is used to create the innings (INTERNALS/locked node iwll be created in DB).
                         Log.w(TAG, "wakeUpDBConnection: onComplete: Error:" + e.getMessage());
-                        dbRef.setValue(mRole);
+                        dbRef.setValue(role);
                         //Log.w(TAG, "New user created in DB:" + id);
                     } catch (com.google.firebase.database.DatabaseException e) {
                         Log.i(TAG, "wakeUpDBConnection: onComplete:" + e.getMessage());
-                        dbRef.setValue(mRole);
+                        dbRef.setValue(role);
                     }
 
                 }
@@ -963,7 +966,7 @@ public class SharedData {
         });
     }
 
-    public void wakeupdbconnectionProfileRoot() {
+    void wakeupdbconnectionProfileRoot() {
         wakeUpDBConnection_profile_inner("");
     }
 
@@ -1756,7 +1759,7 @@ public class SharedData {
     #silver=sPlayer1, sPlayer2, sPlayer3, .....
     #innings=FirstInnings
     */
-    Map<String, ArrayList<String>> readClubLeagueText(final Activity activity, Uri uri) {
+    static Map<String, ArrayList<String>> readClubLeagueText(final Activity activity, Uri uri) {
         final Map<String, ArrayList<String>> clubMap = new HashMap<>();
         StringBuilder errStr = new StringBuilder();
         try {
@@ -1809,7 +1812,7 @@ public class SharedData {
         return clubMap;
     }
 
-    Map<String, ArrayList<String>> readClubLeagueExcel(final Activity activity, Uri uri) {
+    static Map<String, ArrayList<String>> readClubLeagueExcel(final Activity activity, Uri uri) {
         final Map<String, ArrayList<String>> clubMap = new HashMap<>();
         StringBuilder errStr = new StringBuilder();
         try {
@@ -1879,7 +1882,7 @@ public class SharedData {
     #Example:
     #team1=t1player1, t1player2
     */
-    ArrayList<TeamInfo> readTournaText(final Activity activity, Uri uri) {
+    static ArrayList<TeamInfo> readTournaText(final Activity activity, Uri uri) {
         final ArrayList<TeamInfo> retList = new ArrayList<>();
         ArrayList<String> existingTeamIDs = new ArrayList<>();
         //Generated teamIds are tracked to avoid duplicate teamIds. But team Names are not checked
@@ -1907,7 +1910,7 @@ public class SharedData {
                 }
 
                 TeamInfo tI = new TeamInfo();
-                tI.name = getUniqIDStr(desc, 0, existingTeamIDs);
+                tI.name = getUniqIDStr(desc, 0, existingTeamIDs).toLowerCase();
                 tI.desc = desc;
                 String[] valStrings = entries[1].trim().split(",");
                 StringBuilder badValues = new StringBuilder();
@@ -1927,7 +1930,8 @@ public class SharedData {
                             }
                         }
                         if (!ignore) {
-                            String plNickName = getUniqIDStr(player, 0, existingPlayerIDs);
+                            String plNickName =
+                                    getUniqIDStr(player, 0, existingPlayerIDs).toLowerCase();
                             tI.p_nicks.add(plNickName);
                             tI.players.add(player);
                             existingPlayerIDs.add(plNickName);
@@ -1962,7 +1966,7 @@ public class SharedData {
         return retList;
     }
 
-    ArrayList<TeamInfo> readTournaExcel(final Activity activity, Uri uri) {
+    static ArrayList<TeamInfo> readTournaExcel(final Activity activity, Uri uri) {
         final ArrayList<TeamInfo> retList = new ArrayList<>();
         ArrayList<String> existingTeamIDs = new ArrayList<>();
         ArrayList<String> existingPlayerIDs = new ArrayList<>();
@@ -1997,7 +2001,7 @@ public class SharedData {
                 }
                 TeamInfo tI = new TeamInfo();
                 tI.desc = desc;
-                tI.name = getUniqIDStr(tI.desc, 0, existingTeamIDs);
+                tI.name = getUniqIDStr(tI.desc, 0, existingTeamIDs).toLowerCase();
                 for (int col = 1; col < sheet.getColumns(); col++) {
                     String playerName = sheet.getCell(col, row).getContents();
                     if (playerName.isEmpty()) continue;
@@ -2007,7 +2011,7 @@ public class SharedData {
                         errStr.append(str);
                         continue;
                     }
-                    String pID = getUniqIDStr(playerName, 0, existingPlayerIDs);
+                    String pID = getUniqIDStr(playerName, 0, existingPlayerIDs).toLowerCase();
                     boolean ignore = false;
                     for(String existingPlayer: tI.players) {
                         if(existingPlayer.equals(playerName)) {
@@ -2041,7 +2045,7 @@ public class SharedData {
         return retList;
     }
 
-    //remove spaces, trim, toLowerCase, make unique id compared to the list passed in
+    //remove spaces, trim, make unique id compared to the list passed in
     static String getUniqIDStr(final String p, int len, final ArrayList<String> currentList) {
         if(p==null) return "";
         String p1 = p.replaceAll("\\s+", "");  //remove all spaces
@@ -2053,7 +2057,7 @@ public class SharedData {
             id = p1.substring(0,len); //not playerIdLen-1; see comment above
         else
             id = p1;
-        id = id.trim().toLowerCase();
+        id = id.trim();
         if(null!=currentList && currentList.contains(id)) {
             for (int i = 1; i < 100; i++) {
                 //%x.ys: The first digit (x) is the minimum length (the string will be left padded

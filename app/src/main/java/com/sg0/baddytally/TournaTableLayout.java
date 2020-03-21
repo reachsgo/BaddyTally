@@ -1505,8 +1505,16 @@ class TournaTable implements View.OnClickListener {
                 alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        final String newTourna = edittext.getText().toString();
+                        final String newTourna =
+                                SharedData.getUniqIDStr(edittext.getText().toString(),
+                                        0, null); //tourna name
                         if(newTourna.isEmpty()) return;
+                        if(!SharedData.isValidString(newTourna)) {
+                            Toast.makeText(mActivity, "'" + newTourna +
+                                    "' is not a valid name! Use only alphanumeric characters.",
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
 
                         final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
                                 .child(mCommon.mClub).child(Constants.TOURNA);

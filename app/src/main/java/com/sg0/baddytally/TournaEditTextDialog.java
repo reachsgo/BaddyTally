@@ -9,7 +9,7 @@ import android.view.Window;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-
+import com.google.android.material.textfield.TextInputLayout;
 import java.util.ArrayList;
 
 
@@ -21,8 +21,9 @@ public class TournaEditTextDialog extends Dialog implements View.OnClickListener
     public Dialog d;
     public Button enter, cancel;
     private String mTitle, mKey;
-    private String mT1, mET1;  //1st text and edit text
-    private String mT2, mET2;  //2nd text and edit text
+    private String mT1;  //1st text
+    private String mT2;  //2nd text
+    private int mFirstFocus;
     private Object mObj;
 
     public TournaEditTextDialog(final Activity a, final CallbackRoutine cb) {
@@ -33,15 +34,13 @@ public class TournaEditTextDialog extends Dialog implements View.OnClickListener
     }
 
     public void setContents(final Object in, final String key, final String title,
-                            final String t1, final String et1,
-                            final String t2, final String et2) {
+                            final String t1, final String t2, final int firstFocus) {
         mObj = in;
         mKey = key;
         mTitle = title;
         mT1 = t1;
-        mET1 = et1;
         mT2 = t2;
-        mET2 = et2;
+        mFirstFocus = firstFocus;
     }
 
     @Override
@@ -65,14 +64,14 @@ public class TournaEditTextDialog extends Dialog implements View.OnClickListener
         super.onStart();
         Log.d(TAG, "onStart:");
         ((TextView)findViewById(R.id.t_title)).setText(mTitle);
-        ((TextView)findViewById(R.id.t_1)).setText(mT1);
-        ((EditText)findViewById(R.id.et_1)).setText("");
-        //text has to be empty for hint to take effect. Without emptying text of edittext,
-        //hint will not be set when invoked a second time.
-        ((EditText)findViewById(R.id.et_1)).setHint(mET1);
-        ((TextView)findViewById(R.id.t_2)).setText(mT2);
-        ((EditText)findViewById(R.id.et_2)).setText("");
-        ((EditText)findViewById(R.id.et_2)).setHint(mET2);
+        ((TextInputLayout)findViewById(R.id.et_layout_1)).setHint(mT1);
+        ((TextInputLayout)findViewById(R.id.et_layout_2)).setHint(mT2);
+        switch (mFirstFocus) {
+            case 1: findViewById(R.id.et_layout_1).requestFocus();
+                break;
+            case 2: findViewById(R.id.et_layout_2).requestFocus();
+                break;
+        }
     }
 
     @Override

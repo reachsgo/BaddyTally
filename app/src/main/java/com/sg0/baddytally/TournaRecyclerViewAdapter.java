@@ -250,8 +250,7 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
                             case ADD_PLAYER:
                                 mCustomDialog.setContents(team, NEWPLAYER_TITLE,
                                         mTourna + "\nAdd new player to " + team,
-                                        "ID", "  JACK  ",   //8 chars
-                                        "Name", "  Jack Daniels  ");
+                                        "id", "*Name", 2);
                                 //mCustomDialog.setTitle(mTourna);
                                 if (null != mCustomDialog.getWindow()) {
                                     mCustomDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
@@ -313,8 +312,11 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
                 return;
             }
             final String team = strList.get(0);
-            final String pShort = SharedData.getUniqIDStr(strList.get(1), 0, null);
+            String pID = strList.get(1);
             final String pLong = strList.get(2);
+            if(pID.isEmpty()) pID = pLong; //short name for player is optional
+            final String pShort = SharedData.getUniqIDStr(pID, 0, null).toLowerCase();
+
             Log.d(TAG, "callback: got back:" + team+ pShort + pLong);
             if(!SharedData.isValidString(pShort) || !SharedData.isValidString(pLong)) {
                 Toast.makeText(mContext, "Bad Input! Enter only alphanumeric values", Toast.LENGTH_SHORT)
@@ -334,8 +336,8 @@ public class TournaRecyclerViewAdapter extends RecyclerView.Adapter<TournaRecycl
                 pInfo.T = team;
                 pInfo.name = pLong;
                 String msg = " You are about to create a new player with:" +
-                        "\n   short name = " + pShort +
-                        "\n   full name = " + pInfo.name +
+                        "\n   id = " + pShort +
+                        "\n   name = " + pLong +
                         "\n   team = " + pInfo.T ;
                 mNewPlayer.put(pShort, pInfo);
                 mCommon.showAlert(TournaRecyclerViewAdapter.this, mContext, ADD_PLAYER, msg);
