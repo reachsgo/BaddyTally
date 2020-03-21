@@ -30,6 +30,7 @@ import android.text.style.StrikethroughSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -872,10 +873,6 @@ public class SharedData {
     }
 
     void wakeUpDBConnection() {
-        wakeUpDBConnection2(mRole);
-    }
-
-    void wakeUpDBConnection2(final String role) {
         // Do a mock transaction to wake up the database connection.
 
         /*
@@ -901,6 +898,7 @@ public class SharedData {
         if (mClub.isEmpty() || mUser.isEmpty()) return;
 
         if (null == mDBConnectListener) setUpDBConnectionListener();
+        final String role = mRole;
 
         Date c = Calendar.getInstance().getTime();
         SimpleDateFormat df = new SimpleDateFormat("MM-dd", Locale.CANADA);
@@ -2085,6 +2083,18 @@ public class SharedData {
         return "random" + random();   //don't think we will ever hit this
     }
 
+    static String makeTournaName(final Activity activity, final String name) {
+        String tournaName = getUniqIDStr(name,
+                        activity.getResources().getInteger(R.integer.max_long_id_len),
+                        null); //tourna name, can be upper or lower case
+        if(tournaName.isEmpty() || !SharedData.isValidString(tournaName)) {
+            Log.e(TAG, "makeTournaName : bad name [" + tournaName + "]");
+            Toast.makeText(activity, "Enter alpha-numeric tournament name!",
+                    Toast.LENGTH_LONG).show();
+            tournaName = "";
+        }
+        return tournaName;
+    }
 
     /*
     java.lang.NoClassDefFoundError: Failed resolution of: Ljavax/xml/stream/XMLStreamReader;
@@ -2134,6 +2144,23 @@ public class SharedData {
         return retList;
     }
      */
+
+
+    static void enableDisableView(View view, boolean enabled) {
+        if(view==null) return;
+        view.setEnabled(enabled);
+        //view.setClickable(false);
+        if(enabled) view.setAlpha(1f);
+        else view.setAlpha(.5f);  //making it semi-transparent
+        //Log.w(TAG, "enableDisableView called..." + view.getId());
+        //now do the same for all the children views.
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int idx = 0; idx < group.getChildCount(); idx++) {
+                enableDisableView(group.getChildAt(idx), enabled);
+            }
+        }
+    }
 
     //To use the below progress dialog routines, you have to override onResume and onPause to add
     //ScoreTally.activityResumed() and ScoreTally.activityPaused()

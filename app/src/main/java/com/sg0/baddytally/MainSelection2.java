@@ -26,12 +26,24 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainSelection2 extends AppCompatActivity {
 
     private static final String TAG = "MainSelection2";
+    private SharedData mCommon;
     private AlertDialog mDemoAlert;
 
     @Override
@@ -39,6 +51,7 @@ public class MainSelection2 extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.main_selection2);
+        mCommon = SharedData.getInstance();
         mDemoAlert = null;
         //Log.d(TAG, "onCreate: ");
 
@@ -80,24 +93,30 @@ public class MainSelection2 extends AppCompatActivity {
             getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
 
+        if(!mCommon.mDemoMode) {
+            findViewById(R.id.scroll_tv).setVisibility(View.GONE);
+        } else {
+            //demo mode: set user id in DB and show any msg from admin
+            syncWithDB(Constants.DEMO_CLUB);
+        }
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        SharedData.getInstance().auditClub(MainSelection2.this); //check if club still exists in DB
-        setTitle(SharedData.getInstance().mClub);
+        mCommon.auditClub(MainSelection2.this); //check if club still exists in DB
+        setTitle(mCommon.mClub);
         //Log.d(TAG, "onResume: ");
         displayNews(false);
-        showDemoDialogIfNeeded();
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.basic_menu_main, menu);
         menu.findItem(R.id.action_refresh).setVisible(false);
-        if (SharedData.getInstance().isSuperPlus()) {
+        if (mCommon.isSuperPlus()) {
             MenuItem offlineMode = menu.findItem(R.id.action_settings);
-            if(SharedData.getInstance().mOfflineMode)
+            if(mCommon.mOfflineMode)
                 offlineMode.setTitle("Disable Offline mode");
             else
                 offlineMode.setTitle("Enable Offline mode");
@@ -118,8 +137,8 @@ public class MainSelection2 extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                if(SharedData.getInstance().mDemoMode) {
-                    SharedData.getInstance().logOut(MainSelection2.this, false);
+                if(mCommon.mDemoMode) {
+                    mCommon.logOut(MainSelection2.this, false);
                 } else onBackPressed();
                 return true;
             case R.id.action_refresh:
@@ -127,16 +146,16 @@ public class MainSelection2 extends AppCompatActivity {
                 break;
             // action with ID action_settings was selected
             case R.id.action_settings:
-                SharedData.getInstance().wakeUpDBConnectionProfile();
-                if(SharedData.getInstance().mOfflineMode) {
+                mCommon.wakeUpDBConnectionProfile();
+                if(mCommon.mOfflineMode) {
                     //in offline mode, disable it
                     AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainSelection2.this);
                     alertBuilder.setTitle("Disable Offline mode");
                     alertBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
-                            if(SharedData.getInstance().isDBServerConnected()) {
-                                SharedData.getInstance().persistOfflineMode(false, MainSelection2.this);
+                            if(mCommon.isDBServerConnected()) {
+                                mCommon.persistOfflineMode(false, MainSelection2.this);
                             } else {
                                 Toast.makeText(MainSelection2.this,
                                         "There is no data connection now, try again when you are connected to wifi/cellular data",
@@ -162,9 +181,9 @@ public class MainSelection2 extends AppCompatActivity {
                     alertBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
-                            if(SharedData.getInstance().isDBServerConnected()) {
-                                SharedData.getInstance().persistOfflineMode(true, MainSelection2.this);
-                                SharedData.getInstance().restartApplication(MainSelection2.this, MainSelection2.class);
+                            if(mCommon.isDBServerConnected()) {
+                                mCommon.persistOfflineMode(true, MainSelection2.this);
+                                mCommon.restartApplication(MainSelection2.this, MainSelection2.class);
                             } else {
                                 Toast.makeText(MainSelection2.this,
                                         "There is no data connection now, try again when you are connected to wifi/cellular data",
@@ -182,7 +201,7 @@ public class MainSelection2 extends AppCompatActivity {
                 }
                 break;
             case R.id.action_logout:
-                SharedData.getInstance().logOut(MainSelection2.this, false);
+                mCommon.logOut(MainSelection2.this, false);
                 break;
             case R.id.action_help:
                 AlertDialog.Builder hBuilder = new AlertDialog.Builder(MainSelection2.this);
@@ -202,7 +221,6 @@ public class MainSelection2 extends AppCompatActivity {
             case R.id.action_misc:
                 
                 //Allow root user to broadcast info. This will be shown as popup window for every user.
-                final SharedData mCommon = SharedData.getInstance();
                 mCommon.wakeUpDBConnectionProfile(); //read news again; might not be in time for this view, but atleast for future.
                 if (mCommon.isSuperPlus()) {
                     AlertDialog.Builder alert = new AlertDialog.Builder(MainSelection2.this);
@@ -260,11 +278,10 @@ public class MainSelection2 extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        SharedData.getInstance().killApplication(MainSelection2.this);
+        mCommon.killApplication(MainSelection2.this);
     }
 
     private void displayNews(final boolean showAlways) {
-        final SharedData mCommon = SharedData.getInstance();
         if (!showAlways) {
             //if the news was already read by this user, dont show it.
             if (mCommon.mReadNews.equals(mCommon.mProfile.getNews())) return;
@@ -304,9 +321,9 @@ public class MainSelection2 extends AppCompatActivity {
         if (!TextUtils.isEmpty(title)) {
             //Log.d(TAG, "setTitle: " + title);
             String tempString = Constants.APPNAME + "  " + title;
-            if(title.equals(SharedData.getInstance().mClub)) {
-                if (SharedData.getInstance().isAdmin()) tempString += " +";
-                else if (SharedData.getInstance().isSuperPlus()) tempString += " *";
+            if(title.equals(mCommon.mClub)) {
+                if (mCommon.isAdmin()) tempString += " +";
+                else if (mCommon.isSuperPlus()) tempString += " *";
                 else tempString += " ";
             }
             SpannableString spanString = new SpannableString(tempString);
@@ -331,13 +348,12 @@ public class MainSelection2 extends AppCompatActivity {
             mDemoAlert=null;
         }
     }
+    
+    
 
     private void showDemoDialogIfNeeded() {
-        if(!SharedData.getInstance().mDemoMode) {
-            findViewById(R.id.scroll_tv).setVisibility(View.GONE);
-            return;
-        }
-        if(!SharedData.getInstance().validFlag(Constants.DATA_FLAG_DEMO_MODE1)) {
+
+        if(!mCommon.validFlag(Constants.DATA_FLAG_DEMO_MODE1)) {
             AlertDialog.Builder builder = new AlertDialog.Builder(MainSelection2.this);
             builder.setTitle("Demo mode");
             builder.setMessage(
@@ -356,11 +372,66 @@ public class MainSelection2 extends AppCompatActivity {
             builder.setNegativeButton("Got it", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
-                    SharedData.getInstance().addFlag(MainSelection2.this, Constants.DATA_FLAG_DEMO_MODE1);
+                    mCommon.addFlag(MainSelection2.this, Constants.DATA_FLAG_DEMO_MODE1);
                 }
             });
             mDemoAlert = builder.create();
             mDemoAlert.show();
         }
     }
+
+    //See if there is a personal message to be shown to this user from teh admin
+    void syncWithDB(final String role) {
+        if(mCommon.mUser.isEmpty() || role.isEmpty()) { showDemoDialogIfNeeded(); return; }
+
+        final DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                .child(mCommon.mClub)
+                .child(Constants.ACTIVE_USERS).child(mCommon.mUser);
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                boolean alert2bShown = true;
+                Date c = Calendar.getInstance().getTime();
+                SimpleDateFormat df = new SimpleDateFormat(Constants.ROUND_DATEFORMAT_SHORT, Locale.CANADA);
+                final String todaysDate = df.format(c);
+                if(dataSnapshot.exists()) {
+                    Log.d(TAG, "onDataChange: " + dataSnapshot.toString());
+                    String entry = dataSnapshot.getValue(String.class);
+                    if(null!=entry && entry.contains(Constants.NEWS)) {
+                        String[] entries = entry.split("=");
+                        if(entries.length<2) { alert2bShown = false; }
+                        else {
+                            AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainSelection2.this);
+                            alertBuilder.setTitle(mCommon.getColorString("Message from admin", Color.RED));
+                            String msg = entries[1].trim();
+                            alertBuilder.setMessage(msg);
+                            alertBuilder.setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    dbRef.setValue(todaysDate); //alert shown, over-write now.
+                                    showDemoDialogIfNeeded();
+                                }
+                            });
+                            alertBuilder.show();
+                        }
+                    } else alert2bShown = false; //no msg to show
+                }
+
+                if(!alert2bShown) {
+                    //does not exist, set in DB
+                    Log.d(TAG, "syncWithDB: no alert from admin");
+                    dbRef.setValue(todaysDate);
+                    showDemoDialogIfNeeded();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.w(TAG, "syncWithDB: onCancelled", databaseError.toException());
+                Toast.makeText(MainSelection2.this,
+                        "DB connection error:" + databaseError.toString(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
 }

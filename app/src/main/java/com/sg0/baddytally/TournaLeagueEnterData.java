@@ -48,7 +48,7 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
     private static final String TAG = "TournaLeagueEnterData";
     private String mGameType;
     private Integer mNumOfMatches;
-    private Integer mBestOf;
+    //private Integer mBestOf;
     private MatchInfo mChosenMatch;
     private String mSelectedMatch;
     private HashMap<String, PlayerInfo> mDBPlayerData;
@@ -380,10 +380,10 @@ public class TournaLeagueEnterData extends BaseEnterData implements CallbackRout
             num++;
         }
         if (mBestOf == 1) {
-            findViewById(R.id.score_t1_2).setEnabled(false);
-            findViewById(R.id.score_t1_3).setEnabled(false);
-            findViewById(R.id.score_t2_2).setEnabled(false);
-            findViewById(R.id.score_t2_3).setEnabled(false);
+            SharedData.enableDisableView(findViewById(R.id.score_t1_2), false);
+            SharedData.enableDisableView(findViewById(R.id.score_t1_3), false);
+            SharedData.enableDisableView(findViewById(R.id.score_t2_2), false);
+            SharedData.enableDisableView(findViewById(R.id.score_t2_3), false);
         }
         if (isMatchDone(gameList)) {
             Toast.makeText(TournaLeagueEnterData.this, "Match already completed, nothing to update!",

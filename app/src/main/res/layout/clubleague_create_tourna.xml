@@ -90,6 +90,7 @@
             android:imeActionLabel="Tournament name"
             android:imeOptions="actionUnspecified"
             android:maxLines="1"
+            android:maxLength="@integer/max_long_id_len"
             android:singleLine="true" />
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -114,6 +115,7 @@
             android:imeActionLabel="Description"
             android:imeOptions="actionUnspecified"
             android:maxLines="1"
+            android:maxLength="@integer/max_description_len"
             android:singleLine="true" />
     </com.google.android.material.textfield.TextInputLayout>
 

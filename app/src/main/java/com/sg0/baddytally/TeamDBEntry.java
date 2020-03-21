@@ -3,7 +3,7 @@ package com.sg0.baddytally;
 import java.util.List;
 
 public class TeamDBEntry {
-    final static int MAX_ID_LEN = 12;
+    final static int MAX_ID_LEN = 12; //getResources().getInteger(R.integer.max_id_len)
     private String id;
     private List<String> p;
     private Integer seed;

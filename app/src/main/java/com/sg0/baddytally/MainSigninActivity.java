@@ -18,6 +18,18 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 
@@ -85,15 +97,19 @@ public class MainSigninActivity extends AppCompatActivity {
                 Toast.makeText(MainSigninActivity.this,
                         "Demo mode", Toast.LENGTH_LONG).show();
                 mCommon.mClub = Constants.DEMO_CLUB;
-                mCommon.wakeUpDBConnection2(Constants.DEMO_CLUB);  //set user id in DB
                 mCommon.mRole = Constants.MEMBER;
                 mCommon.mDemoMode = true;
-                Intent myIntent = new Intent(MainSigninActivity.this, MainSelection2.class);
-                MainSigninActivity.this.startActivity(myIntent);
+                startDemo();
             }
         });
 
     }
+
+    void startDemo() {
+        Intent myIntent = new Intent(MainSigninActivity.this, MainSelection2.class);
+        MainSigninActivity.this.startActivity(myIntent);
+    }
+
 
     private void killActivity() {
         setResult(RESULT_OK);

@@ -80,8 +80,8 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
     private boolean mInitialAttempt;
     private boolean mRefreshing;
     //private boolean mDBUpdated;
-    private RecyclerViewAdapter mGoldAdapter;
-    private RecyclerViewAdapter mSilverAdapter;
+    private ClubeLeagueRecycler mGoldAdapter;
+    private ClubeLeagueRecycler mSilverAdapter;
     private Handler uiHandler;
     private SharedData mCommon;
     private Runnable progressTimeOutRunnable;
@@ -650,7 +650,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
         mRecyclerGoldView.setLayoutManager(mGoldLayoutManager);
         //mRecyclerGoldView.addItemDecoration(new DividerItemDecoration(ClubLeagueActivity.this,
         //        DividerItemDecoration.VERTICAL));
-        mGoldAdapter = new RecyclerViewAdapter(this, Constants.GOLD, players);
+        mGoldAdapter = new ClubeLeagueRecycler(this, Constants.GOLD, players);
         mGoldAdapter.setBgColor("#eee8aa");  //pale gold as background for text
         mRecyclerGoldView.setAdapter(mGoldAdapter);
         mGoldDB = new FireBaseDBReader(this, mClub, Constants.GOLD, mInnings,
@@ -680,7 +680,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
             mSilverLayoutManager.setReverseLayout(true);
             mSilverLayoutManager.setStackFromEnd(true);
             mRecyclerSilverView.setLayoutManager(mSilverLayoutManager);
-            mSilverAdapter = new RecyclerViewAdapter(this, Constants.SILVER, players);
+            mSilverAdapter = new ClubeLeagueRecycler(this, Constants.SILVER, players);
             mSilverAdapter.setBgColor("#eeeee0");  //color silver
             mRecyclerSilverView.setAdapter(mSilverAdapter);
             mSilverDB = new FireBaseDBReader(this, mClub, Constants.SILVER, mInnings,
@@ -878,7 +878,7 @@ public class ClubLeagueActivity extends AppCompatActivity implements CallbackRou
     }
 
     private void showPlayersPopup(final String group) {
-        RecyclerViewAdapter adapter = null;
+        ClubeLeagueRecycler adapter = null;
 
         //Players present on this game day
         Set<String> presetPlayerNames = null;

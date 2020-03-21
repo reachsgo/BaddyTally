@@ -3,6 +3,8 @@
     <integer name="max_shortname_len">12</integer>
     <integer name="max_longname_len">32</integer>
     <integer name="max_short_id_len">8</integer>
+    <integer name="max_id_len">12</integer>
+    <integer name="max_long_id_len">24</integer>
     <integer name="max_club_short_len">8</integer>
-    <integer name="max_club_desc_len">64</integer>
+    <integer name="max_description_len">64</integer>
 </resources>

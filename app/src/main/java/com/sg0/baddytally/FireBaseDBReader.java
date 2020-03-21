@@ -22,7 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 class FireBaseDBReader {
     private static final String TAG = "FireBaseDBReader";
     private final Context mContext;
-    private final RecyclerViewAdapter mViewAdapter;
+    private final ClubeLeagueRecycler mViewAdapter;
     private final RecyclerView mView;
     private final String mClub;
     private final String mGroup;
@@ -31,7 +31,7 @@ class FireBaseDBReader {
     private final String mLogStr;
 
     public FireBaseDBReader(Context context, String club, String group, String innings,
-                            RecyclerViewAdapter viewAdapter, RecyclerView view) {
+                            ClubeLeagueRecycler viewAdapter, RecyclerView view) {
         mContext = context;
         mInnings = innings;
         mClub = club;

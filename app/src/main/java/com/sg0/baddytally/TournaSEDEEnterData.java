@@ -312,7 +312,7 @@ public class TournaSEDEEnterData extends BaseEnterData {
 
             if (gamesCompleted == 1 && mBestOf == 1) {
                 //If only 1 game completed, then Tick completed checkbox only if best-of-1
-                //otherwise, its error prone (completed might be checked after completing game1 of best-of-3
+                //otherwise, its error prone (completed might be checked after completing game1 of best-of-3)
                 checkbox.setChecked(true);
                 matchCompleted();
             } else if (gamesCompleted > 1) {//more than 1 game and there is a clear winner.

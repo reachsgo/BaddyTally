@@ -101,20 +101,6 @@ public class ClubLeagueSettings extends AppCompatActivity {
     // checkforDuplicateName() -> starts new thread -> mMainHandler.removeCallbacksAndMessages()
 
 
-    private void enableDisableView(View view, boolean enabled) {
-        view.setEnabled(enabled);
-        //view.setClickable(false);
-        if(enabled) view.setAlpha(1f);
-        else view.setAlpha(.5f);  //making it semi-transparent
-        //Log.w(TAG, "enableDisableView called..." + view.getId());
-        //now do the same for all the children views.
-        if (view instanceof ViewGroup) {
-            ViewGroup group = (ViewGroup) view;
-            for (int idx = 0; idx < group.getChildCount(); idx++) {
-                enableDisableView(group.getChildAt(idx), enabled);
-            }
-        }
-    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -136,8 +122,8 @@ public class ClubLeagueSettings extends AppCompatActivity {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 //Log.d(TAG, "onCheckedChanged: " + b);
-                enableDisableView(findViewById(R.id.newuser_ll), !b);
-                enableDisableView(findViewById(R.id.nu_gamegroup_radiogroup), !b);
+                SharedData.enableDisableView(findViewById(R.id.newuser_ll), !b);
+                SharedData.enableDisableView(findViewById(R.id.nu_gamegroup_radiogroup), !b);
                 if(b) {
                     Animation shake = AnimationUtils.loadAnimation(
                             ClubLeagueSettings.this, R.anim.shake);
@@ -230,28 +216,28 @@ public class ClubLeagueSettings extends AppCompatActivity {
         if (mCommon.isMemberRole()) {
             Snackbar.make(findViewById(R.id.settings_ll), "Some options might not be available to you!",
                     Snackbar.LENGTH_LONG).setAction("Action", null).show();
-            enableDisableView(findViewById(R.id.club_datafile_ll), false);
-            enableDisableView(findViewById(R.id.enter_ll), false);
-            enableDisableView(findViewById(R.id.delete_ll), false);
-            enableDisableView(findViewById(R.id.newinnings_ll), false);
-            enableDisableView(findViewById(R.id.winPercNum_ll), false);
-            enableDisableView(findViewById(R.id.history_ll), false);
-            enableDisableView(findViewById(R.id.users_btn), false);
-            enableDisableView(findViewById(R.id.history_btn), false);
-            enableDisableView(findViewById(R.id.reset_ll), false);
+            SharedData.enableDisableView(findViewById(R.id.club_datafile_ll), false);
+            SharedData.enableDisableView(findViewById(R.id.enter_ll), false);
+            SharedData.enableDisableView(findViewById(R.id.delete_ll), false);
+            SharedData.enableDisableView(findViewById(R.id.newinnings_ll), false);
+            SharedData.enableDisableView(findViewById(R.id.winPercNum_ll), false);
+            SharedData.enableDisableView(findViewById(R.id.history_ll), false);
+            SharedData.enableDisableView(findViewById(R.id.users_btn), false);
+            SharedData.enableDisableView(findViewById(R.id.history_btn), false);
+            SharedData.enableDisableView(findViewById(R.id.reset_ll), false);
             //enableDisableView(findViewById(R.id.reset_pts), false);
             //enableDisableView(findViewById(R.id.delete_all), false);
         } else if (mCommon.isAdmin()) {
             Snackbar.make(findViewById(R.id.settings_ll), "Some options might not be available to you!",
                     Snackbar.LENGTH_LONG).setAction("Action", null).show();
-            enableDisableView(findViewById(R.id.club_datafile_ll), false);
-            enableDisableView(findViewById(R.id.delete_ll), false);
-            enableDisableView(findViewById(R.id.newinnings_ll), false);
-            enableDisableView(findViewById(R.id.winPercNum_ll), false);
+            SharedData.enableDisableView(findViewById(R.id.club_datafile_ll), false);
+            SharedData.enableDisableView(findViewById(R.id.delete_ll), false);
+            SharedData.enableDisableView(findViewById(R.id.newinnings_ll), false);
+            SharedData.enableDisableView(findViewById(R.id.winPercNum_ll), false);
             //enableDisableView(findViewById(R.id.history_ll), false);
-            enableDisableView(findViewById(R.id.users_btn), false);
+            SharedData.enableDisableView(findViewById(R.id.users_btn), false);
             //enableDisableView(findViewById(R.id.history_btn), false);
-            enableDisableView(findViewById(R.id.reset_ll), false);
+            SharedData.enableDisableView(findViewById(R.id.reset_ll), false);
             //enableDisableView(findViewById(R.id.reset_pts), false);
             //enableDisableView(findViewById(R.id.delete_all), false);
         } else {

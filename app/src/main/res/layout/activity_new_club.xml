@@ -71,7 +71,7 @@
                 android:imeActionLabel="Description"
                 android:imeOptions="actionUnspecified"
                 android:maxLines="1"
-                android:maxLength="@integer/max_club_desc_len"
+                android:maxLength="@integer/max_description_len"
                 android:singleLine="true" />
         </com.google.android.material.textfield.TextInputLayout>
 

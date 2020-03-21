@@ -532,17 +532,12 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
 
 
             EditText et_tourna = findViewById(R.id.et_newTourna);
-            mTourna = SharedData.getUniqIDStr(et_tourna.getText().toString(),
-                                            0, null); //tourna name
+            mTourna = SharedData.makeTournaName(TournaSettings.this,
+                                                et_tourna.getText().toString());
+            if(mTourna.isEmpty()) return false;
             Log.v(TAG, "preCreateTournament: " + mNewTournaType + "," + mTourna + ": " +
                     newTournaData.mNum + "," + newTournaData.bestOf);
-            if(mTourna.isEmpty() || !SharedData.isValidString(mTourna)) {
-                Log.e(TAG, "preCreateTournament : bad name [" + mTourna + "]");
-                Toast.makeText(TournaSettings.this, "Enter alpha-numeric tournament name!",
-                        Toast.LENGTH_LONG).show();
-                mTourna = "";
-                return false;
-            }
+
             EditText et_tourna_desc = findViewById(R.id.et_newTourna_desc);
             newTournaData.desc = et_tourna_desc.getText().toString().trim();
             if(!SharedData.isValidString(newTournaData.desc)) {
@@ -959,7 +954,7 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
                 if(mCommon.isLeagueTournament(mTourna)) {
                     mCustomDialog = new TournaEditTextDialog(TournaSettings.this, TournaSettings.this);
                     mCustomDialog.setContents(mTourna, CREATE_NEW_TEAM,
-                            "Add new team to \n" + mTourna,
+                            "Add new team to\n" + mTourna,
                             "*Name", "Description", 1);
                     mCustomDialog.setTitle(mTourna);
                     mCustomDialog.show();  //callback is handled by onClickNewteam()
@@ -1045,9 +1040,8 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             mDialogueDismiss = mDialogueDone = false;
             mSpinner0 = findViewById(R.id.numPlayers);
 
-            String tStr = "Add new team to " + mTourna;
             TextView titleTV = findViewById(R.id.newTeam_tv);
-            titleTV.setText(tStr);
+            titleTV.setText(mTourna);
 
             final ArrayAdapter<Integer> dataAdapter0 = new ArrayAdapter<>(parentActivity,
                     android.R.layout.simple_spinner_item,
@@ -1321,9 +1315,8 @@ public class TournaSettings extends AppCompatActivity implements CallbackRoutine
             requestWindowFeature(Window.FEATURE_NO_TITLE);
             setContentView(R.layout.tourna_new_match_dialog);
 
-            String tStr = "Add new match to " + mTourna;
             TextView titleTV = findViewById(R.id.title_tv);
-            titleTV.setText(tStr);
+            titleTV.setText(mTourna);
 
             mSpinner_T1 = findViewById(R.id.t1_spinner);
             List<String> teamList = new ArrayList<>(mCommon.mTeams);

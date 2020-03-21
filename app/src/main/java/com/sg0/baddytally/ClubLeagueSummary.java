@@ -186,7 +186,7 @@ public class ClubLeagueSummary extends AppCompatActivity {
                     goldGameList.add(jEntry);
                     //Log.w(TAG, "gold fetchGames:" + child.getKey() + " data=" + jEntry.toReadableString());
                 }
-                mGoldAdapter = new SummaryRecyclerViewAdapter(ClubLeagueSummary.this, Constants.GOLD, goldGameListKeys, goldGameList);
+                mGoldAdapter = new ClubLeagueSummaryRecycler(ClubLeagueSummary.this, Constants.GOLD, goldGameListKeys, goldGameList);
                 mRecyclerGoldView.setAdapter(mGoldAdapter);
                 mGoldAdapter.notifyDataSetChanged();
             }
@@ -225,7 +225,7 @@ public class ClubLeagueSummary extends AppCompatActivity {
                         silverGameList.add(jEntry);
                         //Log.w(TAG, "silver fetchGames:" + child.getKey() + " data=" + jEntry.toReadableString());
                     }
-                    mSilverAdapter = new SummaryRecyclerViewAdapter(ClubLeagueSummary.this, Constants.SILVER, silverGameListKeys, silverGameList);
+                    mSilverAdapter = new ClubLeagueSummaryRecycler(ClubLeagueSummary.this, Constants.SILVER, silverGameListKeys, silverGameList);
                     mRecyclerSilverView.setAdapter(mSilverAdapter);
                     mSilverAdapter.notifyDataSetChanged();
                 }

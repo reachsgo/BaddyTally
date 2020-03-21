@@ -381,7 +381,8 @@ public class ClubLeagueEnterData extends BaseEnterData {
 
     private void fetchGames(){
         mGameNum = 1;
-        DatabaseReference dbRef = mDatabase.child(mClub).child(Constants.JOURNAL).child(mInnings).child(mRoundName).child(mGroup);
+        DatabaseReference dbRef = mDatabase.child(mClub).child(Constants.JOURNAL)
+                .child(mInnings).child(mRoundName).child(mGroup);
         Query myQuery = dbRef.orderByKey();
         final ArrayList<GameJournalDBEntry> gameList= new ArrayList<>();
         myQuery.addListenerForSingleValueEvent(new ValueEventListener() {

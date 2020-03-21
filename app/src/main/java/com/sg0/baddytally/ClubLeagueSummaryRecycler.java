@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecyclerViewAdapter.ViewHolder> {
+public class ClubLeagueSummaryRecycler extends RecyclerView.Adapter<ClubLeagueSummaryRecycler.ViewHolder> {
     private static final String TAG = "SummaryRecyclerAdapter";
     private final ArrayList<String> mGameJournalKeys;
     private final Context mContext;
@@ -34,7 +34,7 @@ public class SummaryRecyclerViewAdapter extends RecyclerView.Adapter<SummaryRecy
     private ArrayList<GameJournalDBEntry> mGameJournalDBEntry;
 
 
-    public SummaryRecyclerViewAdapter(Context context, String group, ArrayList<String> keys, ArrayList<GameJournalDBEntry> journal) {
+    public ClubLeagueSummaryRecycler(Context context, String group, ArrayList<String> keys, ArrayList<GameJournalDBEntry> journal) {
         this.mContext = context;
         this.mGroup = group;
         this.mGameJournalKeys = keys;

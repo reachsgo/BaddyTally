@@ -295,15 +295,9 @@ public class ClubLeagueCreateTourna extends AppCompatActivity {
                     //name/desc is entered and "next" button is pressed after that
                     case 2:  //Enter name / desc; followed by Enter button.
                         EditText et = findViewById(R.id.et_newTourna);
-                        //upper case or lower case; all good!
-                        mTourna = SharedData.getUniqIDStr(et.getText().toString(),
-                                                        0, null); //tourna name
-                        if(mTourna.isEmpty()) {
-                            Toast.makeText(ClubLeagueCreateTourna.this,
-                                    "Enter tournament name",
-                                    Toast.LENGTH_SHORT).show();
-                            return;
-                        }
+                        mTourna = SharedData.makeTournaName(ClubLeagueCreateTourna.this,
+                                                            et.getText().toString());
+                        if(mTourna.isEmpty()) return;
 
                         //hide keyboard
                         InputMethodManager inputMethodManager =

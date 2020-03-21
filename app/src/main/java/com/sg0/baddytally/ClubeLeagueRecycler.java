@@ -33,8 +33,8 @@ import java.util.List;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder> {
-    private static final String TAG = "RecyclerViewAdapter";
+public class ClubeLeagueRecycler extends RecyclerView.Adapter<ClubeLeagueRecycler.ViewHolder> {
+    private static final String TAG = "ClubeLeagueRecycler";
     private Context mContext;
     private ArrayList<PlayerData> mPlayers;
     private String mGroup;
@@ -42,7 +42,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     private boolean descending;
     private ArrayList<PlayerData> mFullListOfPlayers;
 
-    public RecyclerViewAdapter(Context context, String group, ArrayList<PlayerData> players) {
+    public ClubeLeagueRecycler(Context context, String group, ArrayList<PlayerData> players) {
         mContext = context;
         this.mPlayers = players;
         mGroup = group;
