@@ -18,6 +18,12 @@
             android:id="@+id/clubs_btn"
             android:text="Clubs" />
 
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/users_btn"
+            android:text="Users" />
+
     </LinearLayout>
 
 </ScrollView>

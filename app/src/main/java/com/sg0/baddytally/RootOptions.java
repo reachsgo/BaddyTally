@@ -10,6 +10,7 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Html;
+import android.text.SpannableStringBuilder;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
@@ -49,6 +50,7 @@ public class RootOptions extends AppCompatActivity {
     private SharedData mCommon;
     private Map<String, ClubDBEntry> mClubs;
     private Handler mMainHandler;
+    private Map<String, Map<String,UserDBEntry>> mUserList;
 
 
     @Override
@@ -60,6 +62,7 @@ public class RootOptions extends AppCompatActivity {
         mCommon = SharedData.getInstance();
         mClubs = new HashMap<>();
         mMainHandler = new Handler();
+        mUserList = new HashMap<>();
 
         mCommon.wakeupdbconnectionProfileRoot();
 
@@ -69,6 +72,13 @@ public class RootOptions extends AppCompatActivity {
                 showClubs();
             }
         });
+        findViewById(R.id.users_btn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                readRootUsers();
+            }
+        });
+
 
         // add back arrow to toolbar
         if (getSupportActionBar() != null){
@@ -329,6 +339,124 @@ public class RootOptions extends AppCompatActivity {
             }
         });
         alertBuilder.show();
+    }
+
+    void readRootUsers() {
+        DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                .child(Constants.ACTIVE_USERS);
+        dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    Log.d(TAG, "readRootUsers: " + dataSnapshot.toString());
+                    Map<String,UserDBEntry> users = new HashMap<>();
+                    for (DataSnapshot child : dataSnapshot.getChildren()) {
+                        //no worry about support for prev releases, as users entry under root
+                        //was created for the first time in 4.0.0 with UserDBEntry class.
+                        UserDBEntry usr = child.getValue(UserDBEntry.class);
+                        if (usr == null || child.getKey() == null) {
+                            return;
+                        }
+                        users.put(child.getKey(), usr);
+                    }
+                    if(users.size()>0)
+                        mUserList.put(Constants.USERDATA, users);  //club name is set to USERDATA
+                }
+                readClubUsers();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    void readClubUsers() {
+        if(mClubs.size()==0) return;
+        for(Map.Entry<String,ClubDBEntry> entry : mClubs.entrySet()) {
+            final String club = entry.getKey();
+            Log.d(TAG, "readClubUsers: " + club);
+            DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference()
+                    .child(club)
+                    .child(Constants.ACTIVE_USERS);
+            dbRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if (dataSnapshot.exists()) {
+                        Map<String,UserDBEntry> users = new HashMap<>();
+                        //support for releases previous to 4.0.0, where user data
+                        //was ProfileDBEntry.class instead of String.
+                        for (DataSnapshot child : dataSnapshot.getChildren()) {
+                            try {
+                                String userData = child.getValue(String.class);
+                                if (userData == null) continue;
+                                UserDBEntry usrEntry = new UserDBEntry();
+                                usrEntry.setClub(club);
+                                usrEntry.setTs(userData);  //last login time
+                                users.put(child.getKey(), usrEntry);
+                            } catch (com.google.firebase.database.DatabaseException e) {
+                                //Old DB had ProfileDBEntry.class in DB instead of String.
+                                //just ignore it.
+                            }
+                        }
+                        if(users.size()>0) {
+                            mUserList.put(club, users);
+                        }
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+        }
+
+        mMainHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                showUserPopup();
+            }
+        }, 3000);  //display after 3secs
+
+    }
+
+    void showUserPopup() {
+        if(mUserList.isEmpty()) return;
+        Log.d(TAG, "showUserPopup:");
+        SpannableStringBuilder sb = new SpannableStringBuilder();
+        for(Map.Entry<String,Map<String,UserDBEntry>> entry : mUserList.entrySet()) {
+            if(entry.getKey().equals(Constants.USERDATA)) continue; //add root profiles last
+            sb.append(mCommon.getStyleString(entry.getKey(), Typeface.BOLD)); //club entry
+            sb.append("\n");
+            for(Map.Entry<String,UserDBEntry> usr : entry.getValue().entrySet()) {
+                sb.append("    > ");
+                sb.append(usr.getKey()); sb.append(" = ");
+                sb.append(usr.getValue().toString()); //user data
+                sb.append("\n");
+            }
+            sb.append("\n");
+        }
+        for(Map.Entry<String,Map<String,UserDBEntry>> entry : mUserList.entrySet()) {
+            if(!entry.getKey().equals(Constants.USERDATA)) continue; //root profiles only
+            sb.append(mCommon.getStyleString("\n\n-- ACTIVE USERS --", Typeface.BOLD));
+            sb.append("\n");
+            for(Map.Entry<String,UserDBEntry> usr : entry.getValue().entrySet()) {
+                sb.append("    > ");
+                sb.append(usr.getKey()); sb.append(" = ");
+                sb.append(usr.getValue().toString()); //user data
+                sb.append("\n");
+            }
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(RootOptions.this);
+        builder.setMessage(sb)
+                .setTitle(mCommon.getTitleStr("Users:", RootOptions.this))
+                .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                    }
+                }).show();
     }
 
     private void sendEmail(final String emailid, final int act_code, final String club) {

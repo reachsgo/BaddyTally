@@ -79,14 +79,22 @@ public class UserDBEntry {
         this.maxC = maxC;
     }
 
-    @Override
-    public String toString() {
-        return "UserDBEntry{" +
-                "clubs='" + clubs + '\'' +
-                ", ts='" + ts + '\'' +
-                ", ph='" + ph + '\'' +
-                ", v='" + ver + '\'' +
-                '}';
+    boolean isUserAtRootNode() {
+        return ver>0;  //if ver==0, then it is user under club node in DB
     }
 
+    @Override
+    public String toString() {
+        if(isUserAtRootNode()) { //user at the root node in DB
+            return "{" +
+                    "clubs='" + clubs + '\'' +
+                    ", ts='" + ts + '\'' +
+                    ", ph='" + ph + '\'' +
+                    ", ver=" + ver +
+                    ", maxC=" + maxC +
+                    '}';
+        }
+
+        return ts;
+    }
 }
