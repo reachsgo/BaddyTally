@@ -2400,7 +2400,6 @@ public class TournaTableLayout extends AppCompatActivity {
             return;
         }
 
-
         ActivityManager.MemoryInfo memoryInfo = mCommon.getAvailableMemory(this);
         if (memoryInfo.lowMemory) {
             // Note: This is device's overall memory status, not specific to this app
